@@ -1,0 +1,38 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# C/C++ build artifacts
+build/
+dist/
+*.egg-info/
+
+# Virtual Environments
+venv/
+env/
+.venv/
+env*/
+envs*/
+
+# IDE & Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# MetaDrive temporary runtime screenshots / logs
+main_index_*.png
+*.log
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Keep models and evaluation plots
+!models/best_agent.pt
+!plots/learning_curves.png

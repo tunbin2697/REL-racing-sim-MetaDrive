@@ -1,0 +1,17 @@
+# PyTorch with CUDA (tuỳ chọn cài đặt theo hướng dẫn trong README)
+torch>=2.2.0
+torchvision>=0.17.0
+
+# 3D Simulation & Environment
+metadrive-simulator>=0.4.3
+gymnasium>=0.29.0
+panda3d>=1.10.13
+pygame>=2.5.0
+
+# Numerical Computing & Plotting
+numpy>=1.24.0,<2.3.0
+matplotlib>=3.8.0
+scipy>=1.12.0
+pandas>=2.0.0
+tqdm>=4.66.0
+tensorboard>=2.15.0
