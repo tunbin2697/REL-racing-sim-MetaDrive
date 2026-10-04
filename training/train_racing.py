@@ -23,7 +23,7 @@ if sys.platform == "win32":
 # Thêm thư mục gốc vào path để import
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from envs.racing_env import MetaRacingEnv
+from game_env.racing_env import MetaRacingEnv
 from agents.ppo_agent import PPOAgent
 
 def parse_args():

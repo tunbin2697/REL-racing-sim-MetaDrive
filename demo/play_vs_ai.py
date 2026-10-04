@@ -26,7 +26,7 @@ if sys.platform == "win32":
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from envs.multiagent_env import MultiAgentRacingEnv
+from game_env.multiagent_env import MultiAgentRacingEnv
 from agents.ppo_agent import PPOAgent
 
 def parse_args():

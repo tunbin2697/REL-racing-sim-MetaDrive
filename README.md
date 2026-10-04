@@ -18,7 +18,7 @@ Dự án phát triển một hệ thống xe tự hành đua xe trong môi trư�
 
 ```text
 REL Assignment/
-├── envs/
+├── game_env/
 │   ├── __init__.py
 │   ├── racing_env.py          # Wrapper MetaRacingEnv (Chuẩn Gymnasium, hàm thưởng tự nhiên)
 │   └── multiagent_env.py      # Môi trường đua đối đầu 2 xe (Người vs AI)

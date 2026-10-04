@@ -9,12 +9,17 @@ build/
 dist/
 *.egg-info/
 
-# Virtual Environments
-venv/
+# Environments & Virtual Envs (Standard Python / Conda / Pipenv)
+.env
+.venv
 env/
-.venv/
-env*/
+venv/
+ENV/
+env.bak/
+venv.bak/
+envs/
 envs*/
+.env*.local
 
 # IDE & Editors
 .idea/
