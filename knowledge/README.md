@@ -51,6 +51,7 @@ flowchart TD
 | [`05_deep_rl_and_neural_fitted_agents.md`](./05_deep_rl_and_neural_fitted_agents.md) | **Kiến trúc Deep RL, Replay Buffer & Bộ tối ưu Adam** | Slide 3.1 + Deep RL | **Assignment 1** (Deep Expected Sarsa giải quyết Lunar Lander). |
 | [`06_assignment_handbook.md`](./06_assignment_handbook.md) | **Cẩm nang Thực chiến & Giải mã 3 Bài Assignment** | Assignment-student | Hướng dẫn chi tiết từng dòng code, input/output shape, unit tests, pitfalls. |
 | [`07_formula_and_algorithm_cheatsheet.md`](./07_formula_and_algorithm_cheatsheet.md) | **Bí kíp Tra cứu Nhanh Công thức & Pseudo-code** | Toàn bộ khóa học | Bảng tổng hợp công thức toán, đạo hàm, quy tắc update để ôn thi và debug. |
+| [`08_sim_racing_telemetry_and_physics.md`](./08_sim_racing_telemetry_and_physics.md) | **Vật lý Sim Racing, Telemetry & Tối ưu Hàm thưởng** | Mở rộng Nâng cao | Kết nối vật lý Panda3D BulletVehicle, Trail braking, G-G circle và Credit assignment. |
 
 ---
 

@@ -108,11 +108,19 @@ def main():
             # 2. Bước mô phỏng vật lý 3D
             obs_dict, rewards, terminations, truncations, infos = racing_env.step(actions)
             
-            # Trích xuất telemetry hiển thị HUD
-            p_speed = infos.get(player_id, {}).get("velocity", 0.0) * 3.6
-            ai_speed = infos.get(ai_id, {}).get("velocity", 0.0) * 3.6
+            # Trích xuất telemetry hiển thị HUD & Delta Bar
+            p_speed = infos.get(player_id, {}).get("speed_km_h", infos.get(player_id, {}).get("velocity", 0.0) * 3.6)
+            ai_speed = infos.get(ai_id, {}).get("speed_km_h", infos.get(ai_id, {}).get("velocity", 0.0) * 3.6)
             p_comp = infos.get(player_id, {}).get("route_completion", 0.0) * 100.0
             ai_comp = infos.get(ai_id, {}).get("route_completion", 0.0) * 100.0
+            
+            p_delta = infos.get(player_id, {}).get("delta_time", 0.0)
+            p_color = infos.get(player_id, {}).get("delta_color", "gray").upper()
+            ai_delta = infos.get(ai_id, {}).get("delta_time", 0.0)
+            ai_color = infos.get(ai_id, {}).get("delta_color", "gray").upper()
+            
+            p_delta_str = f"+{p_delta:.2f}s" if p_delta > 0 else f"{p_delta:.2f}s"
+            ai_delta_str = f"+{ai_delta:.2f}s" if ai_delta > 0 else f"{ai_delta:.2f}s"
             
             # Kiểm tra trạng thái hoàn thành / va chạm / lệch đường
             p_crash = infos.get(player_id, {}).get("crash", False) or infos.get(player_id, {}).get("crash_sidewalk", False)
@@ -135,18 +143,18 @@ def main():
                 elif (p_crash or p_out) and (ai_crash or ai_out):
                     winner = "[DRAW] CA HAI XE DEU BI TAI NAN!"
 
-            # Render text HUD lên màn hình 3D
+            # Render text HUD lên màn hình 3D kèm Delta Bar Sim Racing
             hud_text = {
-                "HUMAN VS AI RACE": f"Step: {step_idx}",
-                "Player (You)": f"Speed: {p_speed:.1f} km/h | Progress: {p_comp:.1f}%",
-                "AI Agent": f"Speed: {ai_speed:.1f} km/h | Progress: {ai_comp:.1f}%",
-                "Result": winner if winner else "RACING IN PROGRESS...",
+                "SIM RACING HUD": f"Lap Time: {step_idx * 0.02:5.2f}s",
+                "Player (You)": f"Speed: {p_speed:5.1f} km/h | Progress: {p_comp:4.1f}% | Delta: {p_delta_str} [{p_color}]",
+                "AI Agent": f"Speed: {ai_speed:5.1f} km/h | Progress: {ai_comp:4.1f}% | Delta: {ai_delta_str} [{ai_color}]",
+                "Status": winner if winner else "RACING IN PROGRESS...",
             }
             racing_env.render(text=hud_text)
 
             # In console định kỳ mỗi 50 steps
             if step_idx % 50 == 0:
-                print(f"[Race Step {step_idx:04d}] You: {p_speed:5.1f} km/h ({p_comp:4.1f}%) | AI: {ai_speed:5.1f} km/h ({ai_comp:4.1f}%) | {winner or 'Dang dua...'}")
+                print(f"[Race {step_idx * 0.02:5.2f}s] You: {p_speed:5.1f} km/h (Δ {p_delta_str} {p_color}) | AI: {ai_speed:5.1f} km/h (Δ {ai_delta_str} {ai_color}) | {winner or 'Dang dua...'}")
 
             # Kết thúc trận khi có xe thắng/thua hoặc hết thời gian
             round_ended = (

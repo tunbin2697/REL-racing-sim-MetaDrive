@@ -22,35 +22,33 @@ if sys.platform == "win32":
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from metadrive import MetaDriveEnv
+from game_env.racing_env import SingleRacingMetaDrive
 from metadrive.examples.ppo_expert.numpy_expert import expert
 from agents.ppo_agent import PPOAgent
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Pretrain RL Agent using Expert Demonstrations")
-    parser.add_argument("--steps", type=int, default=5000, help="Số bước thu thập từ chuyên gia")
+    parser = argparse.ArgumentParser(description="Pretrain RL Agent using Expert Demonstrations on RacingMap")
+    parser.add_argument("--steps", type=int, default=6000, help="Số bước thu thập từ chuyên gia")
     parser.add_argument("--epochs", type=int, default=100, help="Số epoch huấn luyện Behavior Cloning")
     parser.add_argument("--batch-size", type=int, default=128, help="Batch size")
     parser.add_argument("--lr", type=float, default=1e-3, help="Tốc độ học")
-    parser.add_argument("--map", type=str, default="O", help="Bản đồ đua ('O' hoặc 'SCS')")
-    parser.add_argument("--save-path", type=str, default="models/best_agent.pt", help="File lưu checkpoint")
+    parser.add_argument("--save-path", type=str, default="models/warmup_racing_agent.pt", help="File lưu checkpoint")
     return parser.parse_args()
 
-def collect_expert_data(num_steps, map_type):
-    print(f">> Dang thu thap {num_steps} buoc du lieu tu Expert Policy tren map '{map_type}'...")
-    env = MetaDriveEnv(dict(
+def collect_expert_data(num_steps):
+    print(f">> Đang thu thập {num_steps} bước dữ liệu từ Expert Policy trên RacingMap (12 Blocks Circuit)...")
+    env = SingleRacingMetaDrive(dict(
         use_render=False,
-        map=map_type,
-        num_scenarios=5,
-        start_seed=42,
         traffic_density=0.0,
+        map_config=dict(lane_num=2, lane_width=4.5),
+        vehicle_config=dict(lidar=dict(num_lasers=240, distance=50)),
     ))
     
     obs, info = env.reset()
     states = []
     actions = []
     
-    for _ in range(num_steps):
+    for _ in tqdm(range(num_steps), desc="Thu thập expert data"):
         act = expert(env.agent)
         states.append(obs)
         actions.append(np.clip(act, -1.0, 1.0))
@@ -63,7 +61,7 @@ def collect_expert_data(num_steps, map_type):
     
     states = np.array(states, dtype=np.float32)
     actions = np.array(actions, dtype=np.float32)
-    print(f">> Thu thap thanh cong: {states.shape[0]} mau du lieu.")
+    print(f">> Thu thập thành công: {states.shape[0]} mẫu dữ liệu (State shape: {states.shape[1]}).")
     return states, actions
 
 def main():
@@ -75,7 +73,7 @@ def main():
     print("=" * 70)
     
     # 1. Thu thập dữ liệu
-    states, actions = collect_expert_data(args.steps, args.map)
+    states, actions = collect_expert_data(args.steps)
     
     # 2. Khởi tạo Agent
     agent = PPOAgent(state_dim=259, action_dim=2, device="cuda" if torch.cuda.is_available() else "cpu")
