@@ -25,6 +25,7 @@ class SingleRacingMetaDrive(MetaDriveEnv):
     def default_config(cls):
         config = super(SingleRacingMetaDrive, cls).default_config()
         config.update(dict(
+            show_sidewalk=False,
             cross_yellow_line_done=False,
             crash_sidewalk_done=False,
         ), allow_add_new_key=True)
@@ -83,14 +84,15 @@ class MetaRacingEnv(gym.Env):
                 "lane_width": 4.5,
             },
             
-            # Tắt toàn bộ ép làn và phạt vạch để tự do cắt góc apex & lấn làn
+            # Tắt tường bê tông rào chắn và phạt vạch để áp dụng cơ chế Runoff thể thao
+            "show_sidewalk": False,
             "use_lateral_reward": False,
             "cross_yellow_line_done": False,
             "on_continuous_line_done": False,
             "out_of_route_done": False,
-            "crash_sidewalk_done": False,   # Chạm lề không bị văng game ngay
+            "crash_sidewalk_done": False,
             "crash_vehicle_done": False,
-            "out_of_road_done": False,       # Track limits được quản lý tùy biến bởi wrapper
+            "out_of_road_done": False,
             
             # Cảm biến & Đồ họa
             "vehicle_config": {
@@ -136,19 +138,25 @@ class MetaRacingEnv(gym.Env):
     def check_track_limits_and_apply_runoff(self, vehicle):
         """
         Quản lý lề Runoff & Giới hạn đường đua (Track Limits) chuẩn thể thao:
-        - Trên bất kỳ làn nào của đường đua: on_lane = True -> hoàn toàn bình thường.
-        - Chém lề Runoff: Xe lệch khỏi mép làn ngoài nhưng chưa đâm rào -> giảm 5% vận tốc do ma sát lề, KHÔNG phạt.
-        - Chạm/Đâm rào thép / văng khỏi đường đua: is_full_out = True -> Dừng episode & phạt ngay lập tức (Triệt tiêu ôm tường).
+        - Tắt rào chắn tường (show_sidewalk=False) để triệt tiêu vĩnh viễn thói quen ôm tường (Wall-riding).
+        - Khoảng cách từ tâm xe tới mép đường trái và phải (dist_to_left_side, dist_to_right_side).
+        - Xe rộng 1.85m -> nửa thân xe ~0.93m:
+          + min_edge > 0.93m: Hoàn toàn trên đường nhựa.
+          + -1.5m < min_edge <= 0.93m: Chém lề Runoff / Kerb -> giảm 5% vận tốc do ma sát lề, KHÔNG phạt dừng.
+          + min_edge <= -1.5m: Cả 4 bánh văng khỏi track limits -> Dừng episode & phạt ngay (-40.0).
         """
         on_runoff = False
         is_full_out = False
         
-        # 1. Kiểm tra va quẹt hoặc đâm rào chắn bên đường (Tuyệt đối không cho phép dùng tường làm ray trượt)
-        if vehicle.crash_sidewalk or vehicle.crash_object or vehicle.crash_vehicle:
+        # Khoảng cách từ mép ngoài của thân xe tới rìa đường đua
+        min_edge = min(vehicle.dist_to_left_side, vehicle.dist_to_right_side)
+        
+        # 1. Kiểm tra va chạm xe khác, vật thể hoặc vượt quá Track Limits (> 1.5m ngoài mép đường)
+        if min_edge <= -1.5 or vehicle.crash_object or vehicle.crash_vehicle:
             is_full_out = True
             on_runoff = False
-        elif not vehicle.on_lane:
-            # Xe đang liếm gờ lề kerb / runoff ngoài vạch sơn nhưng CHƯA chạm rào
+        elif min_edge <= 0.93:
+            # Chém lề Runoff / Kerb
             on_runoff = True
             vehicle.set_velocity(vehicle.velocity * 0.95)
         else:
