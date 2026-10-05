@@ -27,14 +27,14 @@ from agents.ppo_agent import PPOAgent
 
 def parse_args():
     parser = argparse.ArgumentParser(description="PPO Racing Training in MetaDrive 3D")
-    parser.add_argument("--total-steps", type=int, default=20000, help="Tổng số bước mô phỏng")
+    parser.add_argument("--total-steps", type=int, default=50000, help="Tổng số bước mô phỏng")
     parser.add_argument("--rollout-len", type=int, default=1024, help="Độ dài rollout thu thập trước mỗi lần update")
     parser.add_argument("--batch-size", type=int, default=64, help="Kích thước minibatch PPO")
     parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate (fine-tuning)")
     parser.add_argument("--gamma", type=float, default=0.99, help="Discount factor gamma")
     parser.add_argument("--gae-lambda", type=float, default=0.95, help="GAE lambda")
     parser.add_argument("--clip-coef", type=float, default=0.15, help="PPO clipping parameter")
-    parser.add_argument("--ent-coef", type=float, default=0.001, help="Entropy bonus coefficient")
+    parser.add_argument("--ent-coef", type=float, default=0.005, help="Entropy bonus coefficient")
     parser.add_argument("--eval-freq", type=int, default=2, help="Tần suất đánh giá (theo số vòng update)")
     parser.add_argument("--eval-episodes", type=int, default=2, help="Số episode đánh giá")
     parser.add_argument("--map", type=str, default="O", help="Bản đồ đua ('O' cho oval track hoặc '3' cho block circuit)")

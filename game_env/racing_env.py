@@ -158,10 +158,8 @@ class MetaRacingEnv(gym.Env):
             is_full_out = True
             on_runoff = False
         elif min_edge <= 0.93:
-            # Chém lề Runoff / Kerb
+            # Chém lề Runoff / Kerb: Xe cắt góc cua trên lề, không can thiệp vật lý, không phạt điểm
             on_runoff = True
-            # Không can thiệp set_velocity thô bạo (50Hz làm hụt 54% tốc độ trong 0.3s)
-            # Thay vào đó phạt vi mô -0.1 điểm để Agent tự học bám tim đường
         else:
             on_runoff = False
             is_full_out = False
@@ -234,15 +232,12 @@ class MetaRacingEnv(gym.Env):
             r_delta = 0.0
         
         # Phạt rung giật đánh lái và kháng lực trượt lốp (Steering Induced Drag)
-        steer_diff = float(action[0] - self.last_action[0])
-        r_steer_smooth = -0.15 * (steer_diff ** 2)
-        r_steer_scrub = -0.05 * (float(action[0]) ** 2) * speed_ratio
-        
         # Phạt thời gian trôi qua từng step
         r_step_penalty = -0.05
         
-        # Chém lề không phạt điểm: Tự nhiên để tốc độ và Lap Time tự điều tiết lợi ích khi cắt góc Apex
-        micro_reward = r_progress + r_speed + r_step_penalty + r_delta + r_steer_smooth + r_steer_scrub
+        # Hàm thưởng vi mô tinh gọn (Streamlined): Giữ lại tiến độ dọc, tốc độ đúng hướng, áp lực thời gian và Telemetry Delta Bar
+        # Loại bỏ phạt góc lái vi mô để Agent tự do đánh lái thoát khỏi bias cua phải và chinh phục khúc cua trái 220 độ
+        micro_reward = r_progress + r_speed + r_step_penalty + r_delta
         macro_reward = 0.0
         
         self.last_action = np.array(action, dtype=np.float32)
