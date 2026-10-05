@@ -14,11 +14,10 @@ import matplotlib.pyplot as plt
 
 # Đảm bảo mã hóa UTF-8 trên Windows console
 if sys.platform == "win32":
-    try:
-        sys.stdout.reconfigure(encoding="utf-8")
-        sys.stderr.reconfigure(encoding="utf-8")
-    except Exception:
-        pass
+    if hasattr(sys.stdout, "reconfigure"):
+        getattr(sys.stdout, "reconfigure")(encoding="utf-8")
+    if hasattr(sys.stderr, "reconfigure"):
+        getattr(sys.stderr, "reconfigure")(encoding="utf-8")
 
 # Thêm thư mục gốc vào path để import
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -28,23 +27,24 @@ from agents.ppo_agent import PPOAgent
 
 def parse_args():
     parser = argparse.ArgumentParser(description="PPO Racing Training in MetaDrive 3D")
-    parser.add_argument("--total-steps", type=int, default=50000, help="Tổng số bước mô phỏng")
+    parser.add_argument("--total-steps", type=int, default=20000, help="Tổng số bước mô phỏng")
     parser.add_argument("--rollout-len", type=int, default=1024, help="Độ dài rollout thu thập trước mỗi lần update")
     parser.add_argument("--batch-size", type=int, default=64, help="Kích thước minibatch PPO")
-    parser.add_argument("--lr", type=float, default=3e-4, help="Learning rate")
+    parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate (fine-tuning)")
     parser.add_argument("--gamma", type=float, default=0.99, help="Discount factor gamma")
     parser.add_argument("--gae-lambda", type=float, default=0.95, help="GAE lambda")
-    parser.add_argument("--clip-coef", type=float, default=0.2, help="PPO clipping parameter")
-    parser.add_argument("--ent-coef", type=float, default=0.01, help="Entropy bonus coefficient")
-    parser.add_argument("--eval-freq", type=int, default=5, help="Tần suất đánh giá (theo số vòng update)")
-    parser.add_argument("--eval-episodes", type=int, default=3, help="Số episode đánh giá")
+    parser.add_argument("--clip-coef", type=float, default=0.15, help="PPO clipping parameter")
+    parser.add_argument("--ent-coef", type=float, default=0.001, help="Entropy bonus coefficient")
+    parser.add_argument("--eval-freq", type=int, default=2, help="Tần suất đánh giá (theo số vòng update)")
+    parser.add_argument("--eval-episodes", type=int, default=2, help="Số episode đánh giá")
     parser.add_argument("--map", type=str, default="O", help="Bản đồ đua ('O' cho oval track hoặc '3' cho block circuit)")
+    parser.add_argument("--warmup-model", type=str, default="models/warmup_racing_agent.pt", help="File checkpoint warmup")
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
     parser.add_argument("--save-dir", type=str, default="models", help="Thư mục lưu weights")
     parser.add_argument("--log-dir", type=str, default="logs", help="Thư mục lưu log số liệu")
     return parser.parse_args()
 
-def evaluate_agent(env, agent, num_episodes=3):
+def evaluate_agent(env, agent, num_episodes=2):
     """Đánh giá agent ở chế độ deterministic (không lấy mẫu ngẫu nhiên)"""
     eval_returns = []
     eval_lengths = []
@@ -53,7 +53,7 @@ def evaluate_agent(env, agent, num_episodes=3):
     crash_count = 0
     
     for ep in range(num_episodes):
-        target_seed = env.start_seed + (ep % env.num_scenarios)
+        target_seed = env.start_seed + (ep % max(1, getattr(env, "num_scenarios", 1)))
         obs, info = env.reset(seed=target_seed)
         ep_return = 0.0
         ep_len = 0
@@ -64,7 +64,7 @@ def evaluate_agent(env, agent, num_episodes=3):
             obs, reward, terminated, truncated, info = env.step(action)
             ep_return += reward
             ep_len += 1
-            speeds.append(info.get("speed_kmh", 0.0))
+            speeds.append(info.get("speed_km_h", info.get("speed_kmh", 0.0)))
             
             if terminated or truncated:
                 if info.get("crash", False) or info.get("crash_sidewalk", False):
@@ -161,8 +161,10 @@ def main():
     # Khởi tạo môi trường mô phỏng (MetaDrive sử dụng Singleton Engine)
     env = MetaRacingEnv(use_render=False, traffic_density=0.0, map_config=args.map, start_seed=args.seed)
     
-    obs_dim = env.observation_space.shape[0]
-    act_dim = env.action_space.shape[0]
+    obs_shape = env.observation_space.shape
+    act_shape = env.action_space.shape
+    obs_dim = int(obs_shape[0]) if obs_shape is not None else 259
+    act_dim = int(act_shape[0]) if act_shape is not None else 2
     
     agent = PPOAgent(
         state_dim=obs_dim,
@@ -174,6 +176,10 @@ def main():
         ent_coef=args.ent_coef,
         minibatch_size=args.batch_size,
     )
+    
+    if args.warmup_model and os.path.exists(args.warmup_model):
+        print(f">> Nạp trọng số khởi đầu từ Warmup Model: {args.warmup_model}")
+        agent.load(args.warmup_model)
     
     # Bộ đệm Rollout Storage
     states = np.zeros((args.rollout_len, obs_dim), dtype=np.float32)
@@ -194,9 +200,28 @@ def main():
         "entropy": [],
     }
     
+    print(">> Đánh giá ban đầu (Step 0 / Warmup baseline)...")
+    eval_res = evaluate_agent(env, agent, num_episodes=args.eval_episodes)
+    metrics["steps"].append(0)
+    metrics["eval_return"].append(eval_res["mean_return"])
+    metrics["eval_completion"].append(eval_res["mean_completion"])
+    metrics["eval_speed"].append(eval_res["mean_speed"])
+    metrics["crash_rate"].append(eval_res["crash_rate"])
+    metrics["policy_loss"].append(0.0)
+    metrics["value_loss"].append(0.0)
+    metrics["entropy"].append(0.0)
+    print(
+        f"[Step 000000/{args.total_steps}] "
+        f"Eval Return: {eval_res['mean_return']:+.2f} | "
+        f"Track Completion: {eval_res['mean_completion']:.1f}% | "
+        f"Speed: {eval_res['mean_speed']:.1f} km/h | "
+        f"Crash Rate: {eval_res['crash_rate']*100:.0f}%"
+    )
+    plot_training_curves(metrics, os.path.join("plots", "learning_curves.png"))
+    
     global_step = 0
     update_idx = 0
-    best_completion = -1.0
+    best_completion = eval_res["mean_completion"]
     start_time = time.time()
     
     obs, info = env.reset()
@@ -213,10 +238,11 @@ def main():
             log_probs[step] = log_prob
             rewards[step] = reward
             values[step] = value
-            dones[step] = float(terminated or truncated)
+            is_done = bool(terminated) or bool(truncated)
+            dones[step] = 1.0 if is_done else 0.0
             
             obs = next_obs
-            if terminated or truncated:
+            if is_done:
                 obs, info = env.reset()
                 
         # 2. Ước tính giá trị trạng thái kế tiếp để tính GAE

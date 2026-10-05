@@ -21,7 +21,7 @@ if sys.platform == "win32":
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from game_env.racing_env import SingleRacingMetaDrive
+from game_env.racing_env import MetaRacingEnv
 from metadrive.examples.ppo_expert.numpy_expert import expert
 from agents.ppo_agent import PPOAgent
 
@@ -35,25 +35,27 @@ def parse_args():
     return parser.parse_args()
 
 def collect_expert_data(num_steps):
-    print(f">> Đang thu thập {num_steps} bước dữ liệu từ Expert Policy trên RacingMap (12 Blocks Circuit)...")
-    env = SingleRacingMetaDrive(dict(
-        use_render=False,
-        traffic_density=0.0,
-        map_config=dict(lane_num=2, lane_width=4.5),
-        vehicle_config=dict(lidar=dict(num_lasers=240, distance=50)),
-    ))
+    print(f">> Đang thu thập {num_steps} bước dữ liệu từ Expert Policy trên MetaRacingEnv...")
+    env = MetaRacingEnv(use_render=False)
     
     obs, info = env.reset()
     states = []
     actions = []
+    rewards = []
+    dones = []
     
     for _ in tqdm(range(num_steps), desc="Thu thập expert data"):
-        act_raw = expert(env.agent)
+        act_raw = expert(env.vehicle)
         act: np.ndarray = np.asarray(act_raw[0] if isinstance(act_raw, tuple) else act_raw, dtype=np.float32)
-        states.append(obs)
-        actions.append(np.clip(act, -1.0, 1.0))
+        act_clipped = np.clip(act, -1.0, 1.0)
         
-        obs, reward, term, trunc, info = env.step(act)
+        states.append(obs)
+        actions.append(act_clipped)
+        
+        obs, reward, term, trunc, info = env.step(act_clipped)
+        rewards.append(reward)
+        dones.append(term or trunc)
+        
         if term or trunc:
             obs, info = env.reset()
             
@@ -61,19 +63,32 @@ def collect_expert_data(num_steps):
     
     states = np.array(states, dtype=np.float32)
     actions = np.array(actions, dtype=np.float32)
+    rewards = np.array(rewards, dtype=np.float32)
+    dones = np.array(dones, dtype=bool)
+    
+    # Tính toán Monte-Carlo discounted returns để khởi tạo giá trị Critic V(s)
+    returns = np.zeros_like(rewards, dtype=np.float32)
+    running_return = 0.0
+    gamma = 0.99
+    for t in reversed(range(len(rewards))):
+        if dones[t]:
+            running_return = 0.0
+        running_return = rewards[t] + gamma * running_return
+        returns[t] = running_return
+        
     print(f">> Thu thập thành công: {states.shape[0]} mẫu dữ liệu (State shape: {states.shape[1]}).")
-    return states, actions
+    return states, actions, returns
 
 def main():
     args = parse_args()
     os.makedirs(os.path.dirname(args.save_path), exist_ok=True)
     
     print("=" * 70)
-    print(">> KHOI DONG TIEN HUAN LUYEN TRI THUC CHO AI (BEHAVIOR CLONING WARM START)")
+    print(">> KHOI DONG TIEN HUAN LUYEN TRI THUC CHO AI (ACTOR & CRITIC WARM START)")
     print("=" * 70)
     
     # 1. Thu thập dữ liệu
-    states, actions = collect_expert_data(args.steps)
+    states, actions, returns = collect_expert_data(args.steps)
     
     # 2. Khởi tạo Agent
     agent = PPOAgent(state_dim=259, action_dim=2, device="cuda" if torch.cuda.is_available() else "cpu")
@@ -82,39 +97,53 @@ def main():
     # 3. Chuyển đổi dữ liệu sang PyTorch Tensor
     dataset = torch.utils.data.TensorDataset(
         torch.tensor(states, dtype=torch.float32),
-        torch.tensor(actions, dtype=torch.float32)
+        torch.tensor(actions, dtype=torch.float32),
+        torch.tensor(returns, dtype=torch.float32),
     )
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=args.batch_size, shuffle=True)
     
     criterion = nn.MSELoss()
     optimizer = torch.optim.Adam(agent.ac.parameters(), lr=args.lr)
     
-    # 4. Huấn luyện mạng Actor (học phán đoán góc lái và chân ga chính xác)
-    print(f">> Bat dau huan luyen Behavior Cloning ({args.epochs} epochs)...")
+    # 4. Huấn luyện đồng thời cả Actor (hành động) và Critic (giá trị trạng thái)
+    print(f">> Bat dau huan luyen Behavior Cloning & Value Fitting ({args.epochs} epochs)...")
     for epoch in range(args.epochs):
-        epoch_loss = 0.0
-        for b_states, b_actions in dataloader:
+        epoch_actor_loss = 0.0
+        epoch_critic_loss = 0.0
+        for b_states, b_actions, b_returns in dataloader:
             b_states = b_states.to(agent.device)
             b_actions = b_actions.to(agent.device)
+            b_returns = b_returns.to(agent.device)
             
-            # Dự đoán góc lái và ga từ Actor
             pred_actions = agent.ac.actor_mean(b_states)
-            loss = criterion(pred_actions, b_actions)
+            pred_values = agent.ac.critic(b_states).squeeze(-1)
+            
+            actor_loss = criterion(pred_actions, b_actions)
+            critic_loss = criterion(pred_values, b_returns)
+            total_loss = actor_loss + 0.5 * critic_loss
             
             optimizer.zero_grad()
-            loss.backward()
+            total_loss.backward()
             optimizer.step()
             
-            epoch_loss += loss.item() * b_states.size(0)
+            epoch_actor_loss += actor_loss.item() * b_states.size(0)
+            epoch_critic_loss += critic_loss.item() * b_states.size(0)
             
-        epoch_loss /= len(dataset)
+        epoch_actor_loss /= len(dataset)
+        epoch_critic_loss /= len(dataset)
         if (epoch + 1) % 20 == 0 or epoch == 0:
-            print(f"  [Epoch {epoch+1:03d}/{args.epochs:03d}] MSE Loss: {epoch_loss:.5f}")
+            print(f"  [Epoch {epoch+1:03d}/{args.epochs:03d}] Actor Loss: {epoch_actor_loss:.5f} | Critic Loss: {epoch_critic_loss:.5f}")
             
+    # Hiệu chỉnh độ lệch chuẩn khám phá an toàn
+    with torch.no_grad():
+        agent.ac.actor_logstd.fill_(-1.6)
+        
     # 5. Lưu trọng số
     agent.save(args.save_path)
+    best_path = os.path.join(os.path.dirname(args.save_path), "best_agent.pt")
+    agent.save(best_path)
     print("=" * 70)
-    print(f">> [THANH CONG] Da luu model khoi tao tri thuc tai: {args.save_path}")
+    print(f">> [THANH CONG] Da luu model khoi tao tri thuc tai: {args.save_path} & {best_path}")
     print("=" * 70)
 
 if __name__ == "__main__":

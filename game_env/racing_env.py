@@ -48,7 +48,9 @@ class MetaRacingEnv(gym.Env):
         horizon: int = 3000,
         manual_control: bool = False,
         start_seed: int = 42,
+        num_scenarios: int = 1,
         reference_lap_file: str = "logs/reference_lap.json",
+        **kwargs,
     ):
         super().__init__()
         
@@ -57,6 +59,7 @@ class MetaRacingEnv(gym.Env):
         self.horizon = horizon
         self.manual_control = manual_control
         self.start_seed = start_seed
+        self.num_scenarios = num_scenarios
         self.dt = 0.02
         
         # Telemetry tracker
@@ -126,7 +129,7 @@ class MetaRacingEnv(gym.Env):
         info["best_lap_time"] = self.best_lap_time
         info["delta_time"] = 0.0
         info["delta_color"] = "gray"
-        return obs.astype(np.float32), info
+        return np.asarray(obs, dtype=np.float32), info
 
     def check_track_limits_and_apply_runoff(self, vehicle):
         """
@@ -252,7 +255,7 @@ class MetaRacingEnv(gym.Env):
         info["delta_color"] = sample["delta_color"]
         info["on_runoff"] = bool(on_runoff)
         
-        return obs.astype(np.float32), float(total_reward), terminated, truncated, info
+        return np.asarray(obs, dtype=np.float32), float(total_reward), terminated, truncated, info
 
     def render(self):
         return self.env.render()

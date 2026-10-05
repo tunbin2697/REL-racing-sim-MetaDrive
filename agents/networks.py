@@ -15,7 +15,7 @@ class ActorCritic(nn.Module):
     Actor: Ước lượng vector trung bình mu(s), kết hợp tham số log_std để lấy mẫu phân phối Gaussian.
     Critic: Ước lượng hàm giá trị trạng thái V(s).
     """
-    def __init__(self, state_dim: int, action_dim: int = 2, hidden_dim: int = 256):
+    def __init__(self, state_dim: int, action_dim: int = 2, hidden_dim: int = 256, init_log_std: float = -1.6):
         super().__init__()
         
         # Mạng Critic V(s)
@@ -36,8 +36,8 @@ class ActorCritic(nn.Module):
             layer_init(nn.Linear(hidden_dim, action_dim), std=0.01),
         )
         
-        # Tham số log_std độc lập với trạng thái (Learnable state-independent log standard deviation)
-        self.actor_logstd = nn.Parameter(torch.zeros(1, action_dim))
+        # Tham số log_std: Khởi tạo ở mức -1.6 (std ~ 0.20) để khám phá an toàn quanh đường chạy đua
+        self.actor_logstd = nn.Parameter(torch.full((1, action_dim), float(init_log_std)))
 
     def get_value(self, x):
         """Dự đoán giá trị trạng thái V(s)"""
