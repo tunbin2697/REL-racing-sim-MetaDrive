@@ -113,6 +113,7 @@ class MetaRacingEnv(gym.Env):
         # Biến trạng thái
         self.current_step = 0
         self.last_longitudinal = 0.0
+        self.last_action = np.zeros(2, dtype=np.float32)
         self.lap_completed = False
 
     def reset(self, *, seed=None, options=None):
@@ -122,6 +123,7 @@ class MetaRacingEnv(gym.Env):
             obs, info = self.env.reset()
             
         self.current_step = 0
+        self.last_action = np.zeros(2, dtype=np.float32)
         self.lap_completed = False
         self.telemetry.reset()
         
@@ -158,7 +160,8 @@ class MetaRacingEnv(gym.Env):
         elif min_edge <= 0.93:
             # Chém lề Runoff / Kerb
             on_runoff = True
-            vehicle.set_velocity(vehicle.velocity * 0.95)
+            # Không can thiệp set_velocity thô bạo (50Hz làm hụt 54% tốc độ trong 0.3s)
+            # Thay vào đó phạt vi mô -0.1 điểm để Agent tự học bám tim đường
         else:
             on_runoff = False
             is_full_out = False
@@ -174,7 +177,12 @@ class MetaRacingEnv(gym.Env):
         self.current_step += 1
         action = np.clip(np.array(action, dtype=np.float32), -1.0, 1.0)
         
-        obs, base_reward, terminated, truncated, info = self.env.step(action)
+        # Mô hình hóa độ trễ phản hồi thước lái cơ điện tử (Slew-rate / EMA smoothing)
+        # Giúp triệt tiêu hiện tượng rung giật 50Hz (chattering) làm lốp trượt ngang sinh lực cản
+        steer_applied = 0.7 * float(action[0]) + 0.3 * float(self.last_action[0])
+        action_applied = np.array([steer_applied, action[1]], dtype=np.float32)
+        
+        obs, base_reward, terminated, truncated, info = self.env.step(action_applied)
         
         vehicle = self.env.agent
         current_time = self.current_step * self.dt
@@ -187,8 +195,8 @@ class MetaRacingEnv(gym.Env):
             current_time=current_time,
             position=vehicle.position,
             velocity=vehicle.velocity,
-            steering=action[0],
-            throttle_brake=action[1],
+            steering=float(action_applied[0]),
+            throttle_brake=float(action_applied[1]),
             dt=self.dt,
             on_runoff=on_runoff,
         )
@@ -225,11 +233,21 @@ class MetaRacingEnv(gym.Env):
         else:
             r_delta = 0.0
         
+        # Phạt chém lề Runoff (bằng điểm số, xe vẫn giữ được trọn vẹn lực kéo động cơ)
+        r_runoff = -0.10 if on_runoff else 0.0
+        
+        # Phạt rung giật đánh lái và kháng lực trượt lốp (Steering Induced Drag)
+        steer_diff = float(action[0] - self.last_action[0])
+        r_steer_smooth = -0.15 * (steer_diff ** 2)
+        r_steer_scrub = -0.05 * (float(action[0]) ** 2) * speed_ratio
+        
         # Phạt thời gian trôi qua từng step
         r_step_penalty = -0.05
         
-        micro_reward = r_progress + r_speed + r_step_penalty + r_delta
+        micro_reward = r_progress + r_speed + r_step_penalty + r_delta + r_runoff + r_steer_smooth + r_steer_scrub
         macro_reward = 0.0
+        
+        self.last_action = np.array(action, dtype=np.float32)
         
         # Kiểm tra hoàn thành vòng đua
         route_comp = info.get("route_completion", 0.0)
