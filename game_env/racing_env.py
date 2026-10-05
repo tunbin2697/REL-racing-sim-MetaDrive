@@ -233,9 +233,6 @@ class MetaRacingEnv(gym.Env):
         else:
             r_delta = 0.0
         
-        # Phạt chém lề Runoff (bằng điểm số, xe vẫn giữ được trọn vẹn lực kéo động cơ)
-        r_runoff = -0.10 if on_runoff else 0.0
-        
         # Phạt rung giật đánh lái và kháng lực trượt lốp (Steering Induced Drag)
         steer_diff = float(action[0] - self.last_action[0])
         r_steer_smooth = -0.15 * (steer_diff ** 2)
@@ -244,7 +241,8 @@ class MetaRacingEnv(gym.Env):
         # Phạt thời gian trôi qua từng step
         r_step_penalty = -0.05
         
-        micro_reward = r_progress + r_speed + r_step_penalty + r_delta + r_runoff + r_steer_smooth + r_steer_scrub
+        # Chém lề không phạt điểm: Tự nhiên để tốc độ và Lap Time tự điều tiết lợi ích khi cắt góc Apex
+        micro_reward = r_progress + r_speed + r_step_penalty + r_delta + r_steer_smooth + r_steer_scrub
         macro_reward = 0.0
         
         self.last_action = np.array(action, dtype=np.float32)
