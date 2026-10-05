@@ -53,22 +53,25 @@ class TelemetryTracker:
 
     def save_as_reference_lap(self, filepath: Optional[str] = None):
         """Lưu vòng chạy hiện tại làm Reference Lap mới"""
-        path = filepath or self.reference_lap_file
-        if not self.current_lap_data:
+        target_path = filepath or self.reference_lap_file
+        if not target_path or not self.current_lap_data:
             return
             
-        os.makedirs(os.path.dirname(path), exist_ok=True)
+        target_str = str(target_path)
+        dir_name = os.path.dirname(target_str)
+        if dir_name:
+            os.makedirs(dir_name, exist_ok=True)
         final_time = self.current_lap_data[-1]["time"]
         data = {
             "lap_time": float(final_time),
             "total_distance": float(self.current_lap_data[-1]["distance"]),
             "samples": self.current_lap_data,
         }
-        with open(path, "w", encoding="utf-8") as f:
+        with open(target_str, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
             
         # Nạp lại ngay vào bộ nhớ
-        self.load_reference_lap(path)
+        self.load_reference_lap(target_str)
 
     def log_step(
         self,

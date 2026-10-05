@@ -15,11 +15,10 @@ import matplotlib.pyplot as plt
 
 # Đảm bảo mã hóa UTF-8 trên Windows console
 if sys.platform == "win32":
-    try:
-        sys.stdout.reconfigure(encoding="utf-8")
-        sys.stderr.reconfigure(encoding="utf-8")
-    except Exception:
-        pass
+    if hasattr(sys.stdout, "reconfigure"):
+        getattr(sys.stdout, "reconfigure")(encoding="utf-8")
+    if hasattr(sys.stderr, "reconfigure"):
+        getattr(sys.stderr, "reconfigure")(encoding="utf-8")
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Plot Sim Racing Telemetry Analysis")
@@ -65,7 +64,7 @@ def plot_telemetry(lap_data, save_path):
     valleys, _ = find_peaks(-speeds, distance=30, prominence=5)
     for v_idx in valleys:
         ax1.plot(distances[v_idx], speeds[v_idx], "ro", markersize=6)
-        ax1.annotate(f"Vmin: {speeds[v_idx]:.0f}", (distances[v_idx], speeds[v_idx]),
+        ax1.annotate(f"Vmin: {speeds[v_idx]:.0f}", (float(distances[v_idx]), float(speeds[v_idx])),
                      textcoords="offset points", xytext=(0, -15), ha="center", fontsize=8, color="red")
     ax1.legend(loc="upper right")
     ax1.grid(True, linestyle="--", alpha=0.5)

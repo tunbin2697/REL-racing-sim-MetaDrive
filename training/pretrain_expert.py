@@ -14,11 +14,10 @@ from tqdm import tqdm
 
 # Đảm bảo mã hóa UTF-8 trên Windows console
 if sys.platform == "win32":
-    try:
-        sys.stdout.reconfigure(encoding="utf-8")  
-        sys.stderr.reconfigure(encoding="utf-8")
-    except Exception:
-        pass
+    if hasattr(sys.stdout, "reconfigure"):
+        getattr(sys.stdout, "reconfigure")(encoding="utf-8")
+    if hasattr(sys.stderr, "reconfigure"):
+        getattr(sys.stderr, "reconfigure")(encoding="utf-8")
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -49,7 +48,8 @@ def collect_expert_data(num_steps):
     actions = []
     
     for _ in tqdm(range(num_steps), desc="Thu thập expert data"):
-        act = expert(env.agent)
+        act_raw = expert(env.agent)
+        act: np.ndarray = np.asarray(act_raw[0] if isinstance(act_raw, tuple) else act_raw, dtype=np.float32)
         states.append(obs)
         actions.append(np.clip(act, -1.0, 1.0))
         
