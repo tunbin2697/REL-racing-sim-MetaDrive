@@ -257,8 +257,8 @@ class MetaRacingEnv(gym.Env):
         
         return np.asarray(obs, dtype=np.float32), float(total_reward), terminated, truncated, info
 
-    def render(self):
-        return self.env.render()
+    def render(self, *args, **kwargs):
+        return self.env.render(*args, **kwargs)
 
     def close(self):
         return self.env.close()
