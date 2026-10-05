@@ -31,7 +31,8 @@ REL Assignment/
 ├── training/
 │   ├── pretrain_expert.py     # Tiền huấn luyện bắt chước (Behavior Cloning Warm Start)
 │   ├── train_racing.py        # Pipeline huấn luyện PPO + tự động xuất biểu đồ học thuật
-│   └── evaluate.py            # Benchmark đánh giá học thuật độc lập trên nhiều scenario
+│   ├── evaluate.py            # Benchmark đánh giá học thuật độc lập trên nhiều scenario
+│   └── plot_telemetry.py      # Xuất bộ 4 biểu đồ Sim Racing Telemetry chuyên sâu
 │
 ├── demo/
 │   ├── play_vs_ai.py          # SCRIPT ĐINH: Người bấm phím W-A-S-D trực tiếp đua với AI
@@ -42,12 +43,15 @@ REL Assignment/
 │
 ├── models/
 │   ├── best_agent.pt          # Model AI tốt nhất đã huấn luyện (đã lưu sẵn để chạy ngay)
+│   ├── warmup_racing_agent.pt # Model Warm-up trên 12 blocks circuit
 │   └── latest_agent.pt        # Model checkpoint mới nhất
 │
 ├── plots/
-│   └── learning_curves.png    # Biểu đồ hội tụ học thuật (Return, Loss, Completion, Speed)
+│   ├── learning_curves.png    # Biểu đồ hội tụ học thuật (Return, Loss, Completion, Speed)
+│   └── telemetry_analysis.png # Bộ 4 biểu đồ Sim Racing: Speed trace, Pedals, G-G, Steering
 │
 ├── logs/
+│   ├── reference_lap.json     # Dữ liệu vòng đua chuẩn (Ghost Lap) tính Delta Bar thời gian thực
 │   └── training_metrics.json  # Dữ liệu telemetry chi tiết qua các vòng lặp huấn luyện
 │
 ├── archived_ver1/             # Toàn bộ mã nguồn và mô hình 2D cũ được đóng gói độc lập
