@@ -16,11 +16,10 @@ import numpy as np
 
 # Đảm bảo UTF-8 trên Windows console
 if sys.platform == "win32":
-    try:
-        sys.stdout.reconfigure(encoding="utf-8")
-        sys.stderr.reconfigure(encoding="utf-8")
-    except Exception:
-        pass
+    if hasattr(sys.stdout, "reconfigure"):
+        getattr(sys.stdout, "reconfigure")(encoding="utf-8")
+    if hasattr(sys.stderr, "reconfigure"):
+        getattr(sys.stderr, "reconfigure")(encoding="utf-8")
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -31,7 +30,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="AI Spectator Mode in MetaDrive 3D")
     parser.add_argument("--model", type=str, default="models/best_agent.pt", help="Đường dẫn weights của AI")
     parser.add_argument("--map", type=int, default=3, help="Độ dài bản đồ đua (số block cua)")
-    parser.add_argument("--traffic", type=float, default=0.05, help="Mật độ chướng ngại vật/xe khác (0.0 - 0.2)")
+    parser.add_argument("--traffic", type=float, default=0.0, help="Mật độ chướng ngại vật/xe khác (0.0 - 0.2)")
     parser.add_argument("--seed", type=int, default=42, help="Seed tạo bản đồ")
     return parser.parse_args()
 
@@ -77,20 +76,27 @@ def main():
             action, _, _ = agent.select_action(obs, deterministic=True)
             obs, reward, terminated, truncated, info = env.step(action)
             
-            speed_kmh = info.get("speed_kmh", 0.0)
+            speed_kmh = info.get("speed_km_h", info.get("speed_kmh", 0.0))
             comp = info.get("route_completion", 0.0) * 100.0
             steer = action[0]
             throttle = action[1]
             
+            delta_t = info.get("delta_time", 0.0)
+            delta_str = f"+{delta_t:.2f}s" if delta_t >= 0 else f"{delta_t:.2f}s"
+            delta_color = info.get("delta_color", "gray")
+            
             # Text HUD
             hud_text = {
                 "RL AGENT SPECTATOR": f"Lap: {lap_count} | Step: {step}",
+                "Delta Bar": f"[{delta_color.upper()}] {delta_str}",
+                "Current Lap": f"{info.get('lap_time', 0.0):.2f}s",
+                "Best Lap": f"{info.get('best_lap_time', 0.0):.2f}s",
                 "Speed": f"{speed_kmh:.1f} km/h",
                 "Completion": f"{comp:.1f}%",
                 "Action": f"Steer: {steer:+.2f} | Throttle: {throttle:+.2f}",
                 "Reward": f"{reward:+.2f}",
             }
-            env.render()
+            env.render(text=hud_text)
             
             if terminated or truncated:
                 print(f">> Vòng {lap_count} kết thúc tại step {step}! (Completion: {comp:.1f}%, Arrive: {info.get('arrive_dest', False)})")

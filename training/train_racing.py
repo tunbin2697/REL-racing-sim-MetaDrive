@@ -50,6 +50,7 @@ def evaluate_agent(env, agent, num_episodes=2):
     eval_lengths = []
     eval_completions = []
     eval_speeds = []
+    crash_locations = []
     crash_count = 0
     
     for ep in range(num_episodes):
@@ -67,8 +68,11 @@ def evaluate_agent(env, agent, num_episodes=2):
             speeds.append(info.get("speed_km_h", info.get("speed_kmh", 0.0)))
             
             if terminated or truncated:
-                if info.get("crash", False) or info.get("crash_sidewalk", False):
+                is_crash = info.get("crash", False) or info.get("crash_sidewalk", False) or (info.get("termination_reason") == "crash_or_track_limit")
+                if is_crash:
                     crash_count += 1
+                    dist = info.get("crash_distance", info.get("route_completion", 0.0) * 2117.0)
+                    crash_locations.append(f"{dist:.0f}m")
                 break
                 
         eval_returns.append(ep_return)
@@ -82,6 +86,7 @@ def evaluate_agent(env, agent, num_episodes=2):
         "mean_completion": float(np.mean(eval_completions)),
         "mean_speed": float(np.mean(eval_speeds)),
         "crash_rate": float(crash_count / max(1, num_episodes)),
+        "crash_locations": crash_locations,
     }
 
 def plot_training_curves(metrics, plot_path):
@@ -250,8 +255,8 @@ def main():
         _, _, next_value = agent.select_action(obs, deterministic=True)
         advantages, returns = agent.compute_gae(rewards, values, dones, next_value)
         
-        # 3. Cập nhật mạng Actor-Critic
-        train_info = agent.update(states, actions, log_probs, advantages, returns)
+        # 3. Cập nhật mạng Actor-Critic (Decoupled optimization)
+        train_info = agent.update(states, actions, log_probs, advantages, returns, values)
         update_idx += 1
         
         # 4. Đánh giá định kỳ
@@ -269,14 +274,16 @@ def main():
             metrics["value_loss"].append(train_info["value_loss"])
             metrics["entropy"].append(train_info["entropy"])
             
+            crash_info_str = f" | Crashes at: {eval_res['crash_locations']}" if eval_res['crash_locations'] else " | Clean Lap"
             print(
                 f"[Step {global_step:06d}/{args.total_steps}] "
                 f"FPS: {fps} | "
                 f"Eval Return: {eval_res['mean_return']:+.2f} | "
-                f"Track Completion: {eval_res['mean_completion']:.1f}% | "
+                f"Completion: {eval_res['mean_completion']:.1f}% | "
                 f"Speed: {eval_res['mean_speed']:.1f} km/h | "
-                f"Crash Rate: {eval_res['crash_rate']*100:.0f}% | "
-                f"Loss(P/V): {train_info['policy_loss']:.3f}/{train_info['value_loss']:.3f}"
+                f"Loss(P/V): {train_info['policy_loss']:.3f}/{train_info['value_loss']:.3f} | "
+                f"ExpVar: {train_info.get('explained_var', 0.0):.2f}"
+                f"{crash_info_str}"
             )
             
             # Lưu checkpoint tốt nhất dựa trên tỷ lệ hoàn thành chặng đua và điểm thưởng
