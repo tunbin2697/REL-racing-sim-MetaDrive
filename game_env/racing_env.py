@@ -62,9 +62,11 @@ class MetaRacingEnv(gym.Env):
         self.num_scenarios = num_scenarios
         self.dt = 0.02
         
-        # Telemetry tracker
+        # Telemetry tracker & Lap records
         self.telemetry = TelemetryTracker(reference_lap_file=reference_lap_file)
-        self.best_lap_time = self.telemetry.ref_best_lap_time
+        self.target_lap_time = self.telemetry.ref_best_lap_time
+        self.agent_best_lap_time = float("inf")
+        self.best_lap_time = self.target_lap_time
         
         # Cấu hình MetaDrive engine
         self.config = {
@@ -241,18 +243,33 @@ class MetaRacingEnv(gym.Env):
             # Cúp hoàn thành vòng: Đảm bảo tỷ lệ hoàn thành >= 99%
             r_finish = 100.0
             
-            # Thưởng phá kỷ lục Lap Time phi tuyến:
-            # - Các vòng đầu cải thiện nhiều giây -> Thưởng lớn
-            # - Các vòng sau cải thiện từng phần mười giây -> Vẫn có thưởng cơ bản lớn (+50)
+            # Thưởng phá kỷ lục Lap Time phi tuyến & phạt dậm chân tại chỗ:
+            # - Vòng đầu: Mốc thành tích ban đầu (+50)
+            # - Các vòng sau cải thiện nhiều giây (giai đoạn sớm): Thưởng lớn (50 + 15 * sqrt(time_saved))
+            # - Các vòng sau cải thiện ít (giai đoạn tinh chỉnh): Vẫn nhận thưởng tối thiểu lớn (+50)
+            # - Chạy quá chậm / thụt lùi: Phạt (tối đa -25) để triệt tiêu bẫy an toàn (Safety Trap)
             r_record_gap = 0.0
-            if current_time < self.best_lap_time:
-                time_saved = self.best_lap_time - current_time
+            if np.isinf(self.agent_best_lap_time):
+                self.agent_best_lap_time = current_time
+                r_record_gap = 50.0
+                info["new_record"] = True
+            elif current_time < self.agent_best_lap_time:
+                time_saved = self.agent_best_lap_time - current_time
                 r_record_gap = 50.0 + 15.0 * float(np.sqrt(max(0.0, time_saved)))
-                self.best_lap_time = current_time
-                self.telemetry.save_as_reference_lap()
+                self.agent_best_lap_time = current_time
                 info["new_record"] = True
             else:
+                time_lost = current_time - self.agent_best_lap_time
+                r_record_gap = -1.0 * min(25.0, time_lost)
                 info["new_record"] = False
+                
+            # Đánh bại cả chuẩn Reference Lap của Benchmark -> Thưởng mốc vàng (+20)
+            if current_time < self.telemetry.ref_best_lap_time:
+                r_record_gap += 20.0
+                self.telemetry.save_as_reference_lap()
+                self.best_lap_time = current_time
+            else:
+                self.best_lap_time = min(self.agent_best_lap_time, self.telemetry.ref_best_lap_time)
                 
             macro_reward = r_finish + r_record_gap
             
