@@ -136,24 +136,22 @@ class MetaRacingEnv(gym.Env):
         Quản lý lề Runoff & Giới hạn đường đua (Track Limits) chuẩn thể thao:
         - Trên bất kỳ làn nào của đường đua: on_lane = True -> hoàn toàn bình thường.
         - Chém lề Runoff: Xe lệch khỏi mép làn ngoài nhưng chưa đâm rào -> giảm 5% vận tốc do ma sát lề, KHÔNG phạt.
-        - Đâm rào thép / văng khỏi đường đua: is_full_out = True -> Dừng episode & phạt.
+        - Chạm/Đâm rào thép / văng khỏi đường đua: is_full_out = True -> Dừng episode & phạt ngay lập tức (Triệt tiêu ôm tường).
         """
         on_runoff = False
         is_full_out = False
         
-        # 1. Xe hoàn toàn nằm trong các làn đường
-        if vehicle.on_lane:
+        # 1. Kiểm tra va quẹt hoặc đâm rào chắn bên đường (Tuyệt đối không cho phép dùng tường làm ray trượt)
+        if vehicle.crash_sidewalk or vehicle.crash_object or vehicle.crash_vehicle:
+            is_full_out = True
+            on_runoff = False
+        elif not vehicle.on_lane:
+            # Xe đang liếm gờ lề kerb / runoff ngoài vạch sơn nhưng CHƯA chạm rào
+            on_runoff = True
+            vehicle.set_velocity(vehicle.velocity * 0.95)
+        else:
             on_runoff = False
             is_full_out = False
-        else:
-            # Xe đang liếm lề kerb / runoff ngoài vạch sơn
-            if vehicle.crash_sidewalk or vehicle.crash_object:
-                # Đâm trực diện vào rào hộ lan (Barrier impact)
-                is_full_out = True
-            else:
-                # Chém lề nhẹ (chưa chạm rào chắn)
-                on_runoff = True
-                vehicle.set_velocity(vehicle.velocity * 0.95)
                 
         # Kiểm tra chạy ngược lùi quá xa
         long, _ = vehicle.lane.local_coordinates(vehicle.position)
@@ -198,18 +196,29 @@ class MetaRacingEnv(gym.Env):
         # --- TẦNG VI MÔ (Mỗi step) ---
         r_progress = 1.5 * delta_long
         
-        # Vận tốc hiệu dụng (tốc độ cao + đầu xe hướng đúng đường)
+        # Vận tốc hiệu dụng: Tăng trọng số khuyến khích đạp ga, triệt tiêu thói quen để trôi xe (Coasting)
         speed_km_h = sample["speed_km_h"]
         max_speed = vehicle.max_speed_km_h or 120.0
         speed_ratio = speed_km_h / max_speed
         
         heading_diff = vehicle.heading_diff(vehicle.lane)
-        r_speed = 0.3 * speed_ratio * max(0.0, float(np.cos(heading_diff)))
+        r_speed = 0.8 * speed_ratio * max(0.0, float(np.cos(heading_diff)))
         
-        # Phạt thời gian trôi qua: Tương đương tối ưu Lap Time nhưng loại bỏ bẫy Credit Assignment!
+        # Áp lực Telemetry Delta Bar thời gian thực
+        delta_t = sample["delta_time"]
+        if delta_t < 0.0:
+            # Đang nhanh hơn vòng mẫu (Xanh) -> Thưởng tốc độ dẫn trước
+            r_delta = 0.1 * min(1.0, -delta_t)
+        elif delta_t > 1.0:
+            # Đang chậm hơn vòng mẫu > 1.0s (Đỏ) -> Phạt chạy rùa
+            r_delta = -0.1 * min(1.0, delta_t - 1.0)
+        else:
+            r_delta = 0.0
+        
+        # Phạt thời gian trôi qua từng step
         r_step_penalty = -0.05
         
-        micro_reward = r_progress + r_speed + r_step_penalty
+        micro_reward = r_progress + r_speed + r_step_penalty + r_delta
         macro_reward = 0.0
         
         # Kiểm tra hoàn thành vòng đua
@@ -217,10 +226,12 @@ class MetaRacingEnv(gym.Env):
         arrive_dest = info.get("arrive_dest", False) or route_comp >= 0.98
         
         # --- TẦNG VĨ MÔ (Kết thúc hoặc Về đích) ---
-        if is_full_out or vehicle.crash_vehicle or vehicle.crash_object:
-            macro_reward = -30.0
+        if is_full_out or vehicle.crash_vehicle or vehicle.crash_object or vehicle.crash_sidewalk:
+            macro_reward = -40.0
             terminated = True
             info["termination_reason"] = "crash_or_track_limit"
+            info["crash_distance"] = float(sample["distance"])
+            info["crash_speed"] = float(sample["speed_km_h"])
             
         elif arrive_dest:
             self.lap_completed = True
@@ -230,11 +241,13 @@ class MetaRacingEnv(gym.Env):
             # Cúp hoàn thành vòng: Đảm bảo tỷ lệ hoàn thành >= 99%
             r_finish = 100.0
             
-            # Thưởng phá kỷ lục Lap Time
+            # Thưởng phá kỷ lục Lap Time phi tuyến:
+            # - Các vòng đầu cải thiện nhiều giây -> Thưởng lớn
+            # - Các vòng sau cải thiện từng phần mười giây -> Vẫn có thưởng cơ bản lớn (+50)
             r_record_gap = 0.0
             if current_time < self.best_lap_time:
                 time_saved = self.best_lap_time - current_time
-                r_record_gap = 10.0 * min(time_saved, 20.0)  # Thưởng tối đa 200 điểm khi phá kỷ lục
+                r_record_gap = 50.0 + 15.0 * float(np.sqrt(max(0.0, time_saved)))
                 self.best_lap_time = current_time
                 self.telemetry.save_as_reference_lap()
                 info["new_record"] = True
