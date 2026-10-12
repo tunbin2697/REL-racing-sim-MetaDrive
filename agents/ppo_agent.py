@@ -4,6 +4,7 @@ Dựa trên kiến trúc chuẩn Clipped Surrogate Objective & Generalized Advan
 Đúng theo khung lý thuyết giáo trình Học tăng cường (REL).
 """
 
+from typing import Optional
 import os
 import torch
 import torch.nn as nn
@@ -14,7 +15,7 @@ from .networks import ActorCritic
 class PPOAgent:
     def __init__(
         self,
-        state_dim: int = 259,
+        state_dim: int = 35,
         action_dim: int = 2,
         lr: float = 3e-4,
         gamma: float = 0.99,
@@ -25,7 +26,7 @@ class PPOAgent:
         max_grad_norm: float = 0.5,
         update_epochs: int = 10,
         minibatch_size: int = 64,
-        device: str = None,
+        device: Optional[str] = None,
     ):
         if device is None:
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -47,12 +48,16 @@ class PPOAgent:
         self.actor_params = list(self.ac.actor_mean.parameters()) + [self.ac.actor_logstd]
         self.critic_params = list(self.ac.critic.parameters())
         
-        # Tách riêng Optimizer: Actor học bảo tồn (lr thấp), Critic học khớp giá trị (lr cao hơn)
         self.lr_actor = lr * 0.2
         self.lr_critic = lr * 1.5
         self.actor_optimizer = optim.Adam(self.actor_params, lr=self.lr_actor, eps=1e-5)
         self.critic_optimizer = optim.Adam(self.critic_params, lr=self.lr_critic, eps=1e-5)
         
+    @property
+    def network(self):
+        """Thuộc tính tương thích cho mạng ActorCritic"""
+        return self.ac
+
     def select_action(self, state, deterministic: bool = False):
         """
         Chọn hành động từ trạng thái hiện tại.
@@ -148,13 +153,12 @@ class PPOAgent:
                 nn.utils.clip_grad_norm_(self.actor_params, self.max_grad_norm)
                 self.actor_optimizer.step()
                 
-                # 3. PPO Clipped Value Loss
-                v_loss_unclipped = (new_value.view(-1) - b_returns[mb_idx]) ** 2
+                # 3. PPO Clipped Value Loss (Ổn định Critic, chống spike khi va chạm)
+                v_pred = new_value.view(-1)
                 v_clipped = b_values_tensor[mb_idx] + torch.clamp(
-                    new_value.view(-1) - b_values_tensor[mb_idx],
-                    -self.clip_coef,
-                    self.clip_coef,
+                    v_pred - b_values_tensor[mb_idx], -10.0, 10.0
                 )
+                v_loss_unclipped = (v_pred - b_returns[mb_idx]) ** 2
                 v_loss_clipped = (v_clipped - b_returns[mb_idx]) ** 2
                 v_loss = 0.5 * torch.max(v_loss_unclipped, v_loss_clipped).mean()
                 

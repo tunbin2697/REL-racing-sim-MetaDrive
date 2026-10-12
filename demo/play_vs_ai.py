@@ -18,11 +18,10 @@ import numpy as np
 
 # Đảm bảo UTF-8 trên Windows console
 if sys.platform == "win32":
-    try:
-        sys.stdout.reconfigure(encoding="utf-8")
-        sys.stderr.reconfigure(encoding="utf-8")
-    except Exception:
-        pass
+    if hasattr(sys.stdout, "reconfigure"):
+        getattr(sys.stdout, "reconfigure")(encoding="utf-8")
+    if hasattr(sys.stderr, "reconfigure"):
+        getattr(sys.stderr, "reconfigure")(encoding="utf-8")
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -53,10 +52,19 @@ def main():
     print("  - [Esc]: Thoát trận đấu")
     print("=" * 70)
 
-    # Khởi tạo AI Agent
-    ai_agent = PPOAgent(state_dim=259, action_dim=2)
+    # Tự động phát hiện state_dim từ checkpoint
+    ckpt_dim = 35
     if os.path.exists(args.model):
-        print(f">> Đang nạp mô hình AI từ: {args.model}")
+        try:
+            import torch
+            ckpt = torch.load(args.model, map_location="cpu")
+            ckpt_dim = int(ckpt.get("state_dim", 35))
+        except Exception:
+            ckpt_dim = 35
+
+    ai_agent = PPOAgent(state_dim=ckpt_dim, action_dim=2)
+    if os.path.exists(args.model):
+        print(f">> Đang nạp mô hình AI từ: {args.model} (State Dim: {ckpt_dim})")
         ai_agent.load(args.model)
         print(">> Nạp trọng số AI thành công!")
     else:
@@ -68,6 +76,7 @@ def main():
         map_config=args.map,
         start_seed=args.seed,
     )
+    racing_env.compact_obs = (ckpt_dim == 35)
 
     try:
         obs_dict, info_dict = racing_env.reset(seed=args.seed)

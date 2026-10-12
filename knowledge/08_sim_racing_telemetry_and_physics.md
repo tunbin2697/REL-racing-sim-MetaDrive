@@ -136,3 +136,88 @@ Một báo cáo nghiên cứu RL Đua xe chuẩn mực quốc tế cần trình 
 2. **Speed Trace Comparison ($v$ vs $s$)**: Vẽ đường cong vận tốc của AI so sánh với Người chơi/Reference Lap, chỉ rõ các đáy cua hình chữ V tại Chicane.
 3. **Biểu đồ Phanh & Ga theo Quãng đường**: Phân tích kỹ thuật Trail Braking mượt mà của AI.
 4. **Vòng tròn Ma sát G-G Diagram**: Biểu diễn đám mây điểm $(a_y, a_x)$ lấp đầy đường tròn ma sát tối đa của xe.
+
+---
+
+## 5. Khung Phương Pháp Luận RL: Dữ Liệu Telemetry Nào Được Dùng Để Train Agent?
+
+Trong nghiên cứu Reinforcement Learning, việc đưa dữ liệu tính toán từ bên ngoài vào hàm thưởng hoặc không gian quan sát đòi hỏi sự phân định chặt chẽ về mặt phương pháp luận nhằm ngăn chặn **Rò rỉ thông tin đặc quyền (Privileged Information / Oracle Leakage)** và **Thiên kiến sao chép (Imitation Bias)**.
+
+```
+                                  PHÂN LOẠI TELEMETRY TRONG RL
+                                               |
+                 +-----------------------------+-----------------------------+
+                 |                                                           |
+                 v                                                           v
+     [NHÓM 1: ĐƯỢC PHÉP TRAIN AGENT]                             [NHÓM 2: CHỈ DÙNG BÁO CÁO / THẨM ĐỊNH]
+       (In-Loop Training Signals)                                  (Post-Hoc Offline Observability)
+                 |                                                           |
+      +----------+----------+                                    +----------+----------+
+      |                     |                                    |                     |
+      v                     v                                    v                     v
+ [Ego Sensors]       [Temporal Pacing]                     [Reference Trajectory] [Action Traces]
+ - Gia tốc Gx, Gy    - Delta Bar Δt(s)                     - Vận tốc mẫu v_ref(s) - Vết phanh/ga chuyên gia
+ - Độ bám lốp G_total- Tự động update                      - Điểm phanh mẫu       - Góc lái mẫu
+ - Tiến độ dọc Δs      (Self-Paced Benchmark)              - Quỹ đạo Apex mẫu
+```
+
+### 5.1. Nhóm 1: Telemetry ĐƯỢC PHÉP đưa vào Huấn luyện (In-Loop RL)
+
+Đây là các tín hiệu đảm bảo tính đúng đắn của tiến trình Markov Decision Process (MDP):
+
+1. **Telemetry Đo Đạc Nội Tại Thân Xe (Ego Physical Sensors)**:
+   * **Bản chất**: Được đo trực tiếp từ cảm biến quán tính tự thân (Onboard IMU, Con quay hồi chuyển, Cảm biến vòng quay bánh xe) của chính chiếc xe tại thời điểm thực tế $t$.
+   * **Các kênh hợp lệ**:
+     * Gia tốc dọc ($G_x$) và gia tốc ngang ($G_y$).
+     * Độ khai thác bám lốp tổng hợp $G_{\text{total}} = \sqrt{G_x^2 + G_y^2}$: Có thể đưa vào Reward để khuyến khích xe chạy tiệm cận giới hạn ma sát ($G_{\text{total}} \to 1.0G - 1.2G$), loại bỏ thói quen rụt rè / buông trôi xe.
+     * Độ lệch hướng thân xe $\Delta \theta$ và vận tốc dọc đường đua $\Delta s$.
+   * **Tính hợp lệ**: Không phụ thuộc vào bất kỳ "người ngoài cuộc" nào; áp dụng được trên mọi đường đua và môi trường mới mà không bị lỗi tương thích khi kiểm thử (Test-time Invariance).
+
+2. **Telemetry Áp Lực Thời Gian Thực (Temporal Pacing Signal - Delta Bar $\Delta t(s)$)**:
+   * **Bản chất**: Tương tự như đồng hồ bấm giờ của Race Engineer trên vách Pit-lane.
+   * **Tại sao không phạm Label Leakage?**:
+     * Delta Bar chỉ cung cấp một con số vô hướng $\Delta t$ (nhanh hơn hay chậm hơn thời gian trôi qua).
+     * **Tuyệt đối không chỉ dẫn hành động (Action-Free)**: Nó không can thiệp bảo Agent phải bẻ lái bao nhiêu độ, đạp ga bao nhiêu phần trăm hay phanh ở mét thứ mấy.
+     * Mạng nơ-ron phải hoàn toàn tự dùng Lidar và cảm biến vật lý để tự suy diễn làm thế nào cải thiện được con số $\Delta t$ đó.
+   * **Cơ chế Tự Nâng Chuẩn (Self-Paced Dynamic Curriculum)**:
+     * Khi Agent hoàn thành vòng đua sạch và nhanh hơn vòng tham chiếu, hệ thống lập tức nạp vòng chạy của chính Agent làm mốc tham chiếu mới (`telemetry.save_as_reference_lap()`).
+     * Điều này biến tín hiệu từ một mẫu cố định bên ngoài thành tiến trình tự vượt lên chính mình (Fictitious Play / Self-Play).
+
+---
+
+### 5.2. Nhóm 2: Telemetry CẤM dùng làm Hàm Thưởng ép buộc (Chỉ dùng Thẩm định Ngoại vi)
+
+Đây là các dữ liệu ngoại vi trích xuất từ vòng đua mẫu của chuyên gia/bot:
+* **Các kênh bao gồm**:
+  * Vận tốc tham chiếu tại từng mét $v_{\text{ref}}(s)$.
+  * Điểm phanh và lực phanh mẫu (Brake Profile của con người).
+  * Góc lái và tọa độ quỹ đạo chạy mẫu (Optimal Trajectory coordinates).
+
+* **Vì sao đưa các dữ liệu này vào Hàm Thưởng hoặc State là Bad Practice trong RL?**:
+  1. **Rò rỉ thông tin đặc quyền (Privileged Information / Oracle Leakage)**:
+     * Nếu đưa $v_{\text{ref}}(s)$ hay điểm phanh mẫu vào State/Obs: Agent sẽ lệ thuộc hoàn toàn vào "phao thi". Khi đem sang đường đua mới không có dữ liệu mẫu, mạng nơ-ron sẽ tê liệt hoàn toàn.
+  2. **Bẫy Sao Chép Cục Bộ (Imitation Bias & Performance Ceiling)**:
+     * Nếu phạt Agent khi nó không đạp phanh giống chuyên gia: Ta đã ép Agent "học vẹt".
+     * Nếu chuyên gia lái chưa hoàn hảo (ví dụ: vào cua quá sớm), Agent sẽ bị kẹp chặt trần năng lực và copy toàn bộ khuyết điểm đó.
+     * RL sinh ra là để tìm giải pháp tối ưu toàn cục (Superhuman Discovery) – như *AlphaGo* hay *Sony GT Sophy* vượt qua các nhà vô địch thế giới bằng những đường chạy chưa ai từng đi.
+
+---
+
+### 5.3. Bảng Tổng Hợp Khung Sử Dụng Telemetry
+
+| Tên Kênh Telemetry | Nguồn Dữ Liệu | Đưa vào Train Agent (RL)? | Vai Trò Đúng Đắn Trong Dự Án |
+| :--- | :--- | :---: | :--- |
+| **Delta Time $\Delta t(s)$** | Reference / Best Lap | **CÓ** (In-Loop Reward) | Tạo áp lực tốc độ vi mô (Pacing Pressure), tự nâng mốc kỷ lục. |
+| **Gia tốc $G_x, G_y, G_{\text{total}}$** | Cảm biến Onboard IMU | **CÓ** (Ego State / Reward) | Thúc đẩy khai thác giới hạn ma sát lốp $1.0G - 1.2G$. |
+| **Tiến độ dọc $\Delta s$** | Cảm biến Odometry | **CÓ** (Core RL Reward) | Định hướng tiến lên dọc đường đua. |
+| **Vận tốc mẫu $v_{\text{ref}}(s)$** | File log chuyên gia | **KHÔNG** (Tránh Oracle Leakage) | So sánh đối chiếu Speed Trace trên biểu đồ phân tích. |
+| **Vết phanh & Ga mẫu** | File log chuyên gia | **KHÔNG** (Tránh Imitation Trap) | Đối chiếu kỹ thuật Trail Braking trên đồ thị học thuật. |
+| **Góc bẻ lái mẫu** | File log chuyên gia | **KHÔNG** (Tránh Policy Bias) | Phân tích Steering Smoothness / Chattering hậu kiểm. |
+
+---
+
+### 5.4. Lưu ý về Ngoại Lệ: Pre-training (Behavior Cloning)
+* Dữ liệu Nhóm 2 chỉ được phép can thiệp ở pha **Khởi động nguội (Warm-up / Behavior Cloning)** trước khi train RL.
+* Mục đích duy nhất: Giúp Agent biết giữ xe trên mặt đường ở những epoch đầu tiên.
+* Khi bước vào giai đoạn Huấn luyện PPO chính thức, toàn bộ dữ liệu ép buộc phải được gỡ bỏ để Agent tự do khám phá và làm chủ đường đua.
+

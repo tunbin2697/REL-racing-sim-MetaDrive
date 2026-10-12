@@ -29,6 +29,8 @@ class MultiAgentRacingEnv:
         horizon: int = 3000,
         start_seed: int = 42,
         reference_lap_file: str = "logs/reference_lap.json",
+        map_config=None,
+        **kwargs,
     ):
         self.use_render = use_render
         self.window_size = window_size
@@ -40,6 +42,13 @@ class MultiAgentRacingEnv:
         self.telemetry_player = TelemetryTracker(reference_lap_file=reference_lap_file)
         self.telemetry_ai = TelemetryTracker(reference_lap_file=reference_lap_file)
         
+        map_cfg = {
+            "lane_num": 2,
+            "lane_width": 4.5,
+        }
+        if isinstance(map_config, dict):
+            map_cfg.update(map_config)
+            
         self.config = {
             "use_render": use_render,
             "num_agents": 2,
@@ -53,10 +62,7 @@ class MultiAgentRacingEnv:
             "physics_world_step_size": self.dt,
             "show_fps": True,
             "show_logo": False,
-            "map_config": {
-                "lane_num": 2,
-                "lane_width": 4.5,
-            },
+            "map_config": map_cfg,
             
             # Tắt ép bám tâm làn và phạt đè vạch
             "use_lateral_reward": False,
@@ -88,17 +94,179 @@ class MultiAgentRacingEnv:
         }
         
         self.env = MultiAgentRacingMetaDrive(self.config)
-        self.keyboard_controller = None
-        self.current_step = 0
+        self.compact_obs = True
+        self.circuit_initialized = False
+        self.circuit_length = 2186.0
+        self.track_xy = None
+        self.track_theta = None
+        self.track_kappa = None
+        self.track_s = None
+        self.num_track_points = 0
+        self.last_ai_action = [0.0, 0.0]
+
+    def _init_circuit_polyline(self):
+        map_obj = self.env.current_map
+        if map_obj is None or not hasattr(map_obj, "road_network") or map_obj.road_network is None:
+            return
+            
+        v = self.vehicles.get("agent1", self.vehicles.get("agent0"))
+        if v is None or not hasattr(v, "navigation") or v.navigation is None:
+            return
+            
+        ckpts = v.navigation.checkpoints
+        route_lanes = []
+        for i in range(len(ckpts) - 1):
+            lane = map_obj.road_network.get_lane((ckpts[i], ckpts[i + 1], 0))
+            if lane is not None:
+                route_lanes.append(lane)
+                
+        if not route_lanes:
+            return
+            
+        self.circuit_length = float(sum(l.length for l in route_lanes))
+        track_points = []
+        s_accum = 0.0
+        
+        for lane in route_lanes:
+            s_samples = np.linspace(0, lane.length, max(2, int(lane.length)), endpoint=False)
+            kappa = 0.0
+            if hasattr(lane, "radius") and lane.radius > 0:
+                is_cw = lane.is_clockwise() if callable(getattr(lane, "is_clockwise", None)) else bool(getattr(lane, "is_clockwise", False))
+                kappa = (1.0 / float(lane.radius)) * (-1.0 if is_cw else 1.0)
+                
+            for s_l in s_samples:
+                pos = lane.position(s_l, 0)
+                theta = float(lane.heading_theta_at(s_l))
+                track_points.append({
+                    "pos": np.array(pos[:2], dtype=np.float32),
+                    "theta": theta,
+                    "kappa": float(kappa),
+                    "s": float(s_accum + s_l),
+                })
+            s_accum += float(lane.length)
+            
+        self.track_xy = np.array([p["pos"] for p in track_points], dtype=np.float32)
+        self.track_theta = np.array([p["theta"] for p in track_points], dtype=np.float32)
+        self.track_kappa = np.array([p["kappa"] for p in track_points], dtype=np.float32)
+        self.track_s = np.array([p["s"] for p in track_points], dtype=np.float32)
+        self.num_track_points = len(track_points)
+        self.circuit_initialized = True
+
+    def get_compact_racing_obs(self, vehicle, action_applied=None):
+        if not self.circuit_initialized:
+            self._init_circuit_polyline()
+        if action_applied is None:
+            action_applied = self.last_ai_action
+            
+        pos = np.array(vehicle.position[:2], dtype=np.float32)
+        heading = float(vehicle.heading_theta)
+        vel = np.array(vehicle.velocity[:2], dtype=np.float32)
+        speed_m_s = float(np.linalg.norm(vel))
+        
+        if (
+            self.circuit_initialized
+            and self.track_xy is not None
+            and self.track_s is not None
+            and self.track_theta is not None
+            and self.track_kappa is not None
+            and self.num_track_points > 1
+        ):
+            dists = np.sum((self.track_xy - pos) ** 2, axis=1)
+            idx = int(np.argmin(dists))
+            current_s = float(self.track_s[idx])
+            track_pt = self.track_xy[idx]
+            track_heading = float(self.track_theta[idx])
+            track_curvature = float(self.track_kappa[idx])
+        else:
+            current_s = 0.0
+            track_pt = pos
+            track_heading = heading
+            track_curvature = 0.0
+            
+        cos_head = np.cos(heading)
+        sin_head = np.sin(heading)
+        fwd_vec = np.array([cos_head, sin_head], dtype=np.float32)
+        lat_vec = np.array([-sin_head, cos_head], dtype=np.float32)
+        vx = float(np.dot(vel, fwd_vec))
+        vy = float(np.dot(vel, lat_vec))
+        
+        delta_heading = (heading - track_heading + np.pi) % (2.0 * np.pi) - np.pi
+        disp_center = pos - track_pt
+        track_lat_normal = np.array([-np.sin(track_heading), np.cos(track_heading)], dtype=np.float32)
+        lat_offset = float(np.dot(disp_center, track_lat_normal))
+        
+        dist_left = float(np.clip((4.5 - lat_offset) / 4.5, -2.0, 2.0))
+        dist_right = float(np.clip((4.5 + lat_offset) / 4.5, -2.0, 2.0))
+        yaw_rate = float(getattr(vehicle, "yaw_rate", 0.0))
+        
+        ego_state = [
+            float(np.clip(speed_m_s / 40.0, 0.0, 1.5)),
+            float(np.clip(vx / 40.0, -1.0, 1.5)),
+            float(np.clip(vy / 20.0, -1.5, 1.5)),
+            float(np.clip(yaw_rate / 3.14159, -2.0, 2.0)),
+            float(action_applied[0]),
+            float(self.last_ai_action[0]),
+            float(self.last_ai_action[1]),
+            float(np.cos(delta_heading)),
+            float(np.sin(delta_heading)),
+            float(np.clip(lat_offset / 4.5, -2.0, 2.0)),
+        ]
+        
+        progress_ratio = float(np.clip(current_s / self.circuit_length, 0.0, 1.0))
+        track_info = [
+            dist_left,
+            dist_right,
+            0.0,
+            progress_ratio,
+            float(np.clip(track_curvature * 50.0, -2.0, 2.0)),
+        ]
+        
+        lookahead_distances = [10.0, 20.0, 35.0, 50.0, 70.0]
+        lookahead_features = []
+        for dist_ahead in lookahead_distances:
+            if (
+                self.circuit_initialized
+                and self.track_s is not None
+                and self.track_xy is not None
+                and self.track_theta is not None
+                and self.track_kappa is not None
+                and self.num_track_points > 1
+            ):
+                target_s = (current_s + dist_ahead) % self.circuit_length
+                wpt_idx = int(np.searchsorted(self.track_s, target_s)) % self.num_track_points
+                wpt_pos = self.track_xy[wpt_idx]
+                wpt_theta = float(self.track_theta[wpt_idx])
+                wpt_kappa = float(self.track_kappa[wpt_idx])
+                
+                d_vec = wpt_pos - pos
+                dx_rel = float(np.dot(d_vec, fwd_vec))
+                dy_rel = float(np.dot(d_vec, lat_vec))
+                d_theta = (wpt_theta - heading + np.pi) % (2.0 * np.pi) - np.pi
+                
+                lookahead_features.extend([
+                    float(np.clip(dx_rel / 70.0, -1.0, 1.5)),
+                    float(np.clip(dy_rel / 30.0, -2.0, 2.0)),
+                    float(np.sin(d_theta)),
+                    float(np.clip(wpt_kappa * 50.0, -2.0, 2.0)),
+                ])
+            else:
+                lookahead_features.extend([0.0, 0.0, 0.0, 0.0])
+                
+        return np.array(ego_state + track_info + lookahead_features, dtype=np.float32)
 
     def reset(self, seed=None):
         obs, info = self.env.reset(seed=seed)
         self.current_step = 0
         self.telemetry_player.reset()
         self.telemetry_ai.reset()
+        self._init_circuit_polyline()
+        self.last_ai_action = [0.0, 0.0]
         
         if self.use_render and self.keyboard_controller is None:
             self.keyboard_controller = KeyboardController(pygame_control=False)
+            
+        if self.compact_obs and "agent1" in self.vehicles:
+            obs["agent1"] = self.get_compact_racing_obs(self.vehicles["agent1"])
             
         return obs, info
 
@@ -114,8 +282,10 @@ class MultiAgentRacingEnv:
         actions: dict gồm {'agent0': action0, 'agent1': action1}
         """
         self.current_step += 1
+        if "agent1" in actions:
+            self.last_ai_action = list(actions["agent1"])
+            
         obs, rewards, terminations, truncations, infos = self.env.step(actions)
-        
         current_time = self.current_step * self.dt
         
         # Cập nhật Telemetry cho cả 2 xe
@@ -136,6 +306,9 @@ class MultiAgentRacingEnv:
                 infos[aid]["delta_time"] = sample["delta_time"]
                 infos[aid]["delta_color"] = sample["delta_color"]
                 
+        if self.compact_obs and "agent1" in self.vehicles:
+            obs["agent1"] = self.get_compact_racing_obs(self.vehicles["agent1"], actions.get("agent1", [0.0, 0.0]))
+            
         return obs, rewards, terminations, truncations, infos
 
     def render(self, text=None):

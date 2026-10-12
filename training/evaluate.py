@@ -12,11 +12,10 @@ import numpy as np
 
 # UTF-8 encoding
 if sys.platform == "win32":
-    try:
-        sys.stdout.reconfigure(encoding="utf-8")
-        sys.stderr.reconfigure(encoding="utf-8")
-    except Exception:
-        pass
+    if hasattr(sys.stdout, "reconfigure"):
+        getattr(sys.stdout, "reconfigure")(encoding="utf-8")
+    if hasattr(sys.stderr, "reconfigure"):
+        getattr(sys.stderr, "reconfigure")(encoding="utf-8")
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -40,15 +39,19 @@ def main():
     print(f"  - Số vòng đua thử nghiệm: {args.episodes}")
     print("=" * 70)
 
-    agent = PPOAgent(state_dim=259, action_dim=2)
+    env = MetaRacingEnv(use_render=False, num_scenarios=args.episodes, start_seed=100)
+    obs_shape = getattr(env.observation_space, "shape", None)
+    act_shape = getattr(env.action_space, "shape", None)
+    obs_dim = int(obs_shape[0]) if obs_shape is not None else 35
+    act_dim = int(act_shape[0]) if act_shape is not None else 2
+
+    agent = PPOAgent(state_dim=obs_dim, action_dim=act_dim)
     if os.path.exists(args.model):
         agent.load(args.model)
-        print(f">> Nạp thành công weights từ {args.model}")
+        print(f">> Nạp thành công weights từ {args.model} (State Dim: {obs_dim})")
     else:
         print(f">> [CẢNH BÁO] Không tìm thấy file {args.model}!")
         return
-
-    env = MetaRacingEnv(use_render=False, num_scenarios=args.episodes, start_seed=100)
     
     returns = []
     lengths = []
@@ -70,7 +73,7 @@ def main():
             
             ep_ret += reward
             ep_len += 1
-            speeds.append(step_info.get("speed_kmh", 0.0))
+            speeds.append(step_info.get("speed_km_h", step_info.get("velocity", 0.0) * 3.6))
             
             if terminated or truncated:
                 crashed = step_info.get("crash", False) or step_info.get("crash_sidewalk", False)

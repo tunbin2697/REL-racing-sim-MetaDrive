@@ -41,3 +41,7 @@ main_index_*.png
 # Keep models and evaluation plots
 !models/best_agent.pt
 !plots/learning_curves.png
+
+scratch/
+runs/
+logs/*_prev_run.json

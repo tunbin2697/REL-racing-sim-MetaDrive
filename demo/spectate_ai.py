@@ -48,15 +48,6 @@ def main():
     print("  - [Esc]: Thoát")
     print("=" * 70)
 
-    # Nạp Agent
-    agent = PPOAgent(state_dim=259, action_dim=2)
-    if os.path.exists(args.model):
-        print(f">> Đang nạp weights từ: {args.model}")
-        agent.load(args.model)
-        print(">> Nạp mô hình AI thành công!")
-    else:
-        print(f">> [CẢNH BÁO] Không tìm thấy {args.model}. AI sẽ chạy thử nghiệm ngẫu nhiên.")
-
     # Khởi tạo môi trường có render 3D
     env = MetaRacingEnv(
         use_render=True,
@@ -64,6 +55,17 @@ def main():
         map_config=args.map,
         start_seed=args.seed,
     )
+
+    # Nạp Agent tương thích với không gian quan sát
+    obs_shape = env.observation_space.shape
+    state_dim = int(obs_shape[0]) if obs_shape is not None else 35
+    agent = PPOAgent(state_dim=state_dim, action_dim=2)
+    if os.path.exists(args.model):
+        print(f">> Đang nạp weights từ: {args.model}")
+        agent.load(args.model)
+        print(">> Nạp mô hình AI thành công!")
+    else:
+        print(f">> [CẢNH BÁO] Không tìm thấy {args.model}. AI sẽ chạy thử nghiệm ngẫu nhiên.")
 
     try:
         obs, info = env.reset()
@@ -99,7 +101,12 @@ def main():
             env.render(text=hud_text)
             
             if terminated or truncated:
-                print(f">> Vòng {lap_count} kết thúc tại step {step}! (Completion: {comp:.1f}%, Arrive: {info.get('arrive_dest', False)})")
+                reason = info.get("termination_reason", "unknown")
+                is_win = reason == "lap_completed" or info.get("arrive_dest", False)
+                if is_win:
+                    print(f"🎉 [VỀ ĐÍCH THÀNH CÔNG] Vòng {lap_count} hoàn thành tại step {step}! (Completion: {comp:.1f}%, Lap Time: {info.get('lap_time', 0.0):.2f}s, Macro Reward: {info.get('macro_reward', 0.0):+.1f}đ)")
+                else:
+                    print(f"💥 [KẾT THÚC] Vòng {lap_count} dừng tại step {step}: Lý do = {reason} (Completion: {comp:.1f}%)")
                 lap_count += 1
                 step = 0
                 time.sleep(1.0)

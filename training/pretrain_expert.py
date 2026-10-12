@@ -91,8 +91,10 @@ def main():
     states, actions, returns = collect_expert_data(args.steps)
     
     # 2. Khởi tạo Agent
-    agent = PPOAgent(state_dim=259, action_dim=2, device="cuda" if torch.cuda.is_available() else "cpu")
-    print(f">> Thiet bi huan luyen: {agent.device}")
+    state_dim = int(states.shape[1])
+    action_dim = int(actions.shape[1])
+    agent = PPOAgent(state_dim=state_dim, action_dim=action_dim, device="cuda" if torch.cuda.is_available() else "cpu")
+    print(f">> Thiết bị huấn luyện: {agent.device} | State dim: {state_dim} | Action dim: {action_dim}")
     
     # 3. Chuyển đổi dữ liệu sang PyTorch Tensor
     dataset = torch.utils.data.TensorDataset(
@@ -106,7 +108,7 @@ def main():
     optimizer = torch.optim.Adam(agent.ac.parameters(), lr=args.lr)
     
     # 4. Huấn luyện đồng thời cả Actor (hành động) và Critic (giá trị trạng thái)
-    print(f">> Bat dau huan luyen Behavior Cloning & Value Fitting ({args.epochs} epochs)...")
+    print(f">> Bắt đầu huấn luyện Behavior Cloning & Value Fitting ({args.epochs} epochs)...")
     for epoch in range(args.epochs):
         epoch_actor_loss = 0.0
         epoch_critic_loss = 0.0
@@ -115,10 +117,15 @@ def main():
             b_actions = b_actions.to(agent.device)
             b_returns = b_returns.to(agent.device)
             
-            pred_actions = agent.ac.actor_mean(b_states)
-            pred_values = agent.ac.critic(b_states).squeeze(-1)
+            u_mean, _ = agent.ac.actor_forward(b_states)
+            pred_actions = torch.tanh(u_mean)
+            pred_values = agent.ac.get_value(b_states).squeeze(-1)
             
-            actor_loss = criterion(pred_actions, b_actions)
+            # Weighted Loss: Nhân trọng số 5x cho các mẫu chuyên gia đạp phanh (b_actions[:, 1] < 0)
+            # để triệt tiêu việc 83% mẫu ga làm loãng và xóa mất phản xạ phanh của Agent
+            action_weights = torch.ones_like(b_actions)
+            action_weights[:, 1] = torch.where(b_actions[:, 1] < 0.0, 5.0, 1.0)
+            actor_loss = torch.mean(action_weights * (pred_actions - b_actions) ** 2)
             critic_loss = criterion(pred_values, b_returns)
             total_loss = actor_loss + 0.5 * critic_loss
             
