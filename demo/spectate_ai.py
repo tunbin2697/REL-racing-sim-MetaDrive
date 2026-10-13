@@ -16,11 +16,10 @@ import numpy as np
 
 # Đảm bảo UTF-8 trên Windows console
 if sys.platform == "win32":
-    try:
-        sys.stdout.reconfigure(encoding="utf-8")
-        sys.stderr.reconfigure(encoding="utf-8")
-    except Exception:
-        pass
+    if hasattr(sys.stdout, "reconfigure"):
+        getattr(sys.stdout, "reconfigure")(encoding="utf-8")
+    if hasattr(sys.stderr, "reconfigure"):
+        getattr(sys.stderr, "reconfigure")(encoding="utf-8")
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -31,7 +30,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="AI Spectator Mode in MetaDrive 3D")
     parser.add_argument("--model", type=str, default="models/best_agent.pt", help="Đường dẫn weights của AI")
     parser.add_argument("--map", type=int, default=3, help="Độ dài bản đồ đua (số block cua)")
-    parser.add_argument("--traffic", type=float, default=0.05, help="Mật độ chướng ngại vật/xe khác (0.0 - 0.2)")
+    parser.add_argument("--traffic", type=float, default=0.0, help="Mật độ chướng ngại vật/xe khác (0.0 - 0.2)")
     parser.add_argument("--seed", type=int, default=42, help="Seed tạo bản đồ")
     return parser.parse_args()
 
@@ -49,15 +48,6 @@ def main():
     print("  - [Esc]: Thoát")
     print("=" * 70)
 
-    # Nạp Agent
-    agent = PPOAgent(state_dim=259, action_dim=2)
-    if os.path.exists(args.model):
-        print(f">> Đang nạp weights từ: {args.model}")
-        agent.load(args.model)
-        print(">> Nạp mô hình AI thành công!")
-    else:
-        print(f">> [CẢNH BÁO] Không tìm thấy {args.model}. AI sẽ chạy thử nghiệm ngẫu nhiên.")
-
     # Khởi tạo môi trường có render 3D
     env = MetaRacingEnv(
         use_render=True,
@@ -65,6 +55,17 @@ def main():
         map_config=args.map,
         start_seed=args.seed,
     )
+
+    # Nạp Agent tương thích với không gian quan sát
+    obs_shape = env.observation_space.shape
+    state_dim = int(obs_shape[0]) if obs_shape is not None else 35
+    agent = PPOAgent(state_dim=state_dim, action_dim=2)
+    if os.path.exists(args.model):
+        print(f">> Đang nạp weights từ: {args.model}")
+        agent.load(args.model)
+        print(">> Nạp mô hình AI thành công!")
+    else:
+        print(f">> [CẢNH BÁO] Không tìm thấy {args.model}. AI sẽ chạy thử nghiệm ngẫu nhiên.")
 
     try:
         obs, info = env.reset()
@@ -77,23 +78,35 @@ def main():
             action, _, _ = agent.select_action(obs, deterministic=True)
             obs, reward, terminated, truncated, info = env.step(action)
             
-            speed_kmh = info.get("speed_kmh", 0.0)
+            speed_kmh = info.get("speed_km_h", info.get("speed_kmh", 0.0))
             comp = info.get("route_completion", 0.0) * 100.0
             steer = action[0]
             throttle = action[1]
             
+            delta_t = info.get("delta_time", 0.0)
+            delta_str = f"+{delta_t:.2f}s" if delta_t >= 0 else f"{delta_t:.2f}s"
+            delta_color = info.get("delta_color", "gray")
+            
             # Text HUD
             hud_text = {
                 "RL AGENT SPECTATOR": f"Lap: {lap_count} | Step: {step}",
+                "Delta Bar": f"[{delta_color.upper()}] {delta_str}",
+                "Current Lap": f"{info.get('lap_time', 0.0):.2f}s",
+                "Best Lap": f"{info.get('best_lap_time', 0.0):.2f}s",
                 "Speed": f"{speed_kmh:.1f} km/h",
                 "Completion": f"{comp:.1f}%",
                 "Action": f"Steer: {steer:+.2f} | Throttle: {throttle:+.2f}",
                 "Reward": f"{reward:+.2f}",
             }
-            env.render()
+            env.render(text=hud_text)
             
             if terminated or truncated:
-                print(f">> Vòng {lap_count} kết thúc tại step {step}! (Completion: {comp:.1f}%, Arrive: {info.get('arrive_dest', False)})")
+                reason = info.get("termination_reason", "unknown")
+                is_win = reason == "lap_completed" or info.get("arrive_dest", False)
+                if is_win:
+                    print(f"🎉 [VỀ ĐÍCH THÀNH CÔNG] Vòng {lap_count} hoàn thành tại step {step}! (Completion: {comp:.1f}%, Lap Time: {info.get('lap_time', 0.0):.2f}s, Macro Reward: {info.get('macro_reward', 0.0):+.1f}đ)")
+                else:
+                    print(f"💥 [KẾT THÚC] Vòng {lap_count} dừng tại step {step}: Lý do = {reason} (Completion: {comp:.1f}%)")
                 lap_count += 1
                 step = 0
                 time.sleep(1.0)

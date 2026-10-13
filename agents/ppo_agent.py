@@ -4,6 +4,7 @@ Dựa trên kiến trúc chuẩn Clipped Surrogate Objective & Generalized Advan
 Đúng theo khung lý thuyết giáo trình Học tăng cường (REL).
 """
 
+from typing import Optional
 import os
 import torch
 import torch.nn as nn
@@ -14,7 +15,7 @@ from .networks import ActorCritic
 class PPOAgent:
     def __init__(
         self,
-        state_dim: int = 259,
+        state_dim: int = 35,
         action_dim: int = 2,
         lr: float = 3e-4,
         gamma: float = 0.99,
@@ -25,7 +26,7 @@ class PPOAgent:
         max_grad_norm: float = 0.5,
         update_epochs: int = 10,
         minibatch_size: int = 64,
-        device: str = None,
+        device: Optional[str] = None,
     ):
         if device is None:
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -44,8 +45,19 @@ class PPOAgent:
         self.minibatch_size = minibatch_size
         
         self.ac = ActorCritic(state_dim, action_dim).to(self.device)
-        self.optimizer = optim.Adam(self.ac.parameters(), lr=lr, eps=1e-5)
+        self.actor_params = list(self.ac.actor_mean.parameters()) + [self.ac.actor_logstd]
+        self.critic_params = list(self.ac.critic.parameters())
         
+        self.lr_actor = lr * 0.2
+        self.lr_critic = lr * 1.5
+        self.actor_optimizer = optim.Adam(self.actor_params, lr=self.lr_actor, eps=1e-5)
+        self.critic_optimizer = optim.Adam(self.critic_params, lr=self.lr_critic, eps=1e-5)
+        
+    @property
+    def network(self):
+        """Thuộc tính tương thích cho mạng ActorCritic"""
+        return self.ac
+
     def select_action(self, state, deterministic: bool = False):
         """
         Chọn hành động từ trạng thái hiện tại.
@@ -87,15 +99,20 @@ class PPOAgent:
         returns = advantages + values
         return advantages, returns
 
-    def update(self, b_states, b_actions, b_log_probs, b_advantages, b_returns):
+    def update(self, b_states, b_actions, b_log_probs, b_advantages, b_returns, b_values=None):
         """
-        Cập nhật trọng số mạng bằng thuật toán PPO Minibatch SGD
+        Cập nhật trọng số mạng bằng thuật toán PPO Decoupled Minibatch SGD
+        Tách biệt hoàn toàn luồng tối ưu của Actor và Critic để bảo vệ policy.
         """
         b_states = torch.as_tensor(b_states, dtype=torch.float32, device=self.device)
         b_actions = torch.as_tensor(b_actions, dtype=torch.float32, device=self.device)
         b_log_probs = torch.as_tensor(b_log_probs, dtype=torch.float32, device=self.device)
         b_advantages = torch.as_tensor(b_advantages, dtype=torch.float32, device=self.device)
         b_returns = torch.as_tensor(b_returns, dtype=torch.float32, device=self.device)
+        if b_values is not None:
+            b_values_tensor = torch.as_tensor(b_values, dtype=torch.float32, device=self.device)
+        else:
+            b_values_tensor = b_returns
         
         # Chuẩn hoá Advantages theo từng batch (Advantage Normalization)
         b_advantages = (b_advantages - b_advantages.mean()) / (b_advantages.std() + 1e-8)
@@ -121,34 +138,52 @@ class PPOAgent:
                 log_ratio = new_log_prob - b_log_probs[mb_idx]
                 ratio = torch.exp(log_ratio)
                 
-                # PPO Policy Loss (Clipped Objective)
+                # 1. PPO Policy Loss (Clipped Objective)
                 pg_loss1 = -b_advantages[mb_idx] * ratio
                 pg_loss2 = -b_advantages[mb_idx] * torch.clamp(ratio, 1.0 - self.clip_coef, 1.0 + self.clip_coef)
                 pg_loss = torch.max(pg_loss1, pg_loss2).mean()
                 
-                # Value Loss (MSE)
-                v_loss = 0.5 * ((new_value.view(-1) - b_returns[mb_idx]) ** 2).mean()
-                
-                # Entropy Bonus
+                # 2. Entropy Bonus
                 entropy_loss = entropy.mean()
+                actor_loss = pg_loss - self.ent_coef * entropy_loss
                 
-                # Tổng hàm mất mát cần tối thiểu hóa
-                loss = pg_loss - self.ent_coef * entropy_loss + self.vf_coef * v_loss
+                # Cập nhật riêng mạng Actor
+                self.actor_optimizer.zero_grad()
+                actor_loss.backward()
+                nn.utils.clip_grad_norm_(self.actor_params, self.max_grad_norm)
+                self.actor_optimizer.step()
                 
-                self.optimizer.zero_grad()
-                loss.backward()
-                nn.utils.clip_grad_norm_(self.ac.parameters(), self.max_grad_norm)
-                self.optimizer.step()
+                # 3. PPO Clipped Value Loss (Ổn định Critic, chống spike khi va chạm)
+                v_pred = new_value.view(-1)
+                v_clipped = b_values_tensor[mb_idx] + torch.clamp(
+                    v_pred - b_values_tensor[mb_idx], -10.0, 10.0
+                )
+                v_loss_unclipped = (v_pred - b_returns[mb_idx]) ** 2
+                v_loss_clipped = (v_clipped - b_returns[mb_idx]) ** 2
+                v_loss = 0.5 * torch.max(v_loss_unclipped, v_loss_clipped).mean()
+                
+                # Cập nhật riêng mạng Critic
+                self.critic_optimizer.zero_grad()
+                v_loss.backward()
+                nn.utils.clip_grad_norm_(self.critic_params, self.max_grad_norm)
+                self.critic_optimizer.step()
                 
                 total_pg_loss += pg_loss.item()
                 total_v_loss += v_loss.item()
                 total_entropy += entropy_loss.item()
                 num_updates += 1
                 
+        # Explained Variance
+        y_true = b_returns.cpu().numpy()
+        y_pred = b_values_tensor.cpu().numpy()
+        var_y = float(np.var(y_true))
+        explained_var = float(1.0 - np.var(y_true - y_pred) / (var_y + 1e-8)) if var_y > 0 else 0.0
+                
         return {
             "policy_loss": total_pg_loss / max(1, num_updates),
             "value_loss": total_v_loss / max(1, num_updates),
             "entropy": total_entropy / max(1, num_updates),
+            "explained_var": explained_var,
         }
 
     def save(self, filepath: str):
@@ -156,7 +191,8 @@ class PPOAgent:
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
         torch.save({
             "model_state_dict": self.ac.state_dict(),
-            "optimizer_state_dict": self.optimizer.state_dict(),
+            "actor_optimizer_state_dict": self.actor_optimizer.state_dict(),
+            "critic_optimizer_state_dict": self.critic_optimizer.state_dict(),
             "state_dim": self.state_dim,
             "action_dim": self.action_dim,
         }, filepath)
@@ -165,6 +201,8 @@ class PPOAgent:
         """Nạp checkpoint mô hình"""
         checkpoint = torch.load(filepath, map_location=self.device)
         self.ac.load_state_dict(checkpoint["model_state_dict"])
-        if "optimizer_state_dict" in checkpoint:
-            self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+        if "actor_optimizer_state_dict" in checkpoint:
+            self.actor_optimizer.load_state_dict(checkpoint["actor_optimizer_state_dict"])
+        if "critic_optimizer_state_dict" in checkpoint:
+            self.critic_optimizer.load_state_dict(checkpoint["critic_optimizer_state_dict"])
         self.ac.eval()
