@@ -54,6 +54,7 @@ class MetaRacingEnv(gym.Env):
         num_scenarios: int = 1,
         reference_lap_file: str = "logs/reference_lap.json",
         milestone_respawn: bool = False,
+        overspeed_a_lat: float = 0.65 * 9.81,
         **kwargs,
     ):
         super().__init__()
@@ -64,8 +65,13 @@ class MetaRacingEnv(gym.Env):
         self.manual_control = manual_control
         self.start_seed = start_seed
         self.num_scenarios = num_scenarios
-        self.dt = 0.02
+        # MetaDrive gộp decision_repeat bước vật lý vào mỗi lần step() -> thời gian thực mỗi step = 0.02 * 5 = 0.1s
+        self.physics_dt = 0.02
+        self.decision_repeat = 5
+        self.dt = self.physics_dt * self.decision_repeat
         self.milestone_respawn = milestone_respawn
+        # Gia tốc ngang dùng để tính tốc độ cho phép trong phạt vượt tốc (0.65g mặc định; ~0.9g là giới hạn văng thực tế)
+        self.overspeed_a_lat = overspeed_a_lat
         
         # Telemetry tracker & Kỷ lục
         self.telemetry = TelemetryTracker()
@@ -88,7 +94,8 @@ class MetaRacingEnv(gym.Env):
             "num_scenarios": num_scenarios,
             "horizon": horizon,
             "window_size": window_size,
-            "physics_world_step_size": self.dt,
+            "physics_world_step_size": self.physics_dt,
+            "decision_repeat": self.decision_repeat,
             "map_config": {
                 "lane_num": 2,
                 "lane_width": 4.5,
@@ -217,6 +224,19 @@ class MetaRacingEnv(gym.Env):
             idx = int(indices[np.argmin(dists)])
             
         return idx, float(self.track_s[idx])
+
+    def get_allowed_speed(self, current_s, preview=70.0, a_lat=0.65 * 9.81, a_brake=5.0):
+        """
+        Tốc độ tối đa cho phép tại vị trí hiện tại (km/h) theo đường bao phanh:
+        v_allow = min_d sqrt(v_corner(d)^2 + 2 * a_brake * d), với v_corner = sqrt(a_lat * R).
+        """
+        ahead = np.arange(0.0, preview, 2.0)
+        target_s = (current_s + ahead) % self.circuit_length
+        idx = np.searchsorted(self.track_s, target_s) % self.num_track_points
+        kappa = np.abs(self.track_kappa[idx])
+        v_corner_sq = np.where(kappa > 1e-6, a_lat / np.maximum(kappa, 1e-6), np.inf)
+        v_allow = float(np.sqrt(np.min(v_corner_sq + 2.0 * a_brake * ahead)))
+        return min(v_allow * 3.6, 200.0)
 
     def get_compact_racing_obs(self, vehicle, action_applied=None, on_runoff=False):
         """
@@ -363,7 +383,9 @@ class MetaRacingEnv(gym.Env):
                     self.cleared_milestones.add(s_m)
                     
         # Lấy Frenet s ban đầu
-        _, current_s = self._get_track_s(vehicle.position)
+        # Tìm toàn cục rồi cập nhật hint, tránh việc dò quanh vạch xuất phát khi xe vừa được hồi sinh giữa đường
+        idx, current_s = self._get_track_s(vehicle.position)
+        self.current_track_idx = idx
         self.last_s = current_s
         self.telemetry.cumulative_distance = current_s
         
@@ -506,16 +528,14 @@ class MetaRacingEnv(gym.Env):
         else:
             r_speed = 0.0
             
-        # d. Thưởng phanh đúng lúc trước cua gắt (Brake Incentive)
-        # Các waypoint lookahead normalized kappa ở index 18 (10m), 22 (20m), 26 (35m), 30 (50m)
-        upcoming_kappa = max(abs(obs[18]), abs(obs[22]), abs(obs[26]), abs(obs[30]))
+        # d. Phạt vượt tốc độ an toàn theo vật lý (Physics-based Overspeed Penalty)
+        # Tốc độ cho phép = min trên các điểm phía trước của sqrt(v_cua^2 + 2*a_brake*d), với v_cua = sqrt(a_lat*R)
+        v_allow_km_h = self.get_allowed_speed(current_s, a_lat=self.overspeed_a_lat)
+        excess_km_h = max(0.0, speed_km_h - v_allow_km_h)
         is_braking = action_applied[1] < -0.1
-        if upcoming_kappa > 0.4 and is_braking and speed_km_h > 40.0:
-            r_brake = 0.02  # Thưởng phanh giảm tốc khi vào cua gắt
-        elif upcoming_kappa > 0.6 and speed_km_h > 65.0 and not is_braking:
-            r_brake = -0.03  # Phạt lao quá nhanh vào cua gắt mà không chịu phanh
-        else:
-            r_brake = 0.0
+        r_brake = -min(0.5, 0.05 * (excess_km_h / 5.0) ** 2)
+        if excess_km_h > 0.0 and is_braking:
+            r_brake += 0.02  # Thưởng chủ động phanh khi đang vượt tốc
             
         # e. Sector Gate Rewards (Thưởng mốc từng chặng để bứt phá bẫy cua 1650m)
         sector_size = self.circuit_length / float(self.num_sectors)  # ~218.6m
@@ -547,14 +567,14 @@ class MetaRacingEnv(gym.Env):
             info["crash_distance"] = float(current_s)
             info["crash_speed"] = float(speed_km_h)
             self.last_crash_history = list(self.episode_history)
-            macro_reward = -15.0  # Cân bằng lại: -15.0 (tránh phá vỡ Critic value landscape)
+            macro_reward = -30.0
             
         elif is_stalled:
             terminated = True
             info["termination_reason"] = "stalled"
             info["crash_distance"] = float(current_s)
             info["crash_speed"] = float(speed_km_h)
-            macro_reward = 0.0
+            macro_reward = -30.0  # Bằng phạt crash: chống reward hacking dừng xe trước cua để né phạt đâm tường
             
         elif arrive_dest:
             self.lap_completed = True
@@ -583,6 +603,7 @@ class MetaRacingEnv(gym.Env):
         info["r_sector"] = float(r_sector)
         info["r_speed"] = float(r_speed)
         info["r_brake"] = float(r_brake)
+        info["v_allow_km_h"] = float(v_allow_km_h)
         info["r_idle"] = float(r_idle)
         info["r_step_penalty"] = float(r_time)
         info["r_delta"] = 0.0

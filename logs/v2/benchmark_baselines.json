@@ -1,0 +1,53 @@
+[
+  {
+    "policy": "rule",
+    "episodes": 20,
+    "finish_rate": 1.0,
+    "mean_completion": 98.52614503694478,
+    "mean_speed_kmh": 72.49285333331336,
+    "mean_lap_time": 105.6,
+    "best_lap_time": 105.60000000000001,
+    "crash_locations": []
+  },
+  {
+    "policy": "rule-fast",
+    "episodes": 20,
+    "finish_rate": 1.0,
+    "mean_completion": 98.57220300454023,
+    "mean_speed_kmh": 73.12092603247505,
+    "mean_lap_time": 105.0,
+    "best_lap_time": 105.0,
+    "crash_locations": []
+  },
+  {
+    "policy": "models/v2/bc_warmup.pt",
+    "episodes": 20,
+    "finish_rate": 1.0,
+    "mean_completion": 98.52614503694478,
+    "mean_speed_kmh": 72.59430819906598,
+    "mean_lap_time": 105.7,
+    "best_lap_time": 105.7,
+    "crash_locations": []
+  },
+  {
+    "policy": "models/final_agent.pt",
+    "episodes": 20,
+    "finish_rate": 0.5,
+    "mean_completion": 91.72991915904629,
+    "mean_speed_kmh": 67.73411738442414,
+    "mean_lap_time": 115.12,
+    "best_lap_time": 114.0,
+    "crash_locations": [
+      1650,
+      1702,
+      1707,
+      1789,
+      1793,
+      1795,
+      1805,
+      2060,
+      2064,
+      2068
+    ]
+  }
+]

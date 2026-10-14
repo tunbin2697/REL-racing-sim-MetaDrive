@@ -340,7 +340,7 @@ def main():
             dones[step] = 1.0 if is_done else 0.0
             
             # Ghi nhận nếu hoàn thành trọn vẹn vòng đua
-            if step_info.get("termination_reason") == "lap_completed" or step_info.get("route_completion", 0.0) >= 0.98:
+            if step_info.get("termination_reason") == "lap_completed":
                 total_finishes += 1
                 lap_time = step_info.get("lap_time", 0.0)
                 speed_fin = step_info.get("speed_km_h", 0.0)

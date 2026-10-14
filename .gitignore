@@ -45,3 +45,8 @@ main_index_*.png
 scratch/
 runs/
 logs/*_prev_run.json
+# Checkpoint trung gian của các bước tune v1 / v2 (chỉ commit model cuối)
+models/step[2-5]/
+models/v2/bc_warmup_direct.pt
+models/v2/*/best_agent.pt
+models/v2/*/fastest_agent.pt

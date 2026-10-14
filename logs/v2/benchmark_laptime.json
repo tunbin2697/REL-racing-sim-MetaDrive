@@ -1,0 +1,52 @@
+[
+  {
+    "policy": "rule",
+    "episodes": 20,
+    "finish_rate": 1.0,
+    "mean_completion": 98.52614503694478,
+    "mean_speed_kmh": 72.49285333331336,
+    "mean_lap_time": 105.6,
+    "best_lap_time": 105.60000000000001,
+    "crash_locations": []
+  },
+  {
+    "policy": "rule-fast",
+    "episodes": 20,
+    "finish_rate": 1.0,
+    "mean_completion": 98.57220300454023,
+    "mean_speed_kmh": 73.12092603247505,
+    "mean_lap_time": 105.0,
+    "best_lap_time": 105.0,
+    "crash_locations": []
+  },
+  {
+    "policy": "models/v2/residual/latest_agent.pt",
+    "episodes": 20,
+    "finish_rate": 1.0,
+    "mean_completion": 98.57220300454023,
+    "mean_speed_kmh": 71.99444724530238,
+    "mean_lap_time": 105.7,
+    "best_lap_time": 105.7,
+    "crash_locations": []
+  },
+  {
+    "policy": "models/v2/laptime/best_agent.pt",
+    "episodes": 20,
+    "finish_rate": 1.0,
+    "mean_completion": 98.61595807375593,
+    "mean_speed_kmh": 72.50179684426647,
+    "mean_lap_time": 105.59499999999998,
+    "best_lap_time": 105.5,
+    "crash_locations": []
+  },
+  {
+    "policy": "models/v2/laptime/latest_agent.pt",
+    "episodes": 20,
+    "finish_rate": 1.0,
+    "mean_completion": 98.52844793532456,
+    "mean_speed_kmh": 72.4713786874735,
+    "mean_lap_time": 105.10499999999999,
+    "best_lap_time": 105.10000000000001,
+    "crash_locations": []
+  }
+]
