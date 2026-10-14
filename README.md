@@ -1,255 +1,232 @@
-# 🏎️ METADRIVE 3D AUTONOMOUS RACING & HUMAN VS AI BENCHMARK
-> **Đồ Án Môn Học Tăng Cường (Reinforcement Learning - REL)**  
-> **Môi Trường Mô Phỏng:** MetaDrive Simulator (Panda3D Physics Engine)  
-> **Thuật Toán Cốt Lõi:** PPO Continuous Action Space (Squashed Gaussian Policy, Stabilized Jacobian, Unclipped Critic MSE)
+# 🏎️ MetaDrive 3D Autonomous Racing — v2
+> **Đồ án môn Học Tăng Cường (Reinforcement Learning – REL)**
+> **Môi trường:** MetaDrive Simulator 0.4.3 (Panda3D / Bullet physics) — đường đua khép kín 2,186 m
+> **Thuật toán:** PPO liên tục (Squashed Gaussian + Jacobian) · Policy luật Pure Pursuit · PPO v2 Residual khởi tạo bằng Behavior Cloning
 
 ---
 
-## 📖 1. Giới Thiệu Đồ Án
+## 🏁 1. Kết quả chính
 
-Dự án nghiên cứu và phát triển hệ thống điều khiển xe đua tự hành trong không gian 3D vật lý thời gian thực bằng thuật toán **Học Tăng Cường (Deep Reinforcement Learning - PPO)** trên nền tảng **MetaDrive Simulator**.
+Mỗi policy chạy **20 vòng deterministic từ vạch xuất phát** (`scripts/benchmark_policies.py`):
 
-### Điểm nhấn kỹ thuật & Đột phá:
-1. **Không gian quan sát thể thao tinh gọn (Compact Racing State - 35 chiều)**:
-   * Loại bỏ 240 tia LiDAR $360^\circ$ cồng kềnh (vốn bị chắn tầm nhìn bởi góc cua và tường chắn).
-   * Thay thế bằng **Lookahead Horizon 5 Waypoints (10m, 20m, 35m, 50m, 70m)** dọc trục cung Frenet $s$, cung cấp tọa độ tương đối, độ lệch góc và độ cong $\kappa$ giúp Agent "đọc trước góc cua" và tính toán điểm phanh (braking point) như tay đua thực thụ.
-2. **Hàm thưởng đua xe thể thao thuần túy (Pure Motorsport Reward)**:
-   * Loại bỏ hoàn toàn ràng buộc tim đường $\lambda_{\text{lateral}}$ gượng ép (vốn bẫy xe ở tốc độ 35–40 km/h).
-   * Thưởng theo tiến độ tịnh tiến cung đường $\Delta s$, áp lực thời gian cố định ($-0.01$/step), thưởng bình phương vận tốc $(v/120)^2$, phạt đâm tường nặng ($-30.0$) và thưởng về đích lớn ($+100.0$ + bonus thời gian). Cho phép xe tự do cắt cua (apex clipping) và tối ưu racing line.
-3. **Thuật toán PPO Continuous cải tiến**:
-   * **Squashed Gaussian Policy** ($\tanh(u)$) với hiệu chỉnh phân phối **Jacobian** $\log(1 - \tanh^2(u) + \epsilon)$ tránh bẫy bão hòa gradient tại biên $[-1, 1]$.
-   * **Unclipped Critic MSE Loss** giải phóng Critic khỏi ràng buộc clipping hẹp, nâng hệ số giải thích phương sai (`Explained Variance`) từ $0.00$ lên **$0.92 - 0.96$**.
-4. **Chế độ đua đối đầu Người vs AI thời gian thực (`play_vs_ai.py`)**:
-   * Người chơi điều khiển bằng phím `W-A-S-D` trực tiếp so tài tốc độ với AI Agent trên đường đua khép kín 2,186m với đầy đủ tương tác vật lý 3D, hệ thống Telemetry Delta Time và phân định thắng thua tự động.
-5. **Bộ công cụ chẩn đoán Telemetry 6 Panel chuẩn Sim Racing**:
-   * Trích xuất Speed Trace, bản đồ quỹ đạo 2D, góc lái & gia tốc ngang, tỷ lệ Ga/Phanh (Trail Braking), vòng tròn ma sát lốp (G-G Friction Circle), và độ lệch lề đường $d_{\text{lat}}$.
+| Policy | Về đích | Completion TB | Tốc độ TB | Lap time TB |
+| :--- | :---: | :---: | :---: | :---: |
+| PPO v1 gốc (`models/best_agent.pt`) | 0 / 20 | 71.7 % | 73.9 km/h | — (luôn văng tại 1,556 m) |
+| PPO v1 sau sửa lỗi + tune reward (`models/final_agent.pt`) | 10 / 20 | 91.7 % | 67.7 km/h | 115.1 s |
+| Policy luật 0.8g (`rule`) | **20 / 20** | 98.5 % | 72.5 km/h | 105.6 s |
+| Policy luật 0.85g (`rule-fast`, sát giới hạn văng) | **20 / 20** | 98.6 % | 73.1 km/h | 105.0 s |
+| PPO v2 – chỉ Behavior Cloning (`models/v2/bc_warmup_residual.pt`) | **20 / 20** | 98.5 % | 72.4 km/h | 105.7 s |
+| **PPO v2 – BC + RL tối ưu lap time** (`models/v2/laptime/latest_agent.pt`) | **20 / 20** | 98.5 % | 72.5 km/h | **105.1 s** |
+
+Số liệu thô: `logs/v2/benchmark_*.json`.
+
+> **Lưu ý:** bảng kết quả ở README cũ (83.9 % completion, 80.8 km/h) không tái hiện được — benchmark lại checkpoint gốc cho 0/20 vòng về đích và luôn văng tại 1,556 m.
 
 ---
 
-## 📂 2. Cấu Trúc Thư Mục Dự Án
+## 🧭 2. Có gì mới trong v2
+
+### 2.1 Sửa lỗi môi trường & pipeline (ảnh hưởng cả v1)
+| Lỗi | Hậu quả | Sửa |
+| :--- | :--- | :--- |
+| `--milestone-respawn` không cập nhật chỉ số tìm kiếm tim đường sau khi dịch xe | Xe hồi sinh giữa đường bị tính là "văng" ngay step đầu (−15đ) → cơ chế reverse curriculum **chưa từng hoạt động**, critic học sai vùng trước cua khó | Cập nhật `current_track_idx` sau khi tìm kiếm toàn cục trong `reset()` |
+| `dt = 0.02` nhưng MetaDrive gộp `decision_repeat = 5` bước vật lý | Lap time / gia tốc G sai 5 lần | `dt = 0.02 × 5 = 0.1 s` |
+| Bộ đếm "FINISH" cộng mọi step có completion ≥ 98 % | Log báo hàng trăm lần về đích ảo | Chỉ đếm khi `termination_reason == "lap_completed"` |
+| Dừng xe trước cua chỉ tốn ~−24đ, rẻ hơn văng (−30đ) | **Reward hacking**: agent học cách đứng yên trước khúc cua khó | Phạt −30 khi bị kết thúc vì đứng yên |
+
+### 2.2 Hàm thưởng mới
+* **Phạt vượt tốc theo vật lý** thay cho phạt cố định −0.03: tốc độ cho phép tính từ độ cong 70 m phía trước theo đường bao phanh
+  $v_{allow} = \min_d \sqrt{a_{lat}/|\kappa_d| + 2 a_{brake} d}$, phạt $-\min(0.5,\ 0.05\,(\Delta v / 5)^2)$.
+  Gia tốc ngang $a_{lat}$ là tham số `overspeed_a_lat` của env (mặc định 0.65g; v2 dùng 0.9g ≈ giới hạn văng thực tế).
+* Phạt văng khỏi đường −15 → **−30**.
+
+### 2.3 Policy luật (`agents/rule_policy.py`)
+Không học, chỉ đọc vector quan sát 35 chiều:
+* **Lái:** Pure Pursuit $\delta = \arctan(2L\sin\alpha / L_d)$, điểm ngắm $L_d = 0.6v + 8$ m nội suy giữa các waypoint nhìn trước.
+* **Ga/phanh:** bám tốc độ mục tiêu $v_{allow}$ (cùng công thức với reward), hệ số tỷ lệ 0.15 / (km/h).
+* Giới hạn bám đo thực nghiệm: 0.85g về đích 10/10, **0.9g văng 10/10** → mặc định 0.8g để có biên an toàn.
+
+### 2.4 PPO v2 (`agents/networks_v2.py`, `agents/ppo_agent_v2.py`)
+| Thành phần | v1 | v2 |
+| :--- | :--- | :--- |
+| Đầu vào | 35 chiều | 35 chiều + **4 đặc trưng vật lý** (v_allow, vượt tốc, lái & ga gợi ý của Policy luật) + LayerNorm |
+| Đầu ra Actor | $\mu(s)$ | **Residual:** $u = \operatorname{atanh}(a_{rule}) + 0.5\tanh(f_\theta(s))$ — khởi đầu đúng bằng Policy luật |
+| Độ lệch chuẩn | 1 tham số chung cho lái & ga | Bias riêng từng hành động + head phụ thuộc trạng thái; **σ_lái ≈ 0.03, σ_ga ≈ 0.30** |
+| Khởi tạo | Ngẫu nhiên | Behavior Cloning từ Policy luật (DAgger-style relabel) + critic học return Monte Carlo |
+| Ổn định fine-tune | — | Critic warmup (5 update đầu đóng băng Actor) + BC regularization giảm dần |
+
+### 2.5 Bài học rút ra khi huấn luyện
+1. **Xe cực nhạy với nhiễu lái:** cộng nhiễu σ = 0.1 vào tay lái của Policy luật → văng 3/3 vòng; nhiễu ga σ = 0.3 vẫn về đích 3/3. Dùng chung một σ cho cả hai hành động (như v1) khiến rollout gần như luôn văng.
+2. **Fine-tune PPO trực tiếp từ BC sụp đổ** sau 4–20k step (lái lệch đều ~0.1 → văng ở cua dễ). Residual policy + σ tách riêng giải quyết triệt để: 109 lần về đích trong rollout, 0 lần văng khi đánh giá suốt 150k step.
+3. **Đánh giá 3 episode không đủ tin cậy:** kết quả mỗi episode phụ thuộc thứ tự episode từ lúc khởi tạo engine, nên `best_agent.pt` do script tự chọn có lúc chỉ về đích 1/20. Luôn chọn checkpoint bằng benchmark ≥ 20 vòng.
+4. **Reward phải có "lực kéo" về lap time:** khi giới hạn phạt vượt tốc (0.65g) thấp hơn nhịp chạy thật (0.8g), RL tăng return bằng cách *chạy chậm lại*; nâng lên 0.9g thì RL nhanh hơn Policy luật nền 0.5 s/vòng.
+
+---
+
+## 📂 3. Cấu trúc thư mục
 
 ```text
-REL Assignment/
+REL-racing-sim-MetaDrive/
 ├── agents/
-│   ├── __init__.py
-│   ├── networks.py            # Kiến trúc Squashed Gaussian Actor-Critic & Jacobian bù log-prob
-│   └── ppo_agent.py           # Thuật toán PPO Continuous (GAE-Lambda, Unclipped Critic MSE, Minibatch SGD)
-│
+│   ├── networks.py            # [v1] Squashed Gaussian Actor-Critic
+│   ├── ppo_agent.py           # [v1] PPO (GAE, clipped surrogate, decoupled optimizer)
+│   ├── racing_features.py     # [v2] Đặc trưng vật lý từ obs (numpy + torch): v_allow, Pure Pursuit
+│   ├── rule_policy.py         # [v2] Policy luật Pure Pursuit + profile tốc độ
+│   ├── networks_v2.py         # [v2] Actor-Critic residual, physics features, std theo trạng thái
+│   ├── ppo_agent_v2.py        # [v2] PPO + critic warmup + BC regularization
+│   └── policy_loader.py       # [v2] Nạp 'rule' / 'rule-fast' / checkpoint v1 / v2
 ├── game_env/
-│   ├── __init__.py
-│   ├── racing_env.py          # Wrapper MetaRacingEnv (Observation 35 chiều, Pure Motorsport Reward, Frenet s)
-│   ├── multiagent_env.py      # Môi trường đua đối đầu 2 xe (Người vs AI) với compact obs
-│   └── telemetry.py           # Hệ thống ghi nhận Telemetry (v, acc_lat, acc_long, Delta Time)
-│
+│   ├── racing_env.py          # Wrapper MetaRacingEnv (obs 35 chiều, reward, track limits)
+│   ├── multiagent_env.py      # Môi trường 2 xe Người vs AI
+│   └── telemetry.py           # Telemetry (tốc độ, G-G, delta time)
 ├── training/
-│   ├── train_racing.py        # Pipeline huấn luyện PPO chính + Milestone Respawn + Async Plotting
-│   ├── evaluate.py            # Benchmark đánh giá học thuật độc lập đa kịch bản
-│   ├── pretrain_expert.py     # Tiền huấn luyện bắt chước (Tùy chọn Behavior Cloning)
-│   └── train_dagger_warmup.py # Huấn luyện DAgger (Tùy chọn)
-│
+│   ├── train_racing.py        # [v1] Pipeline PPO chính
+│   ├── pretrain_bc_v2.py      # [v2] Behavior Cloning từ Policy luật
+│   ├── train_racing_v2.py     # [v2] PPO v2 (dùng lại train_racing.py, thêm tham số v2)
+│   ├── evaluate.py, pretrain_expert.py, train_dagger_warmup.py, plot_telemetry.py
 ├── demo/
-│   ├── play_vs_ai.py          # SCRIPT ĐINH: Người bấm phím W-A-S-D trực tiếp so tài với AI
-│   └── spectate_ai.py         # Chế độ Cinematic theo dõi AI tự lái đa góc quay
-│
+│   ├── spectate_v2.py         # [v2] Xem mọi loại policy trong 3D, HUD tốc độ cho phép
+│   ├── spectate_ai.py         # [v1] Xem PPO v1
+│   └── play_vs_ai.py          # [v1] Người vs AI (chỉ PPO v1)
 ├── scripts/
-│   ├── plot_learning_curves.py    # Xuất 4 biểu đồ học thuật hội tụ (Return, Completion %, Losses, Speed/Crash)
-│   ├── plot_telemetry_diagnostic.py # Dashboard Telemetry 6 Panel chuyên sâu (Speed, 2D Trajectory, G-G circle)
-│   ├── debug_reward_breakdown.py  # Phân rã tỷ trọng các thành phần trong hàm phần thưởng
-│   └── test_metadrive_install.py  # Kiểm tra cài đặt và lái thử xe tự do
-│
+│   ├── benchmark_policies.py  # [v2] So sánh nhiều policy trên N vòng
+│   └── plot_learning_curves.py, plot_telemetry_diagnostic.py, debug_reward_breakdown.py, test_metadrive_install.py
 ├── models/
-│   ├── best_agent.pt          # Model AI có tỷ lệ hoàn thành chặng (Completion) cao nhất
-│   ├── fastest_agent.pt       # Model AI có vận tốc trung bình cao nhất
-│   └── latest_agent.pt        # Model checkpoint bước huấn luyện mới nhất
-│
-├── plots/
-│   ├── learning_curves.png        # Biểu đồ học thuật 4 panel xuất ra file PNG 300 DPI
-│   └── telemetry_diagnostic.png   # Dashboard Telemetry 6 panel phân tích hành vi lái
-│
-├── logs/
-│   ├── reference_lap.json     # Dữ liệu vòng đua chuẩn (Ghost Lap)
-│   └── training_metrics.json  # Dữ liệu telemetry chi tiết qua các lần đánh giá định kỳ
-│
-├── knowledge/                 # 8 tài liệu lý thuyết chuẩn môn Học Tăng Cường & Sim Racing
-├── requirements.txt           # Danh sách các thư viện phụ thuộc
-├── .gitignore                 # Cấu hình bỏ qua các file tạm, cache, model nặng
-└── README.md                  # Hướng dẫn chi tiết dự án
+│   ├── best_agent.pt …        # Checkpoint PPO v1 gốc
+│   ├── final_agent.pt         # PPO v1 tốt nhất sau sửa lỗi (10/20 vòng)
+│   ├── step1/                 # Kết quả fine-tune bước 1 (trước khi đổi reward)
+│   └── v2/
+│       ├── bc_warmup_residual.pt     # PPO v2 sau Behavior Cloning
+│       ├── residual/latest_agent.pt  # PPO v2 sau RL (reward 0.65g)
+│       └── laptime/latest_agent.pt   # PPO v2 sau RL tối ưu lap time (khuyên dùng)
+├── logs/                      # training_metrics.json từng bước, benchmark_*.json
+├── knowledge/                 # Tài liệu lý thuyết môn REL & Sim Racing
+└── archived_ver1/             # Phiên bản 2D đầu tiên
 ```
 
 ---
 
-## ⚙️ 3. Hướng Dẫn Cài Đặt (Installation)
+## ⚙️ 4. Cài đặt (không dùng Conda)
 
-### Bước 1: Khởi tạo môi trường Conda (Python 3.10)
-```bash
-conda create -n rel_racing python=3.10 -y
-conda activate rel_racing
-```
+Yêu cầu **Python 3.10**. Nếu máy chưa có, có thể dùng [uv](https://docs.astral.sh/uv/) để tự tải Python 3.10.
 
-### Bước 2: Cài đặt PyTorch
-* **Máy có GPU NVIDIA (Khuyến nghị CUDA 12.1 / 12.4):**
-  ```bash
-  pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
-  ```
-* **Máy chỉ dùng CPU:**
-  ```bash
-  pip install torch torchvision
-  ```
+```powershell
+# 1. Tạo môi trường ảo (chọn một cách)
+uv venv .venv --python 3.10 --seed       # có uv
+py -3.10 -m venv .venv                   # đã cài sẵn Python 3.10
 
-### Bước 3: Cài đặt MetaDrive & Thư viện phụ trợ
-```bash
+# 2. Kích hoạt (PowerShell) — mỗi lần mở terminal mới
+.\.venv\Scripts\Activate.ps1             # cmd: .venv\Scripts\activate.bat | Linux/macOS: source .venv/bin/activate
+
+# 3. PyTorch: GPU NVIDIA (CUDA 12.4) hoặc CPU
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
+# pip install torch torchvision
+
+# 4. Thư viện còn lại
 pip install -r requirements.txt
-```
 
-### Bước 4: Kiểm tra cài đặt đồ họa 3D
-```bash
+# 5. Kiểm tra cửa sổ 3D (lái thử bằng W-A-S-D)
 python scripts/test_metadrive_install.py
 ```
-*(Nếu cửa sổ 3D mở ra và bạn lái được xe bằng `W-A-S-D`, hệ thống đã sẵn sàng 100%)*.
+
+> Nếu gặp `ModuleNotFoundError: No module named 'gymnasium'`, terminal đang dùng Python hệ thống — hãy kích hoạt `.venv` hoặc gọi thẳng `.\.venv\Scripts\python.exe`.
 
 ---
 
-## 🎮 4. Hướng Dẫn Chạy Các Chế Độ Thực Thi
+## 🎮 5. Chạy thử
 
-### 🏆 Chế Độ 1: Đua Trực Tiếp Người vs AI (Human vs AI Race - Demo Chính)
-Mở cửa sổ đồ họa 3D Panda3D 60FPS để trực tiếp so tài tốc độ với AI Agent:
-```bash
-python demo/play_vs_ai.py --model models/best_agent.pt
+### 5.1 Xem policy chạy trong 3D
+```powershell
+python demo/spectate_v2.py                                    # PPO v2 (mặc định)
+python demo/spectate_v2.py --policy rule                      # Policy luật
+python demo/spectate_v2.py --policy models/final_agent.pt     # PPO v1
+python demo/spectate_v2.py --realtime --laps 3                # Phát theo thời gian thực, 3 vòng
 ```
-* **Xe Người chơi (Player)**: 🟢 **Xanh Lá Cây**. Điều khiển bằng phím:
-  * `W`: Đạp ga (Throttle)
-  * `S`: Thắng / Lùi (Brake / Reverse)
-  * `A` / `D`: Đánh lái Trái / Phải (Steer)
-* **Xe AI Agent**: 🔴 **Đỏ Thể Thao**. Điều khiển tự động bởi mạng PPO 35 chiều.
-* **Phím chức năng**:
-  * `C`: Đổi góc nhìn camera giữa Xe Bạn và Xe AI.
-  * `B`: Góc nhìn toàn cảnh từ trên cao (Bird-eye view).
-  * `R`: Reset lại vòng đua mới.
-  * `Esc`: Thoát trận đấu.
+Phím: `C` đổi camera · `B` nhìn từ trên cao · `Esc` thoát.
 
----
-
-### 🎬 Chế Độ 2: Theo Dõi AI Tự Lái Góc Quay Điện Ảnh (Cinematic Spectator)
-Theo dõi AI tự ôm cua, thoát cua và phanh nhả nhịp nhàng trên sa bàn 3D:
-```bash
-python demo/spectate_ai.py --model models/best_agent.pt
+### 5.2 Benchmark
+```powershell
+python scripts/benchmark_policies.py rule rule-fast models/final_agent.pt models/v2/laptime/latest_agent.pt --episodes 20
 ```
 
----
-
-### 🚀 Chế Độ 3: Huấn Luyện Học Tăng Cường (PPO Continuous Training)
-Huấn luyện Agent tự khám phá và đột phá các góc cua từ đầu bằng thuật toán PPO thuần:
-```bash
-python training/train_racing.py --total-steps 200000 --milestone-respawn --rollout-len 1024 --batch-size 64 --eval-freq 2 --lr 0.0001 --ent-coef 0.01
+### 5.3 Người vs AI (PPO v1)
+```powershell
+python demo/play_vs_ai.py --model models/final_agent.pt
 ```
-* `--milestone-respawn`: Cơ chế hồi sinh Reverse Curriculum tại 50m trước điểm vừa va chạm, giúp agent tập trung giải quyết góc cua khó mà không tốn công chạy lại đoạn thẳng ban đầu.
-* Model tốt nhất tự động lưu tại: `models/best_agent.pt`.
+> `multiagent_env.py` tính quan sát hơi khác `racing_env.py` (tim đường lệch 2.25 m, độ cong theo bán kính làn), nên chưa dùng được cho Policy luật / PPO v2.
 
 ---
 
-### 🔄 Chế Độ 4: Tiếp Tục Huấn Luyện (Resume Training)
-Tiếp tục huấn luyện từ checkpoint đã có:
-```bash
-python training/train_racing.py --resume models/best_agent.pt --steps-to-run 100000 --milestone-respawn --rollout-len 1024 --batch-size 64 --eval-freq 2 --lr 0.0001 --ent-coef 0.01
+## 🚀 6. Huấn luyện
+
+### 6.1 PPO v2 (khuyên dùng)
+```powershell
+# Bước 1 — Behavior Cloning từ Policy luật (~3 phút)
+python training/pretrain_bc_v2.py --steps 40000 --noise 0.08 --perturb-prob 0.003 `
+    --save-path models/v2/bc_warmup_residual.pt
+
+# Bước 2 — PPO residual (~40 phút / 150k step trên CPU 1 luồng)
+python training/train_racing_v2.py --warmup-model models/v2/bc_warmup_residual.pt `
+    --total-steps 150000 --milestone-respawn --lr 0.00015 --ent-coef 0.0 `
+    --eval-freq 4 --eval-episodes 3 --overspeed-a-lat 8.83 --bc-coef 1.0 `
+    --log-dir logs/v2/rl_laptime --save-dir models/v2/laptime
 ```
-*(Tự động vẽ vạch đỏ nét đứt đánh dấu điểm can thiệp lên biểu đồ `plots/learning_curves.png` để đảm bảo tính minh bạch học thuật)*.
+Tham số riêng của v2: `--overspeed-a-lat` (m/s², giới hạn phạt vượt tốc), `--bc-coef`, `--bc-decay`, `--critic-warmup-updates`.
+Không truyền `--reset-logstd` cho v2: σ riêng từng hành động đã nằm sẵn trong checkpoint BC.
 
----
-
-### 📈 Chế Độ 5: Xuất Biểu Đồ Học Thuật Ngoại Tuyến (Learning Curves)
-Đọc dữ liệu từ `logs/training_metrics.json` và xuất biểu đồ 4 panel chất lượng cao (300 DPI) độc lập mà không ảnh hưởng tới tiến trình train:
-```bash
-python scripts/plot_learning_curves.py --metrics logs/training_metrics.json --save-path plots/learning_curves.png
+### 6.2 PPO v1
+```powershell
+python training/train_racing.py --resume models/best_agent.pt --steps-to-run 150000 --milestone-respawn `
+    --lr 0.00015 --reset-logstd -1.2 --ent-coef 0.005 --eval-freq 4 --eval-episodes 3 `
+    --log-dir logs/run_v1 --save-dir models/run_v1
 ```
-* **Panel 1**: Episodic Return Convergence (Raw + Đường xu hướng SMA-3).
-* **Panel 2**: Track Completion Rate (%) kèm các mốc 50% (Mid-track), 75.4% (S-Turn), 100% (Finish).
-* **Panel 3**: Critic MSE Loss (trục trái) song song Actor Policy Loss & Entropy (trục phải).
-* **Panel 4**: Tốc độ trung bình (km/h) đối chiếu Tỷ lệ đâm xe (Crash Rate %).
+Chuỗi thực nghiệm dẫn tới `final_agent.pt` (step 1 → 5) được ghi trong `logs/step*/training_metrics.json`.
 
----
-
-### 🏎️ Chế Độ 6: Chẩn Đoán Sim Racing Telemetry Chuyên Sâu (6-Panel Dashboard)
-Chạy 1 vòng mô phỏng độc lập với checkpoint model để xuất Dashboard phân tích kỹ thuật:
-```bash
-python scripts/plot_telemetry_diagnostic.py --model models/best_agent.pt --save-path plots/telemetry_diagnostic.png
-```
-* **Panel 1**: Speed Trace ($v$ vs $s$) định vị rõ tốc độ đáy cua (V-min) tại Chicane 1, Hairpin 180°, và S-Turn 1650m.
-* **Panel 2**: Bản đồ 2D đường đua thực tế + Quỹ đạo xe chạy đổi màu theo dải tốc độ.
-* **Panel 3**: Góc bẻ lái vô lăng kèm vùng rẽ Trái/Phải và lực ép ngang Lateral G.
-* **Panel 4**: Biểu đồ đạp Ga/Phanh và vùng rà phanh Trail Braking.
-* **Panel 5**: G-G Friction Circle Diagram (vòng tròn ma sát khai thác độ bám lốp 0.5G, 1.0G, 1.5G).
-* **Panel 6**: Độ lệch ngang tim đường ($d_{\text{lat}}$) đối chiếu giới hạn đường đua FIA $\pm 4.0\text{m}$.
-
----
-
-### 📊 Chế Độ 7: Đánh Giá Benchmark Đa Vòng (Academic Evaluation)
-Đánh giá độ ổn định và xác suất hoàn thành chặng trên 10 vòng đua ngẫu nhiên từ vạch xuất phát:
-```bash
-python training/evaluate.py --model models/best_agent.pt --episodes 10
+### 6.3 Theo dõi & biểu đồ
+```powershell
+tensorboard --logdir runs
+python scripts/plot_learning_curves.py --metrics logs/v2/rl_laptime/training_metrics.json --save-path plots/learning_curves_v2.png
 ```
 
 ---
 
-## 📐 5. Khung Lý Thuyết Môn Học Tăng Cường (REL Formulation)
+## 📐 7. Mô hình hoá MDP
 
-Bài toán được mô hình hóa theo chuẩn **Markov Decision Process (MDP)**:
+$$\mathcal{M} = \langle \mathcal{S}, \mathcal{A}, \mathcal{P}, \mathcal{R}, \gamma \rangle,\quad \gamma = 0.99,\ \Delta t = 0.1\text{ s}$$
 
-$$\mathcal{M} = \langle \mathcal{S}, \mathcal{A}, \mathcal{P}, \mathcal{R}, \gamma \rangle$$
+### 7.1 Không gian quan sát $\mathcal{S} \in \mathbb{R}^{35}$
+* **10 chiều động học:** $[v/40,\ v_x/40,\ v_y/20,\ \dot\psi/\pi,\ \delta_t,\ \delta_{t-1},\ u_{t-1},\ \cos\Delta\theta,\ \sin\Delta\theta,\ d_{lat}/4.5]$
+* **5 chiều giới hạn & tiến độ:** $[d_{left},\ d_{right},\ \mathbb{I}_{runoff},\ s/L,\ \text{clip}(50\kappa, \pm2)]$
+* **20 chiều nhìn trước:** 5 waypoint tại $\{10, 20, 35, 50, 70\}$ m × $[\Delta x/70,\ \Delta y/30,\ \sin\Delta\theta_{wpt},\ \text{clip}(50\kappa_{wpt}, \pm2)]$
 
-### 1. Không Gian Quan Sát (Observation Space $\mathcal{S} \in \mathbb{R}^{35}$)
-* **10 chiều Ego Kinematics & Controls**:
-  $$[v_{\text{norm}}, v_x/40, v_y/20, \dot{\psi}/\pi, a_{\text{steer}}, a_{\text{steer}, t-1}, a_{\text{acc}, t-1}, \cos(\Delta \theta), \sin(\Delta \theta), d_{\text{lat}}/4.5]$$
-* **5 chiều Track Limits & Progress**:
-  $$[\text{dist}_{\text{left}}, \text{dist}_{\text{right}}, \mathbb{I}_{\text{runoff}}, s/L_{\text{circuit}}, \text{clip}(\kappa_{\text{curr}} \cdot 50, -2, 2)]$$
-* **20 chiều Lookahead Horizon Preview (5 Waypoints $\times$ 4)**:
-  Tại các cự ly $d \in \{10\text{m}, 20\text{m}, 35\text{m}, 50\text{m}, 70\text{m}\}$ phía trước xe dọc trục Frenet $s$:
-  $$[\Delta x_{\text{rel}} / 70, \Delta y_{\text{rel}} / 30, \sin(\Delta \theta_{\text{wpt}}), \text{clip}(\kappa_{\text{wpt}} \cdot 50, -2, 2)]$$
+### 7.2 Không gian hành động $\mathcal{A} = [-1, 1]^2$
+$a = [\tanh u_{steer},\ \tanh u_{acc}]$; env làm mượt lái $\delta_{applied} = 0.7\,a_{steer} + 0.3\,\delta_{t-1}$, góc lái tối đa 40°, xe giới hạn 80 km/h.
 
-### 2. Không Gian Hành Động (Action Space $\mathcal{A} \in [-1, 1]^2$)
-* $a_t = [\delta_t, u_t] = [\tanh(u_{\text{steer}}), \tanh(u_{\text{acc}})] \in [-1, 1]^2$:
-  * $\delta_t \in [-1, 1]$: Tỷ lệ góc bẻ lái vô lăng liên tục (Trái $\leftrightarrow$ Phải).
-  * $u_t \in [-1, 1]$: Chân ga/phanh liên tục (Phanh gấp $[-1] \leftrightarrow$ Đạp lút sàn $[+1]$).
+### 7.3 Hàm thưởng
+$$R_t = r_{time} + r_{progress} + r_{speed} + r_{overspeed} + r_{sector} + r_{idle} + R_{macro}$$
 
-### 3. Phép Bù Jacobian Cho Chính Sách Squashed Gaussian
-Khi chuyển từ biến ngẫu nhiên Gaussian $u \sim \mathcal{N}(\mu, \sigma^2)$ sang hành động $a = \tanh(u)$, xác suất log-policy được hiệu chỉnh chính xác bằng định lý chuyển đổi biến ngẫu nhiên:
+| Thành phần | Công thức |
+| :--- | :--- |
+| Áp lực thời gian | $-0.01$ / step |
+| Tiến độ Frenet | $0.02 \max(0, \Delta s)\,(0.5 + 0.5 \min(v/80, 1.5))$ |
+| Tốc độ | $0.03\,(v/120)^2$ khi tiến về phía trước |
+| Vượt tốc vật lý | $-\min(0.5,\ 0.05\,(\max(0, v - v_{allow})/5)^2)$, +0.02 nếu đang phanh khi vượt tốc |
+| Qua sector (10 sector) | $+5$ |
+| Lề mề | $-0.15$ khi $v < 10$ km/h |
+| Văng khỏi đường / lật xe | $-30$ (kết thúc) |
+| Đứng yên quá lâu | $-30$ (kết thúc) |
+| Về đích | $+100 + \max(0,\ 1.5\,(120 - t_{lap}))$ |
 
-$$\log \pi(a \vert s) = \log \mu(u \vert s) - \sum_{i=1}^d \log\left(1 - \tanh^2(u_i) + \epsilon\right)$$
+### 7.4 Squashed Gaussian & hiệu chỉnh Jacobian
+$$\log \pi(a \mid s) = \log \mathcal{N}(u \mid \mu, \sigma) - \sum_i \log\left(1 - \tanh^2 u_i + \epsilon\right)$$
 
-Giúp gradient truyền chính xác mà không gặp lỗi số học hay bão hòa tại biên $[-1, 1]$.
-
-### 4. Hàm Phần Thưởng Đua Xe Thể Thao Thuần Túy (Pure Motorsport Reward)
-$$R_t = r_{\text{time}} + r_{\text{progress}} + r_{\text{speed}} + r_{\text{idle}} + R_{\text{macro}}$$
-
-* **Áp lực thời gian**: $r_{\text{time}} = -0.01$ (ép agent phải hoàn thành vòng đua càng nhanh càng tốt).
-* **Tiến độ cung đường Frenet**: $r_{\text{progress}} = 0.02 \cdot \max(0, \Delta s)$ (thưởng tịnh tiến dọc trục đường đua, không ép buộc bám tim đường).
-* **Vận tốc thể thao**: $r_{\text{speed}} = 0.03 \cdot \left(\frac{v_{\text{km/h}}}{120}\right)^2$.
-* **Phạt đứng yên / lề mề**: $r_{\text{idle}} = -0.15$ nếu $v < 10\text{ km/h}$.
-* **Macro Events**:
-  * Phạt đâm tường: $R_{\text{crash}} = -30.0$.
-  * Thưởng về đích: $R_{\text{finish}} = +100.0 + \max\left(0, (120 - t_{\text{lap}}) \cdot 1.5\right)$.
-
-### 5. Thuật Toán PPO Continuous & Critic Loss Mở Rộng
-* **Clipped Surrogate Policy Loss**:
-  $$L^{\text{CLIP}}(\theta) = -\hat{\mathbb{E}}_t \left[ \min\left( \rho_t(\theta)\hat{A}_t, \text{clip}(\rho_t(\theta), 1-\epsilon, 1+\epsilon)\hat{A}_t \right) \right]$$
-* **Unclipped Critic MSE Loss**:
-  $$L^{\text{VF}}(\phi) = \frac{1}{2} \hat{\mathbb{E}}_t \left[ \left(V_\phi(s_t) - \hat{R}_t\right)^2 \right]$$
-  *(Loại bỏ value clipping hẹp giúp Critic cập nhật toàn diện theo return thực tế, cải thiện độ chính xác dự báo giá trị trạng thái)*.
+### 7.5 PPO
+* Clipped surrogate: $L^{CLIP} = -\hat{\mathbb{E}}\left[\min(\rho_t \hat A_t,\ \text{clip}(\rho_t, 1 \pm \epsilon)\hat A_t)\right]$, $\epsilon = 0.15$, GAE $\lambda = 0.95$.
+* Critic: MSE với value clipping rộng (±10) để chống spike khi va chạm; Actor/Critic dùng optimizer riêng (lr Actor = 0.2·lr, Critic = 1.5·lr).
+* **v2 thêm:** $L_{actor} = L^{CLIP} - c_{ent} H + c_{bc}\,\|\tanh\mu(s) - a_{rule}(s)\|^2$, với $c_{bc}$ giảm dần theo hệ số 0.98 mỗi update.
 
 ---
 
-## 🏁 6. Kết Quả Huấn Luyện Thực Nghiệm
-
-| Chỉ Số Đánh Giá | Baseline Cũ (LiDAR 259D + Penalty Tim Đường) | Phiên Bản Hiện Tại (Option B 35D + Pure Motorsport) | Đánh Giá Cải Thiện |
-| :--- | :---: | :---: | :---: |
-| **Vận tốc cao nhất ($V_{\max}$)** | $42.1\text{ km/h}$ | **$80.8\text{ km/h}$** | **Tăng gần 100% (+92%)** ⚡ |
-| **Vận tốc trung bình ($V_{\text{avg}}$)** | $33.5\text{ km/h}$ | **$71.9\text{ km/h}$** | **Gấp hơn 2.1 lần** 🚀 |
-| **Quãng đường hoàn thành** | $1,560\text{m}$ ($71.4\%$) - Kẹt cua trái | **$1,833.7\text{m}$ ($83.9\%$)** | **Đột phá khúc cua S-Turn 1650m** 🎯 |
-| **Explained Variance (Critic $R^2$)** | $0.00$ (Critic bị tê liệt) | **$0.92 - 0.96$** | **Critic hội tụ chuẩn xác gần như tuyệt đối** |
-| **Kỹ thuật lái xe mô phỏng** | Rụt rè, bò 30 km/h giữa đường | **Ôm cua Apex, phanh giảm tốc nhịp nhàng, bứt tốc đoạn thẳng** | Chuẩn phong cách đua thể thao chuyên nghiệp |
-
----
-
-## 👥 7. Thông Tin Đồ Án
-* **Môn học:** Học Tăng Cường (Reinforcement Learning - REL)
-* **Mã nguồn:** Lưu trữ và quản lý phiên bản trên GitHub.
-* **Tài liệu tham khảo chuyên sâu:** Xem thư mục [`knowledge/`](file:///c:/Users/tunbi/Project/school/REL%20Assignment/knowledge) để xem chi tiết các chứng minh toán học và phân tích động lực học xe đua.
+## 👥 8. Thông tin đồ án
+* **Môn học:** Học Tăng Cường (Reinforcement Learning – REL)
+* **Tài liệu lý thuyết:** thư mục [`knowledge/`](knowledge/)

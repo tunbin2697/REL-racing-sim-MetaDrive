@@ -1,0 +1,33 @@
+[
+  {
+    "policy": "models/best_agent.pt",
+    "episodes": 20,
+    "finish_rate": 0.0,
+    "mean_completion": 71.65070249082972,
+    "mean_speed_kmh": 73.94021924917737,
+    "mean_lap_time": null,
+    "best_lap_time": null,
+    "crash_locations": [
+      1556,
+      1556,
+      1556,
+      1556,
+      1556,
+      1556,
+      1556,
+      1556,
+      1556,
+      1556,
+      1556,
+      1556,
+      1556,
+      1556,
+      1556,
+      1556,
+      1556,
+      1556,
+      1556,
+      1556
+    ]
+  }
+]
