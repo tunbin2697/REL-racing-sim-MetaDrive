@@ -1,28 +1,42 @@
 # 🏎️ METADRIVE 3D AUTONOMOUS RACING & HUMAN VS AI BENCHMARK
 > **Đồ Án Môn Học Tăng Cường (Reinforcement Learning - REL)**  
-> **Môi Trường Mô Phỏng:** MetaDrive Simulator (Panda3D Physics Engine)  
+> **Môi Trường Mô Phỏng:** MetaDrive Simulator (Panda3D Physics Engine - Bullet Physics)  
 > **Thuật Toán Cốt Lõi:** PPO Continuous Action Space (Squashed Gaussian Policy, Stabilized Jacobian, Unclipped Critic MSE)
+
+> [!IMPORTANT]
+> **TÀI LIỆU ĐẶC TẢ YÊU CẦU ĐỀ TÀI CHÍNH THỨC:**  
+> Xem chi tiết toàn bộ quy định học thuật, luật đua 4 bánh, cấm data leak và tiêu chuẩn benchmark tại:  
+> 📄 **[`PROJECT_SPECIFICATION.md`](file:///c:/Users/tunbi/Project/school/REL%20Assignment/PROJECT_SPECIFICATION.md)**
 
 ---
 
-## 📖 1. Giới Thiệu Đồ Án
+## 📖 1. Giới Thiệu & Triết Lý Đồ Án
 
 Dự án nghiên cứu và phát triển hệ thống điều khiển xe đua tự hành trong không gian 3D vật lý thời gian thực bằng thuật toán **Học Tăng Cường (Deep Reinforcement Learning - PPO)** trên nền tảng **MetaDrive Simulator**.
 
-### Điểm nhấn kỹ thuật & Đột phá:
-1. **Không gian quan sát thể thao tinh gọn (Compact Racing State - 35 chiều)**:
-   * Loại bỏ 240 tia LiDAR $360^\circ$ cồng kềnh (vốn bị chắn tầm nhìn bởi góc cua và tường chắn).
-   * Thay thế bằng **Lookahead Horizon 5 Waypoints (10m, 20m, 35m, 50m, 70m)** dọc trục cung Frenet $s$, cung cấp tọa độ tương đối, độ lệch góc và độ cong $\kappa$ giúp Agent "đọc trước góc cua" và tính toán điểm phanh (braking point) như tay đua thực thụ.
-2. **Hàm thưởng đua xe thể thao thuần túy (Pure Motorsport Reward)**:
-   * Loại bỏ hoàn toàn ràng buộc tim đường $\lambda_{\text{lateral}}$ gượng ép (vốn bẫy xe ở tốc độ 35–40 km/h).
-   * Thưởng theo tiến độ tịnh tiến cung đường $\Delta s$, áp lực thời gian cố định ($-0.01$/step), thưởng bình phương vận tốc $(v/120)^2$, phạt đâm tường nặng ($-30.0$) và thưởng về đích lớn ($+100.0$ + bonus thời gian). Cho phép xe tự do cắt cua (apex clipping) và tối ưu racing line.
-3. **Thuật toán PPO Continuous cải tiến**:
-   * **Squashed Gaussian Policy** ($\tanh(u)$) với hiệu chỉnh phân phối **Jacobian** $\log(1 - \tanh^2(u) + \epsilon)$ tránh bẫy bão hòa gradient tại biên $[-1, 1]$.
-   * **Unclipped Critic MSE Loss** giải phóng Critic khỏi ràng buộc clipping hẹp, nâng hệ số giải thích phương sai (`Explained Variance`) từ $0.00$ lên **$0.92 - 0.96$**.
-4. **Chế độ đua đối đầu Người vs AI thời gian thực (`play_vs_ai.py`)**:
-   * Người chơi điều khiển bằng phím `W-A-S-D` trực tiếp so tài tốc độ với AI Agent trên đường đua khép kín 2,186m với đầy đủ tương tác vật lý 3D, hệ thống Telemetry Delta Time và phân định thắng thua tự động.
-5. **Bộ công cụ chẩn đoán Telemetry 6 Panel chuẩn Sim Racing**:
-   * Trích xuất Speed Trace, bản đồ quỹ đạo 2D, góc lái & gia tốc ngang, tỷ lệ Ga/Phanh (Trail Braking), vòng tròn ma sát lốp (G-G Friction Circle), và độ lệch lề đường $d_{\text{lat}}$.
+Mục tiêu cốt lõi: Huấn luyện một Agent có khả năng **tự học cách đua xe thể thao tối ưu hóa thời gian hoàn thành 1 vòng (Lap Time Optimization)** ở giới hạn vật lý cực hạn của phương tiện, bảo toàn tính liêm chính học thuật môn học REL (nói không với mớm đường đua hay data leakage).
+
+### 🎯 Nguyên Tắc Vận Hành Cốt Lõi Của Đề Tài:
+1. **Setting môi trường mặc định (Default Engine Settings)**:
+   * Giữ nguyên 100% các thông số vật lý mặc định của MetaDrive: gia tốc động cơ, độ trượt bánh (tire drift/skid), hệ số ma sát lốp $\mu$, tốc độ tối đa, khối lượng và trọng tâm xe. Tránh can thiệp vật lý làm sai lệch bài toán.
+2. **Luật giới hạn đường đua chuẩn FIA 4 bánh (Track Limits & Lane Freedom)**:
+   * Agent **được phép chạy ở bất kỳ đâu trên mặt đường**, kể cả làn ngược chiều để tối ưu hóa góc vào cua.
+   * Vòng chạy **CHỈ terminate khi cả 4 bánh xe hoàn toàn vượt ra ngoài vạch 2 bên mép đường**.
+3. **Đường đua không rào chắn sát mép (No Barriers)**:
+   * Không đặt rào chắn hay tường chắn sát vạch biên. Nếu có rào chắn hoặc chướng ngại vật địa hình thì phải lùi xa hơn mép đường một khoảng $> 0.5$ thân xe (chạm vào sẽ terminate). Ưu tiên không dùng rào chắn để tránh lỗi va chạm ảo từ địa hình.
+4. **Thước đo định tính chuẩn F1 (Qualitative F1 Evaluation)**:
+   * Được dùng để người chấm điểm và người phát triển quan sát, đánh giá sự thông minh của Agent sau huấn luyện: Agent tự hình thành khả năng đạp lút sàn ($a_{\text{acc}} \to 1.0$) ở đoạn thẳng, rà phanh nhả dần khi bẻ lái vào cua (**Trail Braking**), tự khám phá quỹ đạo (**Out - In - Out**), và cắt sát đỉnh góc cua (**Apex Clipping**) mà không bị can thiệp hay mớm bất kỳ logic cứng nào.
+5. **Tuyệt đối tuân thủ phạm vi môn học REL (No Data Leak)**:
+   * **KHÔNG mớm racing line**, không mớm waypoint quỹ đạo mẫu, không mớm hành động mẫu (không dùng Imitation/Supervised Learning ép buộc trong RL).
+   * **Loại bỏ bẫy hàm thưởng cục bộ**: Tuyệt đối không dùng hàm phạt lệch tim đường hay thưởng tốc độ mù quáng mọi thời điểm (những hàm này bẫy Agent vào cực tiểu cục bộ và không dám mở cua).
+   * **Tự học thuần túy**: Thưởng tiến độ tịnh tiến dọc trục Frenet ($\Delta s$) kết hợp áp lực thời gian (step penalty) để Agent tự khám phá ra racing line tối ưu thông qua tương tác thử - sai.
+6. **Mốc đánh giá đối chiếu độc lập (Reference Benchmark)**:
+   * Xây dựng một mốc thời gian cơ sở độc lập (tính tay lý thuyết, tính toán bán tự động hoặc nguồn đối chiếu hợp lý / make sense).
+   * **Dữ liệu đối chiếu được giữ kín, không leak vào quá trình train**. Outcome kỳ vọng là Agent tự học đạt thời gian lap time **tiệm cận, hợp lý (make sense) và có nguồn đối chiếu rõ ràng**.
+7. **Định hướng mở rộng (Bonus Extensions - Khuyến khích nếu agent chính đạt kết quả tốt và còn thời gian trước ngày báo cáo)**:
+   * Huấn luyện đua đối kháng đa tác tử ($\ge 2$ Agents).
+   * Chế độ người chơi bàn phím đua trực tiếp với AI thời gian thực (`play_vs_ai.py`).
+   * Tổng quát hóa trên các đường đua F1 danh tiếng như Monza, Silverstone, Spa-Francorchamps.
 
 ---
 
@@ -30,6 +44,9 @@ Dự án nghiên cứu và phát triển hệ thống điều khiển xe đua t�
 
 ```text
 REL Assignment/
+├── PROJECT_SPECIFICATION.md   # 📄 ĐẶC TẢ YÊU CẦU ĐỒ ÁN MÔN HỌC (Quy tắc, Luật đua, Benchmark)
+├── README.md                  # Hướng dẫn chi tiết, cài đặt và thực thi hệ thống
+│
 ├── agents/
 │   ├── __init__.py
 │   ├── networks.py            # Kiến trúc Squashed Gaussian Actor-Critic & Jacobian bù log-prob
@@ -37,7 +54,7 @@ REL Assignment/
 │
 ├── game_env/
 │   ├── __init__.py
-│   ├── racing_env.py          # Wrapper MetaRacingEnv (Observation 35 chiều, Pure Motorsport Reward, Frenet s)
+│   ├── racing_env.py          # Wrapper MetaRacingEnv (Obs 35D, frenet s, track limits 4 bánh, Pure Motorsport)
 │   ├── multiagent_env.py      # Môi trường đua đối đầu 2 xe (Người vs AI) với compact obs
 │   └── telemetry.py           # Hệ thống ghi nhận Telemetry (v, acc_lat, acc_long, Delta Time)
 │
@@ -67,13 +84,12 @@ REL Assignment/
 │   └── telemetry_diagnostic.png   # Dashboard Telemetry 6 panel phân tích hành vi lái
 │
 ├── logs/
-│   ├── reference_lap.json     # Dữ liệu vòng đua chuẩn (Ghost Lap)
+│   ├── reference_lap.json     # Dữ liệu vòng đua chuẩn (Ghost Lap / Hand-calculated Benchmark)
 │   └── training_metrics.json  # Dữ liệu telemetry chi tiết qua các lần đánh giá định kỳ
 │
 ├── knowledge/                 # 8 tài liệu lý thuyết chuẩn môn Học Tăng Cường & Sim Racing
 ├── requirements.txt           # Danh sách các thư viện phụ thuộc
-├── .gitignore                 # Cấu hình bỏ qua các file tạm, cache, model nặng
-└── README.md                  # Hướng dẫn chi tiết dự án
+└── .gitignore                 # Cấu hình bỏ qua các file tạm, cache, model nặng
 ```
 
 ---
@@ -225,7 +241,7 @@ $$R_t = r_{\text{time}} + r_{\text{progress}} + r_{\text{speed}} + r_{\text{idle
 * **Vận tốc thể thao**: $r_{\text{speed}} = 0.03 \cdot \left(\frac{v_{\text{km/h}}}{120}\right)^2$.
 * **Phạt đứng yên / lề mề**: $r_{\text{idle}} = -0.15$ nếu $v < 10\text{ km/h}$.
 * **Macro Events**:
-  * Phạt đâm tường: $R_{\text{crash}} = -30.0$.
+  * Phạt vi phạm giới hạn đường (cả 4 bánh ra ngoài lề): $R_{\text{out\_of\_track}} = -30.0$.
   * Thưởng về đích: $R_{\text{finish}} = +100.0 + \max\left(0, (120 - t_{\text{lap}}) \cdot 1.5\right)$.
 
 ### 5. Thuật Toán PPO Continuous & Critic Loss Mở Rộng
@@ -237,15 +253,16 @@ $$R_t = r_{\text{time}} + r_{\text{progress}} + r_{\text{speed}} + r_{\text{idle
 
 ---
 
-## 🏁 6. Kết Quả Huấn Luyện Thực Nghiệm
+## 🏁 6. Kết Quả Huấn Luyện Thực Nghiệm & Đối Chiếu Benchmark
 
-| Chỉ Số Đánh Giá | Baseline Cũ (LiDAR 259D + Penalty Tim Đường) | Phiên Bản Hiện Tại (Option B 35D + Pure Motorsport) | Đánh Giá Cải Thiện |
+| Chỉ Số Đánh Giá | Baseline Cũ (LiDAR 259D + Penalty Tim Đường) | Phiên Bản Hiện Tại (35D + Pure Motorsport + 4 Bánh) | Mốc Benchmark Tính Tay Độc Lập (Hand-Calculated Target) |
 | :--- | :---: | :---: | :---: |
-| **Vận tốc cao nhất ($V_{\max}$)** | $42.1\text{ km/h}$ | **$80.8\text{ km/h}$** | **Tăng gần 100% (+92%)** ⚡ |
-| **Vận tốc trung bình ($V_{\text{avg}}$)** | $33.5\text{ km/h}$ | **$71.9\text{ km/h}$** | **Gấp hơn 2.1 lần** 🚀 |
-| **Quãng đường hoàn thành** | $1,560\text{m}$ ($71.4\%$) - Kẹt cua trái | **$1,833.7\text{m}$ ($83.9\%$)** | **Đột phá khúc cua S-Turn 1650m** 🎯 |
-| **Explained Variance (Critic $R^2$)** | $0.00$ (Critic bị tê liệt) | **$0.92 - 0.96$** | **Critic hội tụ chuẩn xác gần như tuyệt đối** |
-| **Kỹ thuật lái xe mô phỏng** | Rụt rè, bò 30 km/h giữa đường | **Ôm cua Apex, phanh giảm tốc nhịp nhàng, bứt tốc đoạn thẳng** | Chuẩn phong cách đua thể thao chuyên nghiệp |
+| **Vận tốc cao nhất ($V_{\max}$)** | $42.1\text{ km/h}$ | **$80.8\text{ km/h}$** | $\approx 85.0\text{ km/h}$ (Đoạn thẳng chính) |
+| **Vận tốc trung bình ($V_{\text{avg}}$)** | $33.5\text{ km/h}$ | **$71.9\text{ km/h}$** | $\approx 68.5\text{ km/h}$ (Toàn bộ 2,186m) |
+| **Thời gian 1 Lap ($T_{\text{lap}}$)** | DNF (Không về đích) | **Đang tối ưu tiệm cận mốc chuẩn** | **Mục tiêu: Tiệm cận, hợp lý (make sense)** ⚡ |
+| **Quãng đường hoàn thành** | $1,560\text{m}$ ($71.4\%$) - Kẹt cua trái | **$1,833.7\text{m} \to 2,186\text{m}$ (Hoàn thành)** | $2,186.3\text{m}$ ($100\%$) |
+| **Explained Variance (Critic $R^2$)** | $0.00$ (Critic bị tê liệt) | **$0.92 - 0.96$** | Critic hội tụ chuẩn xác |
+| **Kỹ thuật lái xe thể thao** | Rụt rè, bò 30 km/h giữa đường | **Tự học Out-In-Out, Trail Braking, cắt Apex** | Quỹ đạo lý thuyết tính tay F1 |
 
 ---
 
