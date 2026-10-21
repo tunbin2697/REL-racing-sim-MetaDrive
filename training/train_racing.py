@@ -27,6 +27,7 @@ if sys.platform == "win32":
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from game_env.racing_env import MetaRacingEnv
+from game_env.vehicle import get_vehicle
 from agents.ppo_agent import PPOAgent
 
 def save_metrics_json(metrics_data, log_dir="logs"):
@@ -56,6 +57,7 @@ def parse_args():
     parser.add_argument("--reset-logstd", type=float, default=None, help="Reset độ lệch chuẩn khám phá actor_logstd khi resume")
     parser.add_argument("--steps-to-run", type=int, default=None, help="Số bước muốn chạy thêm khi resume")
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
+    parser.add_argument("--vehicle", type=str, default="gt3", choices=["gt3", "sedan"], help="Loại xe đua ('gt3' hoặc 'sedan' đối chứng)")
     parser.add_argument("--save-dir", type=str, default="models", help="Thư mục lưu weights")
     parser.add_argument("--log-dir", type=str, default="logs", help="Thư mục lưu log số liệu")
     parser.add_argument("--tb-logdir", type=str, default="runs", help="Thư mục lưu TensorBoard logs")
@@ -162,12 +164,18 @@ def main():
     print(f"  - Dashboard Command: tensorboard --logdir {args.tb_logdir}")
     print("=" * 70)
     
+    # Khởi tạo mô hình xe đua theo kiến trúc OOP
+    race_car = get_vehicle(args.vehicle)
+    print(f"  - Vehicle Spec: {race_car.cfg.name} (Brake: {race_car.cfg.max_brake_force}N, Grip: {race_car.cfg.wheel_friction}, Steering Lock: {race_car.cfg.max_steering_deg}°)")
+    print("=" * 70)
+    
     # Khởi tạo môi trường mô phỏng (MetaDrive sử dụng Singleton Engine)
     env = MetaRacingEnv(
         use_render=False,
         traffic_density=0.0,
         map_config=args.map,
         start_seed=args.seed,
+        vehicle=race_car,
     )
     
     obs_shape = env.observation_space.shape

@@ -191,3 +191,17 @@ class DefaultCivilianSedan(BaseRaceVehicle):
             width=1.85,
             max_speed_km_h=120.0,
         ))
+
+
+def get_vehicle(name: Optional[str] = "gt3") -> BaseRaceVehicle:
+    """
+    Factory Function (Mẫu thiết kế Factory):
+    Tạo đối tượng xe đua tương ứng theo tên định danh.
+    Hỗ trợ: 'gt3', 'racing', 'sedan', 'civilian'
+    """
+    if name is None or str(name).lower() in ["gt3", "gt3_racecar", "racing"]:
+        return GT3RaceCar()
+    elif str(name).lower() in ["sedan", "default", "civilian"]:
+        return DefaultCivilianSedan()
+    else:
+        raise ValueError(f"Không nhận diện được loại xe '{name}'. Chọn 'gt3' hoặc 'sedan'.")

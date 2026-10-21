@@ -20,26 +20,30 @@ if sys.platform == "win32":
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from game_env.racing_env import MetaRacingEnv
+from game_env.vehicle import get_vehicle
 from agents.ppo_agent import PPOAgent
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Evaluate Trained RL Agent")
     parser.add_argument("--model", type=str, default="models/best_agent.pt", help="File weights cần đánh giá")
     parser.add_argument("--episodes", type=int, default=10, help="Số vòng đua thử nghiệm")
+    parser.add_argument("--vehicle", type=str, default="gt3", choices=["gt3", "sedan"], help="Loại xe đánh giá ('gt3' hoặc 'sedan')")
     parser.add_argument("--out", type=str, default="logs/evaluation_results.json", help="File lưu kết quả")
     return parser.parse_args()
 
 def main():
     args = parse_args()
+    race_car = get_vehicle(args.vehicle)
     
     print("=" * 70)
     print("📊 BẮT ĐẦU ĐÁNH GIÁ CHỈ SỐ HỌC THUẬT (ACADEMIC BENCHMARK EVALUATION)")
     print("=" * 70)
     print(f"  - Model file: {args.model}")
+    print(f"  - Vehicle Spec: {race_car.cfg.name}")
     print(f"  - Số vòng đua thử nghiệm: {args.episodes}")
     print("=" * 70)
 
-    env = MetaRacingEnv(use_render=False, num_scenarios=args.episodes, start_seed=100)
+    env = MetaRacingEnv(use_render=False, num_scenarios=args.episodes, start_seed=100, vehicle=race_car)
     obs_shape = getattr(env.observation_space, "shape", None)
     act_shape = getattr(env.action_space, "shape", None)
     obs_dim = int(obs_shape[0]) if obs_shape is not None else 35

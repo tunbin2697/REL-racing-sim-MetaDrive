@@ -27,6 +27,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 from game_env.racing_env import MetaRacingEnv
+from game_env.vehicle import get_vehicle
 from agents.ppo_agent import PPOAgent
 
 # Danh sách góc cua chính trên đường đua 2186m
@@ -43,20 +44,23 @@ TRACK_CORNERS = [
 def parse_args():
     parser = argparse.ArgumentParser(description="Standalone Telemetry Diagnostic Tool")
     parser.add_argument("--model", type=str, default="models/best_agent.pt", help="Checkpoint cần chẩn đoán")
+    parser.add_argument("--vehicle", type=str, default="gt3", choices=["gt3", "sedan"], help="Loại xe chẩn đoán ('gt3' hoặc 'sedan')")
     parser.add_argument("--save-path", type=str, default="plots/telemetry_diagnostic.png", help="Đường dẫn lưu biểu đồ")
     parser.add_argument("--seed", type=int, default=42, help="Seed mô phỏng")
     return parser.parse_args()
 
 def main():
     args = parse_args()
+    race_car = get_vehicle(args.vehicle)
     print("=" * 75)
     print("🏎️  CHẨN ĐOÁN SIM RACING TELEMETRY ĐỘC LẬP")
     print("=" * 75)
     print(f"  - Model checkpoint: {args.model}")
+    print(f"  - Vehicle Spec: {race_car.cfg.name}")
     print(f"  - File xuất: {args.save_path}")
     print(f"  - Seed: {args.seed}")
     
-    env = MetaRacingEnv(use_render=False, milestone_respawn=False)
+    env = MetaRacingEnv(use_render=False, milestone_respawn=False, vehicle=race_car)
     obs_shape = getattr(env.observation_space, "shape", None)
     act_shape = getattr(env.action_space, "shape", None)
     obs_dim = int(obs_shape[0]) if obs_shape is not None else 35

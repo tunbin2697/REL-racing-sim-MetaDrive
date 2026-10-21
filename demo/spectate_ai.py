@@ -24,11 +24,13 @@ if sys.platform == "win32":
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from game_env.racing_env import MetaRacingEnv
+from game_env.vehicle import get_vehicle
 from agents.ppo_agent import PPOAgent
 
 def parse_args():
     parser = argparse.ArgumentParser(description="AI Spectator Mode in MetaDrive 3D")
     parser.add_argument("--model", type=str, default="models/best_agent.pt", help="Đường dẫn weights của AI")
+    parser.add_argument("--vehicle", type=str, default="gt3", choices=["gt3", "sedan"], help="Loại xe biểu diễn ('gt3' hoặc 'sedan')")
     parser.add_argument("--map", type=str, default="silverstone", help="Bản đồ đua ('silverstone' hoặc 'racing')")
     parser.add_argument("--traffic", type=float, default=0.0, help="Mật độ chướng ngại vật/xe khác (0.0 - 0.2)")
     parser.add_argument("--seed", type=int, default=42, help="Seed tạo bản đồ")
@@ -37,10 +39,12 @@ def parse_args():
 
 def main():
     args = parse_args()
+    race_car = get_vehicle(args.vehicle)
     
     print("=" * 70)
     print("🎬 CHẾ ĐỘ XEM AI BIỂU DIỄN 3D (CINEMATIC SPECTATOR)")
     print("=" * 70)
+    print(f"Xe đua: {race_car.cfg.name} (Brake: {race_car.cfg.max_brake_force}N, Grip: {race_car.cfg.wheel_friction})")
     print("Phím điều khiển camera & quan sát:")
     print("  - [C]: Chuyển góc nhìn camera (Chase cam / Top-down / Cockpit)")
     print("  - [B]: Góc nhìn toàn cảnh từ trên cao (Bird-eye View)")
@@ -55,6 +59,7 @@ def main():
         traffic_density=args.traffic,
         map_config=args.map,
         start_seed=args.seed,
+        vehicle=race_car,
     )
 
     # Nạp Agent tương thích với không gian quan sát

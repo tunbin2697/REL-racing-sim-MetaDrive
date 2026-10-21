@@ -26,17 +26,20 @@ if sys.platform == "win32":
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from game_env.multiagent_env import MultiAgentRacingEnv
+from game_env.vehicle import get_vehicle
 from agents.ppo_agent import PPOAgent
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Human vs AI 3D Racing Benchmark")
     parser.add_argument("--model", type=str, default="models/best_agent.pt", help="Đường dẫn file weights của AI")
     parser.add_argument("--map", type=str, default="O", help="Bản đồ đua ('O' cho oval track hoặc 'S', 'C', '3')")
+    parser.add_argument("--vehicle", type=str, default="gt3", choices=["gt3", "sedan"], help="Loại xe đua ('gt3' hoặc 'sedan')")
     parser.add_argument("--seed", type=int, default=42, help="Bản đồ ngẫu nhiên")
     return parser.parse_args()
 
 def main():
     args = parse_args()
+    race_car = get_vehicle(args.vehicle)
     
     print("=" * 70)
     print(">> KHOI DONG GIAI DUA 3D: HUMAN VS AI (REINFORCEMENT LEARNING)")
@@ -75,6 +78,7 @@ def main():
         use_render=True,
         map_config=args.map,
         start_seed=args.seed,
+        vehicle=race_car,
     )
     racing_env.compact_obs = (ckpt_dim == 35)
 
