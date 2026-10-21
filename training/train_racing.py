@@ -40,56 +40,52 @@ def save_metrics_json(metrics_data, log_dir="logs"):
 
 def parse_args():
     parser = argparse.ArgumentParser(description="PPO Racing Training in MetaDrive 3D")
-    parser.add_argument("--total-steps", type=int, default=200000, help="Tổng số bước mô phỏng tối đa (mặc định 200k steps)")
-    parser.add_argument("--rollout-len", type=int, default=1024, help="Độ dài rollout thu thập trước mỗi lần update")
+    parser.add_argument("--total-steps", type=int, default=1000000, help="Tổng số bước mô phỏng tối đa (mặc định 1M steps)")
+    parser.add_argument("--rollout-len", type=int, default=2048, help="Độ dài rollout thu thập trước mỗi lần update (mặc định 2048)")
     parser.add_argument("--batch-size", type=int, default=64, help="Kích thước minibatch PPO")
-    parser.add_argument("--lr", type=float, default=3e-4, help="Learning rate (3e-4 cho train from scratch, 1e-4 cho fine-tuning)")
-    parser.add_argument("--gamma", type=float, default=0.99, help="Discount factor gamma")
-    parser.add_argument("--gae-lambda", type=float, default=0.95, help="GAE lambda")
+    parser.add_argument("--lr", type=float, default=3e-4, help="Learning rate")
+    parser.add_argument("--gamma", type=float, default=0.99, help="Discount factor gamma (0.99 giảm phương sai)")
+    parser.add_argument("--gae-lambda", type=float, default=0.90, help="GAE lambda (0.90)")
     parser.add_argument("--clip-coef", type=float, default=0.15, help="PPO clipping parameter")
-    parser.add_argument("--ent-coef", type=float, default=0.015, help="Entropy bonus coefficient (đẩy cao khám phá)")
-    parser.add_argument("--eval-freq", type=int, default=1, help="Tần suất đánh giá và xuất log định kỳ (mặc định mỗi 1 vòng update)")
-    parser.add_argument("--eval-episodes", type=int, default=2, help="Số episode đánh giá")
-    parser.add_argument("--map", type=str, default="O", help="Bản đồ đua ('O' cho oval track hoặc '3' cho block circuit)")
-    parser.add_argument("--warmup-model", type=str, default=None, help="File checkpoint warmup (mặc định None để train tự bơi from scratch)")
-    parser.add_argument("--resume", type=str, default=None, help="Đường dẫn checkpoint để tiếp tục huấn luyện (ví dụ models/best_agent.pt)")
-    parser.add_argument("--reset-logstd", type=float, default=None, help="Reset độ lệch chuẩn khám phá actor_logstd khi resume (ví dụ -0.8 cho sigma ~ 0.45)")
-    parser.add_argument("--steps-to-run", type=int, default=None, help="Số bước muốn chạy thêm từ thời điểm hiện tại khi resume")
-    parser.add_argument("--milestone-respawn", action="store_true", help="Bật cơ chế hồi sinh Milestone Respawn để đột phá khúc cua trái 71.4%%")
+    parser.add_argument("--ent-coef", type=float, default=0.01, help="Entropy bonus coefficient")
+    parser.add_argument("--eval-freq", type=int, default=5, help="Tần suất đánh giá và xuất log định kỳ (mỗi 5 update = 10,240 steps)")
+    parser.add_argument("--eval-episodes", type=int, default=3, help="Số episode đánh giá (mặc định 3 episodes)")
+    parser.add_argument("--map", type=str, default="silverstone", help="Bản đồ đua ('silverstone' hoặc 'racing')")
+    parser.add_argument("--warmup-model", type=str, default=None, help="File checkpoint warmup")
+    parser.add_argument("--resume", type=str, default=None, help="Đường dẫn checkpoint để tiếp tục huấn luyện")
+    parser.add_argument("--reset-logstd", type=float, default=None, help="Reset độ lệch chuẩn khám phá actor_logstd khi resume")
+    parser.add_argument("--steps-to-run", type=int, default=None, help="Số bước muốn chạy thêm khi resume")
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
     parser.add_argument("--save-dir", type=str, default="models", help="Thư mục lưu weights")
     parser.add_argument("--log-dir", type=str, default="logs", help="Thư mục lưu log số liệu")
     parser.add_argument("--tb-logdir", type=str, default="runs", help="Thư mục lưu TensorBoard logs")
     return parser.parse_args()
 
-def evaluate_agent(env, agent, num_episodes=2):
-    """Đánh giá agent ở chế độ deterministic (không lấy mẫu ngẫu nhiên)"""
+def evaluate_agent(env, agent, num_episodes=3):
+    """Đánh giá agent ở chế độ deterministic (chỉ lưu agent khi eval đạt kỷ lục)"""
     eval_returns = []
     eval_lengths = []
     eval_completions = []
+    eval_times = []
     eval_speeds = []
-    eval_milestones = []
-    eval_speeds_rew = []
-    eval_brakes_rew = []
-    eval_idles_pen = []
-    eval_deltas_rew = []
+    eval_progress_rew = []
+    eval_steer_smooth_rew = []
+    eval_guide_rew = []
+    eval_idle_pen = []
     eval_macros_rew = []
     crash_locations = []
     crash_count = 0
-    best_lap_samples = []
-    max_comp = -1.0
     
     for ep in range(num_episodes):
         target_seed = env.start_seed + (ep % max(1, getattr(env, "num_scenarios", 1)))
         obs, info = env.reset(seed=target_seed, options={"force_start": True})
         ep_return = 0.0
         ep_len = 0
-        ep_milestone = 0.0
-        ep_speed_rew = 0.0
-        ep_brake_rew = 0.0
-        ep_idle_pen = 0.0
-        ep_delta_rew = 0.0
-        ep_macro_rew = 0.0
+        ep_progress = 0.0
+        ep_smooth = 0.0
+        ep_guide = 0.0
+        ep_idle = 0.0
+        ep_macro = 0.0
         speeds = []
         
         while True:
@@ -97,19 +93,18 @@ def evaluate_agent(env, agent, num_episodes=2):
             obs, reward, terminated, truncated, info = env.step(action)
             ep_return += reward
             ep_len += 1
-            ep_milestone += float(info.get("r_milestone", 0.0))
-            ep_speed_rew += float(info.get("r_speed", 0.0))
-            ep_brake_rew += float(info.get("r_brake", 0.0))
-            ep_idle_pen += float(info.get("r_idle", 0.0))
-            ep_delta_rew += float(info.get("r_delta", 0.0))
-            ep_macro_rew += float(info.get("macro_reward", 0.0))
-            speeds.append(info.get("speed_km_h", info.get("speed_kmh", 0.0)))
+            ep_progress += float(info.get("r_progress", 0.0))
+            ep_smooth += float(info.get("r_steer_smooth", 0.0))
+            ep_guide += float(info.get("r_guide", 0.0))
+            ep_idle += float(info.get("r_idle", 0.0))
+            ep_macro += float(info.get("macro_reward", 0.0))
+            speeds.append(info.get("speed_km_h", 0.0))
             
             if terminated or truncated:
                 is_crash = info.get("crash", False) or info.get("crash_sidewalk", False) or (info.get("termination_reason") == "crash_or_track_limit")
                 if is_crash:
                     crash_count += 1
-                    dist = info.get("crash_distance", info.get("route_completion", 0.0) * 2117.0)
+                    dist = info.get("crash_distance", info.get("route_completion", 0.0) * getattr(env, "circuit_length", 2838.0))
                     crash_locations.append(f"{dist:.0f}m")
                 break
                 
@@ -118,29 +113,28 @@ def evaluate_agent(env, agent, num_episodes=2):
         cur_comp = float(info.get("route_completion", 0.0) * 100.0)
         eval_completions.append(cur_comp)
         eval_speeds.append(np.mean(speeds) if speeds else 0.0)
-        eval_milestones.append(ep_milestone)
-        eval_speeds_rew.append(ep_speed_rew)
-        eval_brakes_rew.append(ep_brake_rew)
-        eval_idles_pen.append(ep_idle_pen)
-        eval_deltas_rew.append(ep_delta_rew)
-        eval_macros_rew.append(ep_macro_rew)
-        if cur_comp > max_comp:
-            max_comp = cur_comp
-            best_lap_samples = list(env.telemetry.current_lap_data)
+        cur_time = float(info.get("lap_time", ep_len * getattr(env, "dt", 0.10)))
+        eval_times.append(cur_time)
+        eval_progress_rew.append(ep_progress)
+        eval_steer_smooth_rew.append(ep_smooth)
+        eval_guide_rew.append(ep_guide)
+        eval_idle_pen.append(ep_idle)
+        eval_macros_rew.append(ep_macro)
         
     return {
         "mean_return": float(np.mean(eval_returns)),
         "mean_length": float(np.mean(eval_lengths)),
+        "mean_time": float(np.mean(eval_times)),
         "mean_completion": float(np.mean(eval_completions)),
         "mean_speed": float(np.mean(eval_speeds)),
-        "mean_milestone": float(np.mean(eval_milestones)),
-        "mean_speed_reward": float(np.mean(eval_speeds_rew)),
-        "mean_brake_reward": float(np.mean(eval_brakes_rew)),
-        "mean_idle_penalty": float(np.mean(eval_idles_pen)),
-        "mean_delta_reward": float(np.mean(eval_deltas_rew)),
-        "mean_terminal_macro": float(np.mean(eval_macros_rew)),
+        "mean_progress_reward": float(np.mean(eval_progress_rew)),
+        "mean_steer_smooth_reward": float(np.mean(eval_steer_smooth_rew)),
+        "mean_guide_reward": float(np.mean(eval_guide_rew)),
+        "mean_idle_penalty": float(np.mean(eval_idle_pen)),
+        "mean_macro_reward": float(np.mean(eval_macros_rew)),
         "crash_rate": float(crash_count / max(1, num_episodes)),
         "crash_locations": crash_locations,
+        "max_speed_cap": float(getattr(env, "max_speed_km_h", 120.0)),
     }
 
 
@@ -153,7 +147,8 @@ def main():
     print("=" * 70)
     print(">> BAT DAU HUAN LUYEN PPO CONTINUOUS 3D RACING AGENT (METADRIVE)")
     print("=" * 70)
-    print(f"  - Device: {'CUDA (GPU)' if PPOAgent().device.type == 'cuda' else 'CPU'}")
+    device_name = "CUDA (GPU)" if torch.cuda.is_available() else "CPU"
+    print(f"  - Device: {device_name}")
     print(f"  - Total Steps: {args.total_steps}")
     print(f"  - Rollout Length: {args.rollout_len}")
     print(f"  - Minibatch Size: {args.batch_size}")
@@ -173,12 +168,11 @@ def main():
         traffic_density=0.0,
         map_config=args.map,
         start_seed=args.seed,
-        milestone_respawn=args.milestone_respawn,
     )
     
     obs_shape = env.observation_space.shape
     act_shape = env.action_space.shape
-    obs_dim = int(obs_shape[0]) if obs_shape is not None else 259
+    obs_dim = int(obs_shape[0]) if obs_shape is not None else 35
     act_dim = int(act_shape[0]) if act_shape is not None else 2
     
     agent = PPOAgent(
@@ -195,9 +189,9 @@ def main():
     metrics_file = os.path.join(args.log_dir, "training_metrics.json")
     global_step = 0
     update_idx = 0
-    best_completion = 0.0
-    best_fastest_speed = 0.0
-    best_fastest_comp = 0.0
+    best_eval_completion = 0.0
+    best_eval_lap_time = float("inf")
+    best_eval_speed = 0.0
     total_finishes = 0
 
     metrics: Dict[str, Any] = {
@@ -231,9 +225,9 @@ def main():
                 if metrics.get("steps"):
                     global_step = int(metrics["steps"][-1])
                 if metrics.get("eval_completion"):
-                    best_completion = float(max(metrics["eval_completion"]))
+                    best_eval_completion = float(max(metrics["eval_completion"]))
                 total_finishes = int(metrics.get("total_finishes", 0))
-                print(f">> RESUME: Đã nạp lại lịch sử metrics! Bắt đầu từ Step {global_step} | Finishes cũ: {total_finishes} | Best Completion cũ: {best_completion:.1f}%")
+                print(f">> RESUME: Đã nạp lại lịch sử metrics! Bắt đầu từ Step {global_step} | Finishes cũ: {total_finishes} | Best Completion cũ: {best_eval_completion:.1f}%")
             except Exception as e:
                 print(f">> [CẢNH BÁO] Không thể nạp metrics_file cũ: {e}")
                 
@@ -260,7 +254,6 @@ def main():
             agent.ac.actor_logstd.data.fill_(float(args.reset_logstd))
             curr_std = float(torch.exp(agent.ac.actor_logstd[0, 0]).item())
             print(f">> EXPLORATION TUNING: Đã thiết lập actor_logstd = {args.reset_logstd} (Action std sigma = {curr_std:.3f})")
-        # Khởi tạo lại optimizer để xóa sạch momentum đệm (m, v) từ pha pretrain, bảo vệ policy tránh giật tham số đột ngột
         agent.actor_optimizer = torch.optim.Adam(agent.actor_params, lr=agent.lr_actor, eps=1e-5)
         agent.critic_optimizer = torch.optim.Adam(agent.critic_params, lr=agent.lr_critic, eps=1e-5)
         print(">> Đã khởi tạo lại Adam Optimizer (Fresh Momentum) để fine-tuning ổn định.")
@@ -293,7 +286,7 @@ def main():
         metrics["value_loss"].append(0.0)
         metrics["entropy"].append(0.0)
         
-    best_completion = max(best_completion, eval_res["mean_completion"])
+    best_eval_completion = max(best_eval_completion, eval_res["mean_completion"])
     print(
         f"[Step {global_step:06d}/{target_total_steps}] "
         f"Eval Return: {eval_res['mean_return']:+.2f} | "
@@ -312,12 +305,11 @@ def main():
     writer.add_scalar("Performance/Episode_Length", eval_res["mean_length"], global_step)
     writer.add_scalar("Performance/Total_Finishes", total_finishes, global_step)
     writer.add_scalars("Reward_Breakdown/Streams", {
-        "Milestones": eval_res["mean_milestone"],
-        "Speed": eval_res["mean_speed_reward"],
-        "Brake": eval_res["mean_brake_reward"],
+        "Progress": eval_res["mean_progress_reward"],
+        "Steer_Smooth": eval_res["mean_steer_smooth_reward"],
+        "Guide": eval_res["mean_guide_reward"],
         "Idle": eval_res["mean_idle_penalty"],
-        "Delta_SIL": eval_res["mean_delta_reward"],
-        "Terminal": eval_res["mean_terminal_macro"],
+        "Macro": eval_res["mean_macro_reward"],
     }, global_step)
     writer.flush()
     
@@ -339,27 +331,26 @@ def main():
             is_done = bool(terminated) or bool(truncated)
             dones[step] = 1.0 if is_done else 0.0
             
-            # Ghi nhận nếu hoàn thành trọn vẹn vòng đua
-            if step_info.get("termination_reason") == "lap_completed" or step_info.get("route_completion", 0.0) >= 0.98:
+            # Ghi nhận số lần hoàn thành trong train rollout (KHÔNG lưu model tại đây)
+            if step_info.get("termination_reason") == "lap_completed" or step_info.get("route_completion", 0.0) >= 0.985:
                 total_finishes += 1
                 lap_time = step_info.get("lap_time", 0.0)
-                speed_fin = step_info.get("speed_km_h", 0.0)
-                print(f"  🏁 [FINISH #{total_finishes}] Step {global_step} | Lap Time: {lap_time:.2f}s | Speed: {speed_fin:.1f} km/h")
+                mean_spd = step_info.get("mean_speed_km_h", step_info.get("speed_km_h", 0.0))
+                print(f"  🏁 [TRAIN FINISH #{total_finishes}] Step {global_step} | Lap Time: {lap_time:.2f}s | Mean Speed: {mean_spd:.1f} km/h")
             
             obs = next_obs
             if is_done:
                 obs, info = env.reset()
                 
         # 2. Ước tính giá trị trạng thái kế tiếp để tính GAE
-        with_deterministic = True
         _, _, next_value = agent.select_action(obs, deterministic=True)
         advantages, returns = agent.compute_gae(rewards, values, dones, next_value)
         
-        # 3. Cập nhật mạng Actor-Critic (Decoupled optimization)
+        # 3. Cập nhật mạng Actor-Critic
         train_info = agent.update(states, actions, log_probs, advantages, returns, values)
         update_idx += 1
         
-        # 4. Đánh giá định kỳ
+        # 4. Đánh giá định kỳ (Evaluation)
         if update_idx % args.eval_freq == 0 or global_step >= target_total_steps:
             eval_res = evaluate_agent(env, agent, num_episodes=args.eval_episodes)
             elapsed = time.time() - start_time
@@ -375,7 +366,12 @@ def main():
             metrics["entropy"].append(train_info["entropy"])
             metrics["total_finishes"] = total_finishes
             
-            crash_info_str = f" | Crashes at: {eval_res['crash_locations']}" if eval_res['crash_locations'] else " | Clean Lap"
+            if eval_res['crash_locations']:
+                crash_info_str = f" | Crashes at: {eval_res['crash_locations']}"
+            elif eval_res['mean_completion'] >= 98.0:
+                crash_info_str = f" | Clean Lap 🏁 (Time: {eval_res['mean_time']:.1f}s, Mean Speed: {eval_res['mean_speed']:.1f} km/h)"
+            else:
+                crash_info_str = " | Stalled on track"
             print(
                 f"[Step {global_step:06d}/{target_total_steps} | Finishes: {total_finishes}] "
                 f"FPS: {fps} | "
@@ -387,32 +383,35 @@ def main():
                 f"{crash_info_str}"
             )
             
-            # 1. Lưu checkpoint tốt nhất dựa trên tỷ lệ hoàn thành chặng đua (Best Agent)
-            if eval_res["mean_completion"] >= best_completion:
-                best_completion = eval_res["mean_completion"]
-                best_model_path = os.path.join(args.save_dir, "best_agent.pt")
-                agent.save(best_model_path)
-                print(f"  [RECORD - BEST] Checkpoint ky luc moi da luu: {best_model_path} (Completion: {best_completion:.1f}%)")
-                
-            # 2. Lưu checkpoint có Completion cao VÀ Vận tốc cao nhất (Fastest Agent)
+            # CHỈ LƯU DUY NHẤT BEST_AGENT TRONG QUÁ TRÌNH VALIDATION
             cur_comp = eval_res["mean_completion"]
             cur_speed = eval_res["mean_speed"]
-            if cur_comp >= 50.0:
-                if (cur_comp >= best_fastest_comp - 3.0 and cur_speed > best_fastest_speed) or (cur_comp > best_fastest_comp and cur_speed >= best_fastest_speed * 0.95):
-                    best_fastest_speed = max(best_fastest_speed, cur_speed)
-                    best_fastest_comp = max(best_fastest_comp, cur_comp)
-                    fastest_model_path = os.path.join(args.save_dir, "fastest_agent.pt")
-                    agent.save(fastest_model_path)
-                    print(f"  [RECORD - FASTEST] Checkpoint toc do cao nhat da luu: {fastest_model_path} (Comp: {cur_comp:.1f}%, Speed: {cur_speed:.1f} km/h)")
+            cur_time = eval_res["mean_time"]
+            is_new_best = False
+            record_msg = ""
 
-            # 3. Lưu checkpoint mới nhất
-            latest_model_path = os.path.join(args.save_dir, "latest_agent.pt")
-            agent.save(latest_model_path)
-            
-            # 4. Lưu metrics JSON định kỳ
+            if cur_comp >= 98.0:
+                if best_eval_completion < 98.0 or cur_time < best_eval_lap_time or cur_speed > best_eval_speed:
+                    best_eval_lap_time = min(best_eval_lap_time, cur_time)
+                    best_eval_speed = max(best_eval_speed, cur_speed)
+                    best_eval_completion = max(best_eval_completion, cur_comp)
+                    is_new_best = True
+                    record_msg = f"Clean Lap 🏁 Time: {cur_time:.1f}s | Speed: {cur_speed:.1f} km/h"
+            else:
+                if cur_comp > best_eval_completion:
+                    best_eval_completion = cur_comp
+                    is_new_best = True
+                    record_msg = f"Quãng đường kỷ lục: {best_eval_completion:.1f}%"
+
+            if is_new_best:
+                best_model_path = os.path.join(args.save_dir, "best_agent.pt")
+                agent.save(best_model_path)
+                print(f"  🏆 [VALID RECORD - BEST AGENT SAVED] {best_model_path} ({record_msg})")
+
+            # Lưu metrics JSON định kỳ
             save_metrics_json(metrics, log_dir=args.log_dir)
             
-            # 5. Ghi log liên tục lên TensorBoard Dashboard
+            # Ghi log liên tục lên TensorBoard Dashboard
             writer.add_scalar("Performance/Eval_Return", eval_res["mean_return"], global_step)
             writer.add_scalar("Performance/Track_Completion_Pct", eval_res["mean_completion"], global_step)
             writer.add_scalar("Performance/Mean_Speed_kmh", eval_res["mean_speed"], global_step)
@@ -420,18 +419,15 @@ def main():
             writer.add_scalar("Performance/Episode_Length", eval_res["mean_length"], global_step)
             writer.add_scalar("Performance/Total_Finishes", total_finishes, global_step)
             
-            # Ghi nhận phân bổ các dòng thưởng (Reward Breakdown) trực tiếp trên Web Dashboard
             writer.add_scalars("Reward_Breakdown/Streams", {
-                "Milestones": eval_res["mean_milestone"],
-                "Speed": eval_res["mean_speed_reward"],
-                "Brake": eval_res["mean_brake_reward"],
+                "Progress": eval_res["mean_progress_reward"],
+                "Steer_Smooth": eval_res["mean_steer_smooth_reward"],
+                "Guide": eval_res["mean_guide_reward"],
                 "Idle": eval_res["mean_idle_penalty"],
-                "Delta_SIL": eval_res["mean_delta_reward"],
-                "Terminal": eval_res["mean_terminal_macro"],
+                "Macro": eval_res["mean_macro_reward"],
             }, global_step)
             writer.add_scalar("Reward_Breakdown/Total_Return", eval_res["mean_return"], global_step)
             
-            # Ghi nhận các hàm Loss
             writer.add_scalar("Loss/Policy_Loss", train_info["policy_loss"], global_step)
             writer.add_scalar("Loss/Value_Loss", train_info["value_loss"], global_step)
             writer.add_scalar("Loss/Entropy", train_info["entropy"], global_step)
@@ -446,10 +442,9 @@ def main():
     writer.close()
     env.close()
     print("=" * 70)
-    print(f">> HOÀN THÀNH QUÁ TRÌNH HUẤN LUYỆN ({global_step}/{target_total_steps} steps, {total_finishes} finishes)!")
-    print(f">> Best Model (Kỷ lục Completion): {os.path.join(args.save_dir, 'best_agent.pt')}")
-    print(f">> Fastest Model (Tốc độ cao nhất): {os.path.join(args.save_dir, 'fastest_agent.pt')}")
-    print(f">> Latest Model (Checkpoint cuối): {os.path.join(args.save_dir, 'latest_agent.pt')}")
+    print(f">> HOÀN THÀNH HUẤN LUYỆN ({global_step}/{target_total_steps} steps, {total_finishes} finishes)!")
+    print(f">> Best Agent: {os.path.join(args.save_dir, 'best_agent.pt')}")
+    print("=" * 70)
     print(f">> Biểu đồ học thuật: plots/learning_curves.png")
     print(f">> Chẩn đoán Telemetry: plots/telemetry_diagnostic.png")
     print("=" * 70)

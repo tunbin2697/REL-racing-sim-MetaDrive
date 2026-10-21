@@ -76,7 +76,13 @@ def main():
             speeds.append(step_info.get("speed_km_h", step_info.get("velocity", 0.0) * 3.6))
             
             if terminated or truncated:
-                crashed = step_info.get("crash", False) or step_info.get("crash_sidewalk", False)
+                crashed = (
+                    step_info.get("crash", False)
+                    or step_info.get("crash_sidewalk", False)
+                    or step_info.get("crash_vehicle", False)
+                    or step_info.get("crash_object", False)
+                    or (step_info.get("termination_reason") == "crash_or_track_limit")
+                )
                 arrived = step_info.get("arrive_dest", False)
                 comp = step_info.get("route_completion", 0.0) * 100.0
                 
@@ -91,7 +97,7 @@ def main():
                 mean_speeds.append(np.mean(speeds) if speeds else 0.0)
                 max_speeds.append(np.max(speeds) if speeds else 0.0)
                 
-                status_str = "ARRIVED" if arrived else ("CRASHED" if crashed else "OUT_OF_TIME")
+                status_str = "ARRIVED" if arrived else ("CRASH_TRACK_LIMIT" if crashed else "OUT_OF_TIME")
                 print(f"  - Round {ep+1:02d}: Return: {ep_ret:+6.2f} | Progress: {comp:5.1f}% | Avg Speed: {np.mean(speeds):4.1f} km/h | Status: {status_str}")
                 break
 

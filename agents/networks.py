@@ -32,10 +32,15 @@ class ActorCritic(nn.Module):
         actor_out = layer_init(nn.Linear(hidden_dim, action_dim), std=0.01)
         # Khởi tạo thiên vị chân ga ban đầu (Forward Drive Bias):
         # Action 0 = Steering (0.0: thẳng)
-        # Action 1 = Throttle (+0.6: tương đương tanh(0.6) ~ 0.54, giúp xe lăn bánh thay vì đứng im chết máy)
+        # Action 1 = Throttle (+0.5: giúp xe lăn bánh xuất phát)
+        # Action 2 = Brake (-0.8: ban đầu không kẹt phanh, nhưng sigma rộng cho phép khám phá phanh)
         if actor_out.bias is not None:
             actor_out.bias.data[0] = 0.0
-            actor_out.bias.data[1] = 0.6
+            if action_dim == 2:
+                actor_out.bias.data[1] = 0.6
+            elif action_dim >= 3:
+                actor_out.bias.data[1] = 0.5
+                actor_out.bias.data[2] = -0.8
             
         self.actor_mean = nn.Sequential(
             layer_init(nn.Linear(state_dim, hidden_dim)),

@@ -29,9 +29,10 @@ from agents.ppo_agent import PPOAgent
 def parse_args():
     parser = argparse.ArgumentParser(description="AI Spectator Mode in MetaDrive 3D")
     parser.add_argument("--model", type=str, default="models/best_agent.pt", help="Đường dẫn weights của AI")
-    parser.add_argument("--map", type=int, default=3, help="Độ dài bản đồ đua (số block cua)")
+    parser.add_argument("--map", type=str, default="silverstone", help="Bản đồ đua ('silverstone' hoặc 'racing')")
     parser.add_argument("--traffic", type=float, default=0.0, help="Mật độ chướng ngại vật/xe khác (0.0 - 0.2)")
     parser.add_argument("--seed", type=int, default=42, help="Seed tạo bản đồ")
+    parser.add_argument("--stochastic", action="store_true", help="Chạy ở chế độ Stochastic (hành vi thực chiến lúc huấn luyện hoàn thành vòng đua)")
     return parser.parse_args()
 
 def main():
@@ -59,7 +60,9 @@ def main():
     # Nạp Agent tương thích với không gian quan sát
     obs_shape = env.observation_space.shape
     state_dim = int(obs_shape[0]) if obs_shape is not None else 35
-    agent = PPOAgent(state_dim=state_dim, action_dim=2)
+    act_shape = env.action_space.shape
+    action_dim = int(act_shape[0]) if act_shape is not None else 3
+    agent = PPOAgent(state_dim=state_dim, action_dim=action_dim)
     if os.path.exists(args.model):
         print(f">> Đang nạp weights từ: {args.model}")
         agent.load(args.model)
@@ -74,28 +77,36 @@ def main():
         
         while True:
             step += 1
-            # AI quyết định hành động tối ưu
-            action, _, _ = agent.select_action(obs, deterministic=True)
+            # AI quyết định hành động (Deterministic hoặc Stochastic)
+            is_deterministic = not args.stochastic
+            action, _, _ = agent.select_action(obs, deterministic=is_deterministic)
             obs, reward, terminated, truncated, info = env.step(action)
             
             speed_kmh = info.get("speed_km_h", info.get("speed_kmh", 0.0))
             comp = info.get("route_completion", 0.0) * 100.0
             steer = action[0]
-            throttle = action[1]
+            if len(action) >= 3:
+                throttle = 0.5 * (float(action[1]) + 1.0)
+                brake = 0.5 * (float(action[2]) + 1.0)
+                action_str = f"Steer: {steer:+.2f} | Thr: {throttle:.2f} | Brk: {brake:.2f}"
+            else:
+                throttle = action[1]
+                action_str = f"Steer: {steer:+.2f} | Pedal: {throttle:+.2f}"
             
             delta_t = info.get("delta_time", 0.0)
             delta_str = f"+{delta_t:.2f}s" if delta_t >= 0 else f"{delta_t:.2f}s"
             delta_color = info.get("delta_color", "gray")
             
+            mode_str = "DETERMINISTIC" if is_deterministic else "STOCHASTIC (THỰC CHIẾN)"
             # Text HUD
             hud_text = {
-                "RL AGENT SPECTATOR": f"Lap: {lap_count} | Step: {step}",
+                "RL AGENT SPECTATOR": f"Lap: {lap_count} | Step: {step} [{mode_str}]",
                 "Delta Bar": f"[{delta_color.upper()}] {delta_str}",
                 "Current Lap": f"{info.get('lap_time', 0.0):.2f}s",
                 "Best Lap": f"{info.get('best_lap_time', 0.0):.2f}s",
                 "Speed": f"{speed_kmh:.1f} km/h",
                 "Completion": f"{comp:.1f}%",
-                "Action": f"Steer: {steer:+.2f} | Throttle: {throttle:+.2f}",
+                "Action": action_str,
                 "Reward": f"{reward:+.2f}",
             }
             env.render(text=hud_text)
