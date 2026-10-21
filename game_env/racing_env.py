@@ -23,6 +23,8 @@ TerrainProperty.map_region_size = 2048
 from metadrive.envs.marl_envs.marl_racing_env import RacingMapManager
 from game_env.silverstone_map import SilverstoneMapManager
 from game_env.telemetry import TelemetryTracker
+from game_env.vehicle import BaseRaceVehicle, GT3RaceCar, DefaultCivilianSedan
+from typing import Optional
 
 
 class SingleRacingMetaDrive(MetaDriveEnv):
@@ -74,9 +76,13 @@ class MetaRacingEnv(gym.Env):
         milestone_respawn: bool = False,
         map_type: str = "silverstone",
         max_speed_km_h: float = 120.0,
+        vehicle: Optional[BaseRaceVehicle] = None,
         **kwargs,
     ):
         super().__init__()
+        
+        # Thực thể phương tiện đua xe chuyên biệt (OOP Race Car Entity)
+        self.car: BaseRaceVehicle = vehicle if vehicle is not None else GT3RaceCar()
         
         self.use_render = use_render
         self.window_size = window_size
@@ -85,7 +91,7 @@ class MetaRacingEnv(gym.Env):
         self.start_seed = start_seed
         self.num_scenarios = num_scenarios
         self.dt = 0.10
-        self.max_speed_km_h = 120.0  # Cố định trần tốc độ 120 km/h, bỏ curriculum dynamic
+        self.max_speed_km_h = float(self.car.cfg.max_speed_km_h)
         if "map_config" in kwargs and isinstance(kwargs["map_config"], str):
             map_type = kwargs["map_config"]
         self.map_type = map_type
@@ -346,25 +352,6 @@ class MetaRacingEnv(gym.Env):
         obs = np.array(ego_state + track_info + lookahead_features, dtype=np.float32)
         return obs
 
-    def _apply_gt3_specs(self, vehicle):
-        """
-        Nâng cấp vật lý của xe lên chuẩn Xe Đua Thể Thao GT3 (GT3 Race Specification):
-        1. Phanh đua thể thao hiệu năng cao: max_brake_force = 650.0 N (hãm tốc tức thì, gấp 5.5 lần phanh sedan 119 N).
-        2. Động cơ thể thao GT3: max_engine_force = 850.0 N.
-        3. Tỷ số truyền & góc lái xe đua GT3: max_steering = 20.0 độ (thay vì 40.0 độ của xe sedan đi phố).
-        4. Lốp xe đua bán trơn (Racing Slicks): Hệ số ma sát Bullet wheel friction = 1.35 (thay vì 0.90).
-        """
-        if hasattr(vehicle, "config"):
-            vehicle.config["max_speed_km_h"] = float(self.max_speed_km_h)
-            vehicle.config["max_brake_force"] = 650.0
-            vehicle.config["max_engine_force"] = 850.0
-            vehicle.config["max_steering"] = 20.0
-            vehicle.config["wheel_friction"] = 1.35
-        vehicle.max_steering = 20.0
-        if hasattr(vehicle, "wheels"):
-            for wheel in vehicle.wheels:
-                wheel.setFrictionSlip(1.35)
-
     def reset(self, *, seed=None, options=None):
         if seed is not None:
             _, info = self.env.reset(seed=seed)
@@ -375,7 +362,7 @@ class MetaRacingEnv(gym.Env):
             self._init_circuit_polyline()
             
         self.current_step = 0
-        self.last_action = np.zeros(3, dtype=np.float32)
+        self.last_action = np.zeros(2, dtype=np.float32)
         self.lap_completed = False
         self.telemetry.reset()
         self.episode_history = []
@@ -384,10 +371,10 @@ class MetaRacingEnv(gym.Env):
         
         vehicle = self.env.agent
         assert vehicle is not None, "Vehicle agent was not properly spawned in MetaDrive"
-        self._apply_gt3_specs(vehicle)
+        self.car.attach_agent(vehicle)
             
         # Lấy Frenet s ban đầu
-        _, current_s = self._get_track_s(vehicle.position)
+        _, current_s = self._get_track_s(self.car.position)
         self.last_s = current_s
         self.telemetry.cumulative_distance = current_s
         
@@ -401,65 +388,37 @@ class MetaRacingEnv(gym.Env):
         info["mean_speed_km_h"] = 0.0
         return obs, info
 
-    def check_track_limits_and_apply_runoff(self, vehicle):
+    def check_track_limits_and_apply_runoff(self):
         """
         Quản lý lề Runoff & Giới hạn đường đua (Track Limits) chuẩn thể thao FIA 4 bánh:
         - Tim đường thực tế nằm ở giữa 2 làn (đường nhựa rộng 9.0m, khoảng cách tới mép nhựa +-4.5m).
         - Gờ Kerb / Runoff: mở rộng thêm 1.0m (bán kính tới 5.5m từ tim đường).
         - Xe được phép chém lề Kerb để mở cua Apex tối ưu.
         - Xử thua (terminated = True) khi:
-          + Cả 4 góc thân xe hoàn toàn rơi khỏi lề Runoff (> 5.5m từ tim đường).
+          + Cả 4 góc thân xe hoàn toàn rơi khỏi lề Runoff (> 4.5m từ tim đường).
           + Hoặc xe bị lật / văng lơ lửng ngoài không gian (roll/pitch > 35 độ hoặc rơi khỏi mặt đường z < -0.1).
         """
-        length = float(getattr(vehicle, "LENGTH", 4.5))
-        width = float(getattr(vehicle, "WIDTH", 1.85))
-        pos = np.array(vehicle.position[:2], dtype=np.float32)
-        heading = float(vehicle.heading_theta)
-        
-        cos_h = np.cos(heading)
-        sin_h = np.sin(heading)
-        fwd = np.array([cos_h, sin_h], dtype=np.float32)
-        lat = np.array([-sin_h, cos_h], dtype=np.float32)
-        
-        corners = [
-            pos + 0.5 * length * fwd + 0.5 * width * lat,
-            pos + 0.5 * length * fwd - 0.5 * width * lat,
-            pos - 0.5 * length * fwd + 0.5 * width * lat,
-            pos - 0.5 * length * fwd - 0.5 * width * lat,
-        ]
-        
+        corners = self.car.get_bounding_corners()
         corner_offsets = []
         for c in corners:
             idx, _ = self._get_track_s(c, self.current_track_idx)
             dist_to_center = float(np.linalg.norm(c - self.track_xy[idx]))
             corner_offsets.append(dist_to_center)
             
-        max_offset = max(corner_offsets)
-        min_offset = min(corner_offsets)
+        max_offset = max(corner_offsets) if corner_offsets else 0.0
+        min_offset = min(corner_offsets) if corner_offsets else 0.0
         
         is_full_out = False
         on_runoff = False
-        
-        # Kiểm tra trạng thái lật xe / rơi rớt khỏi không gian 3D
-        is_airborne_or_flipped = False
-        if hasattr(vehicle, "origin"):
-            pos_3d = vehicle.origin.get_pos()
-            hpr = vehicle.origin.get_hpr()
-            if pos_3d[2] < -0.1 or pos_3d[2] > 2.0 or abs(hpr[1]) > 35.0 or abs(hpr[2]) > 35.0:
-                is_airborne_or_flipped = True
-        
-        idx, current_s = self._get_track_s(pos, self.current_track_idx)
-        # Chuẩn mép đường nhựa thực tế: Mỗi bên cách tim đường 4.5m (tổng bề rộng mặt đường nhựa 9.0m)
-        # Phương án 1 (Chuẩn thể thao FIA): Cả 4 bánh rời khỏi mặt đường nhựa (min_offset > 4.5m) là bị terminate ngay lập tức.
-        # Xóa bỏ hoàn toàn kerb ảo và ngoại lệ 120m xuất phát để đảm bảo tính trực quan và trung thực khi render 3D.
+        is_airborne_or_flipped = self.car.is_airborne_or_flipped()
         limit_threshold = 4.5
         
         if (
             min_offset > limit_threshold
             or is_airborne_or_flipped
-            or vehicle.crash_object
-            or vehicle.crash_vehicle
-            or vehicle.crash_sidewalk
+            or self.car.crash_object
+            or self.car.crash_vehicle
+            or self.car.crash_sidewalk
         ):
             is_full_out = True
         elif max_offset > 4.5:
@@ -469,27 +428,11 @@ class MetaRacingEnv(gym.Env):
 
     def step(self, action):
         self.current_step += 1
-        action = np.clip(np.array(action, dtype=np.float32), -1.0, 1.0)
         
-        # Hỗ trợ 2D [steer, pedal] (pedal > 0 là ga, pedal < 0 là phanh) và 3D tương thích ngược
-        steer = float(action[0])
-        if len(action) >= 3:
-            thr = 0.5 * (float(action[1]) + 1.0)
-            brk = 0.5 * (float(action[2]) + 1.0)
-            net_pedal = thr * (1.0 - brk) - brk if brk > 0.05 else thr
-        else:
-            net_pedal = float(action[1])
-        net_pedal = float(np.clip(net_pedal, -1.0, 1.0))
+        # 1. Cơ cấu chấp hành xe đua (Xử lý pedal, slew rate limit chống rung lắc)
+        action_applied, delta_steer, net_pedal = self.car.process_action(action)
         throttle = max(0.0, net_pedal)
         brake = max(0.0, -net_pedal)
-            
-        # Bộ giới hạn tốc độ đánh lái xe đua GT3 (Slew Rate Limiter) chống rung lắc 10Hz
-        # Với góc lái 20 độ, max_steer_delta = 0.18 cho phép đánh lái mượt mà, chống giật cục
-        max_steer_delta = 0.18
-        delta_steer = steer - float(self.last_action[0])
-        steer_applied = float(self.last_action[0]) + float(np.clip(delta_steer, -max_steer_delta, max_steer_delta))
-        steer_applied = float(np.clip(steer_applied, -1.0, 1.0))
-        action_applied = np.array([steer_applied, net_pedal], dtype=np.float32)
         
         _, _, terminated, truncated, info = self.env.step(action_applied)
         
@@ -497,18 +440,18 @@ class MetaRacingEnv(gym.Env):
         assert vehicle is not None, "Vehicle agent was lost during step"
         current_time = self.current_step * self.dt
         
-        # 1. Kiểm tra Runoff & Track Limits theo chuẩn FIA 4 bánh
-        on_runoff, is_full_out = self.check_track_limits_and_apply_runoff(vehicle)
+        # 2. Kiểm tra Runoff & Track Limits theo chuẩn FIA 4 bánh
+        on_runoff, is_full_out = self.check_track_limits_and_apply_runoff()
         
-        # 2. Tính toán tọa độ dọc tim làn đường Frenet s
-        idx, current_s = self._get_track_s(vehicle.position, self.current_track_idx)
+        # 3. Tính toán tọa độ dọc tim làn đường Frenet s
+        idx, current_s = self._get_track_s(self.car.position, self.current_track_idx)
         self.current_track_idx = idx
         
-        # 3. Ghi nhận Telemetry chi tiết với Frenet s
+        # 4. Ghi nhận Telemetry chi tiết với Frenet s
         sample = self.telemetry.log_step(
             current_time=current_time,
-            position=vehicle.position,
-            velocity=vehicle.velocity,
+            position=self.car.position,
+            velocity=self.car.velocity,
             steering=float(action_applied[0]),
             throttle_brake=float(net_pedal),
             dt=self.dt,
@@ -517,9 +460,9 @@ class MetaRacingEnv(gym.Env):
         self.telemetry.cumulative_distance = float(current_s)
         
         self.episode_history.append({
-            "pos": [float(vehicle.position[0]), float(vehicle.position[1])],
-            "heading": float(vehicle.heading_theta),
-            "vel": [float(vehicle.velocity[0]), float(vehicle.velocity[1])],
+            "pos": [float(self.car.position[0]), float(self.car.position[1])],
+            "heading": float(self.car.heading_theta),
+            "vel": [float(self.car.velocity[0]), float(self.car.velocity[1])],
             "track_s": float(current_s),
             "step": int(self.current_step),
         })
@@ -565,7 +508,7 @@ class MetaRacingEnv(gym.Env):
         micro_reward = r_progress + r_steer_smooth + r_guide + r_center + r_idle
         macro_reward = 0.0
         
-        self.last_action = np.array([steer_applied, net_pedal], dtype=np.float32)
+        self.last_action = np.array([action_applied[0], net_pedal], dtype=np.float32)
         
         # Kiểm tra hoàn thành vòng đua (cán đích)
         progress_ratio = float(np.clip(current_s / self.circuit_length, 0.0, 1.0))
@@ -573,7 +516,7 @@ class MetaRacingEnv(gym.Env):
         arrive_dest = bool((info.get("arrive_dest", False) or progress_ratio >= 0.985) and has_completed_majority)
         
         # --- TẦNG VĨ MÔ (Macro Reward) ---
-        if is_full_out or vehicle.crash_vehicle or vehicle.crash_object:
+        if is_full_out or self.car.crash_vehicle or self.car.crash_object:
             terminated = True
             info["termination_reason"] = "crash_or_track_limit"
             info["crash_distance"] = float(current_s)
