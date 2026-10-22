@@ -45,3 +45,9 @@ main_index_*.png
 scratch/
 runs/
 logs/*_prev_run.json
+
+# Antigravity Assistant & Agent Local Rules
+AGENTS.md
+GEMINI.md
+.antigravity/
+.agents/

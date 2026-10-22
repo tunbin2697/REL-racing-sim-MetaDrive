@@ -48,8 +48,8 @@ class PPOAgent:
         self.actor_params = list(self.ac.actor_mean.parameters()) + [self.ac.actor_logstd]
         self.critic_params = list(self.ac.critic.parameters())
         
-        self.lr_actor = lr * 0.2
-        self.lr_critic = lr * 1.5
+        self.lr_actor = lr
+        self.lr_critic = lr
         self.actor_optimizer = optim.Adam(self.actor_params, lr=self.lr_actor, eps=1e-5)
         self.critic_optimizer = optim.Adam(self.critic_params, lr=self.lr_critic, eps=1e-5)
         

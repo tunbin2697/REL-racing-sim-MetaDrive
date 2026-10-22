@@ -146,8 +146,9 @@ class MetaRacingEnv(gym.Env):
         # 35 chiều Compact Racing State
         self.obs_dim = 35
         self.observation_space = spaces.Box(-np.inf, np.inf, shape=(self.obs_dim,), dtype=np.float32)
-        # 2 chiều Continuous Racing Action: [steer, pedal] (pedal > 0 là ga, pedal < 0 là phanh)
-        self.action_space = spaces.Box(-1.0, 1.0, shape=(2,), dtype=np.float32)
+        # 3 chiều Continuous Racing Action: [steer, throttle, brake]
+        # steer: [-1, 1], throttle: [-1, 1] -> [0, 1], brake: [-1, 1] -> [0, 1]
+        self.action_space = spaces.Box(-1.0, 1.0, shape=(3,), dtype=np.float32)
         
         # Dữ liệu hình học đường đua dạng Polyline
         self.circuit_initialized = False
@@ -163,7 +164,7 @@ class MetaRacingEnv(gym.Env):
         # Biến trạng thái
         self.current_step = 0
         self.last_s = 0.0
-        self.last_action = np.zeros(2, dtype=np.float32)
+        self.last_action = np.zeros(3, dtype=np.float32)
         self.lap_completed = False
         self.episode_history = []
         self.last_crash_history = []
@@ -362,7 +363,7 @@ class MetaRacingEnv(gym.Env):
             self._init_circuit_polyline()
             
         self.current_step = 0
-        self.last_action = np.zeros(2, dtype=np.float32)
+        self.last_action = np.zeros(3, dtype=np.float32)
         self.lap_completed = False
         self.telemetry.reset()
         self.episode_history = []
@@ -489,26 +490,18 @@ class MetaRacingEnv(gym.Env):
         # b. Phạt rung lắc đánh lái để vô-lăng mượt mà, ổn định trên đường thẳng
         r_steer_smooth = -0.10 * float(delta_steer ** 2)
 
-        # c. Hướng dẫn phanh trước cua gắt & đạp ga trên đường thẳng (Chuẩn Markov MDP thuần túy)
-        # Giữ cố định xuyên suốt để không làm biến đổi phân phối Value Function của Critic
-        r_guide = 0.0
-        upcoming_kappa = max(abs(obs[18]), abs(obs[22]), abs(obs[26]), abs(obs[30]))
-        if upcoming_kappa > 0.28 and speed_km_h > 50.0 and net_pedal < -0.05:
-            r_guide = 0.08  # Thưởng phanh giảm tốc an toàn chuẩn bị ôm cua gắt
-        elif upcoming_kappa < 0.10 and net_pedal > 0.25:
-            r_guide = 0.03  # Thưởng đạp ga tăng tốc trên đường thẳng
-
-        # d. Phạt lệch tim đường (Racing Line Centering): khuyến khích đi giữa lòng đường, tránh bám mép cỏ
+        # c. Phạt lệch tim đường (Racing Line Centering): khuyến khích đi trong lòng đường, tránh bám mép cỏ
         lat_offset_val = float(obs[9]) * 4.5  # Khôi phục từ ego_state lat_offset / 4.5
         r_center = -0.04 * float((lat_offset_val / 4.5) ** 2)
 
-        # e. Phạt đứng yên / quay mòng mòng tại chỗ (< 10 km/h)
+        # d. Phạt đứng yên / quay mòng mòng tại chỗ (< 10 km/h)
         r_idle = -0.15 if speed_km_h < 10.0 else 0.0
         
-        micro_reward = r_progress + r_steer_smooth + r_guide + r_center + r_idle
+        # Hàm thưởng thuần túy Markov (Không mớm quy tắc tay ga/phanh):
+        micro_reward = r_progress + r_steer_smooth + r_center + r_idle
         macro_reward = 0.0
         
-        self.last_action = np.array([action_applied[0], net_pedal], dtype=np.float32)
+        self.last_action = np.array(action, dtype=np.float32)
         
         # Kiểm tra hoàn thành vòng đua (cán đích)
         progress_ratio = float(np.clip(current_s / self.circuit_length, 0.0, 1.0))
@@ -569,7 +562,7 @@ class MetaRacingEnv(gym.Env):
         info["macro_reward"] = float(macro_reward)
         info["r_progress"] = float(r_progress)
         info["r_steer_smooth"] = float(r_steer_smooth)
-        info["r_guide"] = float(r_guide)
+        info["r_center"] = float(r_center)
         info["r_idle"] = float(r_idle)
         info["throttle"] = float(throttle)
         info["brake"] = float(brake)

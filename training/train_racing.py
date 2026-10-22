@@ -72,7 +72,7 @@ def evaluate_agent(env, agent, num_episodes=3):
     eval_speeds = []
     eval_progress_rew = []
     eval_steer_smooth_rew = []
-    eval_guide_rew = []
+    eval_center_rew = []
     eval_idle_pen = []
     eval_macros_rew = []
     crash_locations = []
@@ -85,7 +85,7 @@ def evaluate_agent(env, agent, num_episodes=3):
         ep_len = 0
         ep_progress = 0.0
         ep_smooth = 0.0
-        ep_guide = 0.0
+        ep_center = 0.0
         ep_idle = 0.0
         ep_macro = 0.0
         speeds = []
@@ -97,7 +97,7 @@ def evaluate_agent(env, agent, num_episodes=3):
             ep_len += 1
             ep_progress += float(info.get("r_progress", 0.0))
             ep_smooth += float(info.get("r_steer_smooth", 0.0))
-            ep_guide += float(info.get("r_guide", 0.0))
+            ep_center += float(info.get("r_center", 0.0))
             ep_idle += float(info.get("r_idle", 0.0))
             ep_macro += float(info.get("macro_reward", 0.0))
             speeds.append(info.get("speed_km_h", 0.0))
@@ -119,7 +119,7 @@ def evaluate_agent(env, agent, num_episodes=3):
         eval_times.append(cur_time)
         eval_progress_rew.append(ep_progress)
         eval_steer_smooth_rew.append(ep_smooth)
-        eval_guide_rew.append(ep_guide)
+        eval_center_rew.append(ep_center)
         eval_idle_pen.append(ep_idle)
         eval_macros_rew.append(ep_macro)
         
@@ -131,7 +131,7 @@ def evaluate_agent(env, agent, num_episodes=3):
         "mean_speed": float(np.mean(eval_speeds)),
         "mean_progress_reward": float(np.mean(eval_progress_rew)),
         "mean_steer_smooth_reward": float(np.mean(eval_steer_smooth_rew)),
-        "mean_guide_reward": float(np.mean(eval_guide_rew)),
+        "mean_center_reward": float(np.mean(eval_center_rew)),
         "mean_idle_penalty": float(np.mean(eval_idle_pen)),
         "mean_macro_reward": float(np.mean(eval_macros_rew)),
         "crash_rate": float(crash_count / max(1, num_episodes)),
@@ -315,7 +315,7 @@ def main():
     writer.add_scalars("Reward_Breakdown/Streams", {
         "Progress": eval_res["mean_progress_reward"],
         "Steer_Smooth": eval_res["mean_steer_smooth_reward"],
-        "Guide": eval_res["mean_guide_reward"],
+        "Center": eval_res["mean_center_reward"],
         "Idle": eval_res["mean_idle_penalty"],
         "Macro": eval_res["mean_macro_reward"],
     }, global_step)
@@ -430,7 +430,7 @@ def main():
             writer.add_scalars("Reward_Breakdown/Streams", {
                 "Progress": eval_res["mean_progress_reward"],
                 "Steer_Smooth": eval_res["mean_steer_smooth_reward"],
-                "Guide": eval_res["mean_guide_reward"],
+                "Center": eval_res["mean_center_reward"],
                 "Idle": eval_res["mean_idle_penalty"],
                 "Macro": eval_res["mean_macro_reward"],
             }, global_step)
