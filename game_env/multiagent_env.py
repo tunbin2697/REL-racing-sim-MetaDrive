@@ -29,7 +29,6 @@ class MultiAgentRacingEnv:
         window_size=(1280, 720),
         horizon: int = 3000,
         start_seed: int = 42,
-        reference_lap_file: str = "logs/reference_lap.json",
         map_config=None,
         vehicle=None,
         **kwargs,
@@ -46,8 +45,8 @@ class MultiAgentRacingEnv:
         self.car_ai = GT3RaceCar()
         
         # Telemetry trackers cho cả Player và AI
-        self.telemetry_player = TelemetryTracker(reference_lap_file=reference_lap_file)
-        self.telemetry_ai = TelemetryTracker(reference_lap_file=reference_lap_file)
+        self.telemetry_player = TelemetryTracker()
+        self.telemetry_ai = TelemetryTracker()
         
         map_cfg = {
             "lane_num": 2,

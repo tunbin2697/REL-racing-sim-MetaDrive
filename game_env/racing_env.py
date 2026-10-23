@@ -24,7 +24,8 @@ from metadrive.envs.marl_envs.marl_racing_env import RacingMapManager
 from game_env.silverstone_map import SilverstoneMapManager
 from game_env.telemetry import TelemetryTracker
 from game_env.vehicle import BaseRaceVehicle, GT3RaceCar, DefaultCivilianSedan
-from typing import Optional
+from game_env.benchmark import RacingBenchmarkEngine
+from typing import Optional, Dict
 
 
 class SingleRacingMetaDrive(MetaDriveEnv):
@@ -50,6 +51,23 @@ class SingleRacingMetaDrive(MetaDriveEnv):
             self.engine.update_manager("map_manager", RacingMapManager())
 
     def reset(self, *args, **kwargs):
+        # Fail-safe: Tự động dọn dẹp các đối tượng ngoại lai (như Ghost Car) trước khi reset engine
+        if hasattr(self, "engine") and self.engine is not None and hasattr(self.engine, "clear_objects"):
+            try:
+                from metadrive.component.vehicle.base_vehicle import BaseVehicle
+                managed_ids = set()
+                agent_mgr = getattr(self.engine, "agent_manager", None)
+                if agent_mgr is not None and hasattr(agent_mgr, "spawned_objects"):
+                    managed_ids.update(getattr(agent_mgr, "spawned_objects", {}).keys())
+                extra_objs = [
+                    obj_id for obj_id, obj in getattr(self.engine, "_spawned_objects", {}).items()
+                    if isinstance(obj, BaseVehicle) and obj_id not in managed_ids
+                ]
+                if extra_objs:
+                    self.engine.clear_objects(extra_objs, force_destroy=True)
+            except Exception:
+                pass
+
         ret = super().reset(*args, **kwargs)
         # Đưa tâm của Terrain và Semantic texture về đúng trọng tâm của Silverstone Circuit (411m, -33m)
         if self.current_map is not None and hasattr(self.engine, "terrain") and self.engine.terrain is not None:
@@ -72,8 +90,6 @@ class MetaRacingEnv(gym.Env):
         manual_control: bool = False,
         start_seed: int = 42,
         num_scenarios: int = 1,
-        reference_lap_file: str = "logs/reference_lap.json",
-        milestone_respawn: bool = False,
         map_type: str = "silverstone",
         max_speed_km_h: float = 120.0,
         vehicle: Optional[BaseRaceVehicle] = None,
@@ -100,6 +116,7 @@ class MetaRacingEnv(gym.Env):
         self.telemetry = TelemetryTracker()
         self.best_lap_time = float("inf")
         self.total_finishes = 0
+        self._benchmark_engine: Optional[RacingBenchmarkEngine] = None
         
         # Cấu hình MetaDrive engine (Tắt 240 tia LiDAR chết để tăng tốc độ mô phỏng)
         self.config = {
@@ -587,3 +604,23 @@ class MetaRacingEnv(gym.Env):
     @property
     def vehicle(self):
         return self.env.agent
+
+    def get_benchmark_engine(self) -> RacingBenchmarkEngine:
+        """Khởi tạo hoặc trả về động cơ phân tích học thuật (RacingBenchmarkEngine) đã cache"""
+        if self._benchmark_engine is None:
+            if not self.circuit_initialized or self.num_track_points <= 1:
+                self._init_circuit_polyline()
+            self._benchmark_engine = RacingBenchmarkEngine(
+                track_xy=self.track_xy,
+                track_theta=self.track_theta,
+                track_kappa=self.track_kappa,
+                track_s=self.track_s,
+                vehicle_cfg=self.car.cfg,
+                track_width=9.0,
+            )
+        return self._benchmark_engine
+
+    def evaluate_current_lap_benchmark(self) -> Dict[str, float]:
+        """Đánh giá vòng chạy hiện tại với RacingBenchmarkEngine qua Telemetry OOP"""
+        engine = self.get_benchmark_engine()
+        return self.telemetry.evaluate_with_benchmark(engine)

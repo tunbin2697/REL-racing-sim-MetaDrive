@@ -64,6 +64,15 @@ def main():
     max_speeds = []
     crashes = 0
     successes = 0
+    
+    # Chỉ số Động cơ Phân tích Chuẩn mực (Academic Benchmark)
+    line_maes = []
+    line_rmses = []
+    apex_accuracies = []
+    corner_deltas = []
+    friction_utils = []
+    lap_efficiencies = []
+    theoretical_best_time = 98.65
 
     for ep in range(args.episodes):
         obs, info = env.reset(seed=env.start_seed + ep)
@@ -101,8 +110,18 @@ def main():
                 mean_speeds.append(np.mean(speeds) if speeds else 0.0)
                 max_speeds.append(np.max(speeds) if speeds else 0.0)
                 
+                # Đo lường Benchmark qua Telemetry OOP
+                bench = env.evaluate_current_lap_benchmark()
+                line_maes.append(bench["racing_line_mae_m"])
+                line_rmses.append(bench["racing_line_rmse_m"])
+                apex_accuracies.append(bench["apex_cutting_accuracy_pct"])
+                corner_deltas.append(bench["mean_corner_delta_v_kmh"])
+                friction_utils.append(bench["friction_circle_utilization_pct"])
+                lap_efficiencies.append(bench["lap_efficiency_pct"])
+                theoretical_best_time = bench["theoretical_best_lap_time"]
+                
                 status_str = "ARRIVED" if arrived else ("CRASH_TRACK_LIMIT" if crashed else "OUT_OF_TIME")
-                print(f"  - Round {ep+1:02d}: Return: {ep_ret:+6.2f} | Progress: {comp:5.1f}% | Avg Speed: {np.mean(speeds):4.1f} km/h | Status: {status_str}")
+                print(f"  - Round {ep+1:02d}: Return: {ep_ret:+6.2f} | Progress: {comp:5.1f}% | Avg Speed: {np.mean(speeds):4.1f} km/h | Status: {status_str} | Line MAE: {bench['racing_line_mae_m']:.2f}m | Apex: {bench['apex_cutting_accuracy_pct']:.0f}%")
                 break
 
     env.close()
@@ -117,6 +136,13 @@ def main():
         "mean_speed_kmh": float(np.mean(mean_speeds)),
         "max_speed_kmh": float(np.max(max_speeds)),
         "mean_episode_length": float(np.mean(lengths)),
+        "racing_line_mae_m": float(np.mean(line_maes)) if line_maes else 0.0,
+        "racing_line_rmse_m": float(np.mean(line_rmses)) if line_rmses else 0.0,
+        "apex_cutting_accuracy_pct": float(np.mean(apex_accuracies)) if apex_accuracies else 0.0,
+        "mean_corner_delta_v_kmh": float(np.mean(corner_deltas)) if corner_deltas else 0.0,
+        "friction_circle_utilization_pct": float(np.mean(friction_utils)) if friction_utils else 0.0,
+        "lap_efficiency_pct": float(np.mean(lap_efficiencies)) if lap_efficiencies else 0.0,
+        "theoretical_best_lap_time_s": float(theoretical_best_time),
     }
 
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
@@ -124,13 +150,18 @@ def main():
         json.dump(results, f, indent=2)
 
     print("\n" + "=" * 70)
-    print("🏆 KẾT QUẢ ĐÁNH GIÁ CHUẨN MỰC (FINAL BENCHMARK SUMMARY)")
+    print("🏆 KẾT QUẢ ĐÁNH GIÁ CHUẨN MỰC (FINAL ACADEMIC BENCHMARK SUMMARY)")
     print("=" * 70)
     print(f"  - Mean Episodic Return:        {results['mean_return']:+.2f} ± {results['std_return']:.2f}")
     print(f"  - Average Track Completion:    {results['mean_completion_rate']:.1f}%")
     print(f"  - Lap Success Rate:            {results['success_rate']*100:.1f}%")
     print(f"  - Crash Rate:                  {results['crash_rate']*100:.1f}%")
     print(f"  - Average Velocity:            {results['mean_speed_kmh']:.1f} km/h (Max: {results['max_speed_kmh']:.1f} km/h)")
+    print(f"  - Racing Line Cross-Track MAE: {results['racing_line_mae_m']:.2f} m (RMSE: {results['racing_line_rmse_m']:.2f} m)")
+    print(f"  - Apex Cutting Accuracy:       {results['apex_cutting_accuracy_pct']:.1f}%")
+    print(f"  - Corner Speed Delta (ΔV):     {results['mean_corner_delta_v_kmh']:+.1f} km/h")
+    print(f"  - Friction Grip Utilization:   {results['friction_circle_utilization_pct']:.1f}%")
+    print(f"  - Lap Time Efficiency:         {results['lap_efficiency_pct']:.1f}% (vs Theoretical {results['theoretical_best_lap_time_s']:.2f}s)")
     print(f"  - Mean Steps per Episode:      {results['mean_episode_length']:.1f}")
     print(f">> Dữ liệu chi tiết đã lưu vào: {args.out}")
     print("=" * 70)

@@ -64,7 +64,7 @@ def parse_args():
     return parser.parse_args()
 
 def evaluate_agent(env, agent, num_episodes=3):
-    """Đánh giá agent ở chế độ deterministic (chỉ lưu agent khi eval đạt kỷ lục)"""
+    """Đánh giá agent ở chế độ deterministic & tích hợp Động cơ Benchmark Động lực học"""
     eval_returns = []
     eval_lengths = []
     eval_completions = []
@@ -77,6 +77,15 @@ def evaluate_agent(env, agent, num_episodes=3):
     eval_macros_rew = []
     crash_locations = []
     crash_count = 0
+    
+    # Bộ chỉ số học thuật Benchmark
+    eval_line_mae = []
+    eval_line_rmse = []
+    eval_apex_acc = []
+    eval_corner_delta_v = []
+    eval_friction_util = []
+    eval_lap_efficiency = []
+    theoretical_best_lap_time = 98.65
     
     for ep in range(num_episodes):
         target_seed = env.start_seed + (ep % max(1, getattr(env, "num_scenarios", 1)))
@@ -123,6 +132,18 @@ def evaluate_agent(env, agent, num_episodes=3):
         eval_idle_pen.append(ep_idle)
         eval_macros_rew.append(ep_macro)
         
+        # Đánh giá benchmark qua Telemetry OOP (Ground Truth Racing Line & Speed Profile)
+        if hasattr(env, "evaluate_current_lap_benchmark"):
+            bench = env.evaluate_current_lap_benchmark()
+            eval_line_mae.append(bench.get("racing_line_mae_m", 0.0))
+            eval_line_rmse.append(bench.get("racing_line_rmse_m", 0.0))
+            eval_apex_acc.append(bench.get("apex_cutting_accuracy_pct", 0.0))
+            eval_corner_delta_v.append(bench.get("mean_corner_delta_v_kmh", 0.0))
+            eval_friction_util.append(bench.get("friction_circle_utilization_pct", 0.0))
+            eval_lap_efficiency.append(bench.get("lap_efficiency_pct", 0.0))
+            if "theoretical_best_lap_time" in bench and bench["theoretical_best_lap_time"] > 0:
+                theoretical_best_lap_time = bench["theoretical_best_lap_time"]
+        
     return {
         "mean_return": float(np.mean(eval_returns)),
         "mean_length": float(np.mean(eval_lengths)),
@@ -137,6 +158,13 @@ def evaluate_agent(env, agent, num_episodes=3):
         "crash_rate": float(crash_count / max(1, num_episodes)),
         "crash_locations": crash_locations,
         "max_speed_cap": float(getattr(env, "max_speed_km_h", 120.0)),
+        "racing_line_mae_m": float(np.mean(eval_line_mae)) if eval_line_mae else 0.0,
+        "racing_line_rmse_m": float(np.mean(eval_line_rmse)) if eval_line_rmse else 0.0,
+        "apex_accuracy_pct": float(np.mean(eval_apex_acc)) if eval_apex_acc else 0.0,
+        "corner_delta_v_kmh": float(np.mean(eval_corner_delta_v)) if eval_corner_delta_v else 0.0,
+        "friction_utilization_pct": float(np.mean(eval_friction_util)) if eval_friction_util else 0.0,
+        "lap_efficiency_pct": float(np.mean(eval_lap_efficiency)) if eval_lap_efficiency else 0.0,
+        "theoretical_best_lap_time": float(theoretical_best_lap_time),
     }
 
 
@@ -211,6 +239,11 @@ def main():
         "policy_loss": [],
         "value_loss": [],
         "entropy": [],
+        "racing_line_mae_m": [],
+        "apex_accuracy_pct": [],
+        "corner_delta_v_kmh": [],
+        "friction_utilization_pct": [],
+        "lap_efficiency_pct": [],
         "total_finishes": 0,
         "resume_marks": [],
     }
@@ -293,6 +326,11 @@ def main():
         metrics["policy_loss"].append(0.0)
         metrics["value_loss"].append(0.0)
         metrics["entropy"].append(0.0)
+        metrics.setdefault("racing_line_mae_m", []).append(eval_res["racing_line_mae_m"])
+        metrics.setdefault("apex_accuracy_pct", []).append(eval_res["apex_accuracy_pct"])
+        metrics.setdefault("corner_delta_v_kmh", []).append(eval_res["corner_delta_v_kmh"])
+        metrics.setdefault("friction_utilization_pct", []).append(eval_res["friction_utilization_pct"])
+        metrics.setdefault("lap_efficiency_pct", []).append(eval_res["lap_efficiency_pct"])
         
     best_eval_completion = max(best_eval_completion, eval_res["mean_completion"])
     print(
@@ -301,6 +339,14 @@ def main():
         f"Track Completion: {eval_res['mean_completion']:.1f}% | "
         f"Speed: {eval_res['mean_speed']:.1f} km/h | "
         f"Crash Rate: {eval_res['crash_rate']*100:.0f}%"
+    )
+    print(
+        f"  📊 [INITIAL BENCHMARK] "
+        f"Line MAE: {eval_res['racing_line_mae_m']:.2f}m | "
+        f"Apex Acc: {eval_res['apex_accuracy_pct']:.1f}% | "
+        f"Corner ΔV: {eval_res['corner_delta_v_kmh']:+.1f} km/h | "
+        f"Grip: {eval_res['friction_utilization_pct']:.1f}% | "
+        f"Pace Eff: {eval_res['lap_efficiency_pct']:.1f}%"
     )
     # Lưu metrics JSON
     save_metrics_json(metrics, log_dir=args.log_dir)
@@ -312,6 +358,14 @@ def main():
     writer.add_scalar("Performance/Crash_Rate", eval_res["crash_rate"], global_step)
     writer.add_scalar("Performance/Episode_Length", eval_res["mean_length"], global_step)
     writer.add_scalar("Performance/Total_Finishes", total_finishes, global_step)
+    
+    # Ghi log Benchmark Học thuật (Academic Benchmark) cho Step 0
+    writer.add_scalar("Benchmark/Racing_Line_MAE_m", eval_res["racing_line_mae_m"], global_step)
+    writer.add_scalar("Benchmark/Apex_Accuracy_Pct", eval_res["apex_accuracy_pct"], global_step)
+    writer.add_scalar("Benchmark/Corner_Delta_V_kmh", eval_res["corner_delta_v_kmh"], global_step)
+    writer.add_scalar("Benchmark/Friction_Utilization_Pct", eval_res["friction_utilization_pct"], global_step)
+    writer.add_scalar("Benchmark/Lap_Efficiency_Pct", eval_res["lap_efficiency_pct"], global_step)
+    
     writer.add_scalars("Reward_Breakdown/Streams", {
         "Progress": eval_res["mean_progress_reward"],
         "Steer_Smooth": eval_res["mean_steer_smooth_reward"],
@@ -373,6 +427,11 @@ def main():
             metrics["value_loss"].append(train_info["value_loss"])
             metrics["entropy"].append(train_info["entropy"])
             metrics["total_finishes"] = total_finishes
+            metrics.setdefault("racing_line_mae_m", []).append(eval_res["racing_line_mae_m"])
+            metrics.setdefault("apex_accuracy_pct", []).append(eval_res["apex_accuracy_pct"])
+            metrics.setdefault("corner_delta_v_kmh", []).append(eval_res["corner_delta_v_kmh"])
+            metrics.setdefault("friction_utilization_pct", []).append(eval_res["friction_utilization_pct"])
+            metrics.setdefault("lap_efficiency_pct", []).append(eval_res["lap_efficiency_pct"])
             
             if eval_res['crash_locations']:
                 crash_info_str = f" | Crashes at: {eval_res['crash_locations']}"
@@ -389,6 +448,14 @@ def main():
                 f"Loss(P/V): {train_info['policy_loss']:.3f}/{train_info['value_loss']:.3f} | "
                 f"ExpVar: {train_info.get('explained_var', 0.0):.2f}"
                 f"{crash_info_str}"
+            )
+            print(
+                f"  📊 [ACADEMIC BENCHMARK] "
+                f"Line MAE: {eval_res['racing_line_mae_m']:.2f}m (RMSE: {eval_res['racing_line_rmse_m']:.2f}m) | "
+                f"Apex: {eval_res['apex_accuracy_pct']:.1f}% | "
+                f"Corner ΔV: {eval_res['corner_delta_v_kmh']:+.1f} km/h | "
+                f"Grip: {eval_res['friction_utilization_pct']:.1f}% | "
+                f"Pace Eff: {eval_res['lap_efficiency_pct']:.1f}%"
             )
             
             # CHỈ LƯU DUY NHẤT BEST_AGENT TRONG QUÁ TRÌNH VALIDATION
@@ -427,6 +494,13 @@ def main():
             writer.add_scalar("Performance/Episode_Length", eval_res["mean_length"], global_step)
             writer.add_scalar("Performance/Total_Finishes", total_finishes, global_step)
             
+            # Ghi log Benchmark Học thuật (Academic Benchmark)
+            writer.add_scalar("Benchmark/Racing_Line_MAE_m", eval_res["racing_line_mae_m"], global_step)
+            writer.add_scalar("Benchmark/Apex_Accuracy_Pct", eval_res["apex_accuracy_pct"], global_step)
+            writer.add_scalar("Benchmark/Corner_Delta_V_kmh", eval_res["corner_delta_v_kmh"], global_step)
+            writer.add_scalar("Benchmark/Friction_Utilization_Pct", eval_res["friction_utilization_pct"], global_step)
+            writer.add_scalar("Benchmark/Lap_Efficiency_Pct", eval_res["lap_efficiency_pct"], global_step)
+            
             writer.add_scalars("Reward_Breakdown/Streams", {
                 "Progress": eval_res["mean_progress_reward"],
                 "Steer_Smooth": eval_res["mean_steer_smooth_reward"],
@@ -434,7 +508,6 @@ def main():
                 "Idle": eval_res["mean_idle_penalty"],
                 "Macro": eval_res["mean_macro_reward"],
             }, global_step)
-            writer.add_scalar("Reward_Breakdown/Total_Return", eval_res["mean_return"], global_step)
             
             writer.add_scalar("Loss/Policy_Loss", train_info["policy_loss"], global_step)
             writer.add_scalar("Loss/Value_Loss", train_info["value_loss"], global_step)

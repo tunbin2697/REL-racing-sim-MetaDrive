@@ -21,6 +21,7 @@ class VehicleConfig:
     max_steering_deg: float = 20.0     # Góc bẻ lái cực đại (độ) - Chuẩn xe đua đầm chắc
     wheel_friction: float = 1.35       # Hệ số ma sát lốp Bullet (Racing Slicks)
     max_steer_rate: float = 0.18       # Tốc độ quay vô-lăng tối đa mỗi bước 0.1s (Slew Rate Limit)
+    max_pedal_rate: float = 1.00       # Tốc độ biến thiên chân ga/phanh tối đa mỗi bước 0.1s (Cho phép phanh gấp chuẩn thể thao trong 0.1s)
     length: float = 4.50               # Chiều dài xe (m)
     width: float = 1.85                # Chiều rộng xe (m)
     max_speed_km_h: float = 120.0      # Vận tốc giới hạn trần (km/h)
@@ -75,22 +76,29 @@ class BaseRaceVehicle:
         if len(raw_action) >= 3:
             thr = 0.5 * (float(raw_action[1]) + 1.0)
             brk = 0.5 * (float(raw_action[2]) + 1.0)
-            net_pedal = thr * (1.0 - brk) - brk if brk > 0.05 else thr
+            # Deadband trơn mượt: loại bỏ nhiễu exploration nhỏ mà không tạo bước nhảy gián đoạn
+            brk_eff = (brk - 0.015) / 0.985 if brk > 0.015 else 0.0
+            thr_eff = (thr - 0.015) / 0.985 if thr > 0.015 else 0.0
+            raw_pedal = thr_eff * (1.0 - brk_eff) - brk_eff
         else:
-            net_pedal = float(raw_action[1])
+            raw_pedal = float(raw_action[1])
             
-        net_pedal = float(np.clip(net_pedal, -1.0, 1.0))
+        raw_pedal = float(np.clip(raw_pedal, -1.0, 1.0))
         
-        # Slew rate limiter: Chống giật cục và triệt tiêu rung chấn vô-lăng
+        # Slew rate limiter: Chống giật cục và triệt tiêu rung chấn vô-lăng và chân ga/phanh
         delta_steer = steer - self.last_steer
         steer_applied = self.last_steer + np.clip(delta_steer, -self.cfg.max_steer_rate, self.cfg.max_steer_rate)
         steer_applied = float(np.clip(steer_applied, -1.0, 1.0))
+
+        delta_pedal = raw_pedal - self.last_pedal
+        pedal_applied = self.last_pedal + np.clip(delta_pedal, -self.cfg.max_pedal_rate, self.cfg.max_pedal_rate)
+        pedal_applied = float(np.clip(pedal_applied, -1.0, 1.0))
         
         self.last_steer = steer_applied
-        self.last_pedal = net_pedal
-        self.last_action = np.array([steer_applied, net_pedal], dtype=np.float32)
+        self.last_pedal = pedal_applied
+        self.last_action = np.array([steer_applied, pedal_applied], dtype=np.float32)
         
-        return self.last_action, float(delta_steer), net_pedal
+        return self.last_action, float(delta_steer), pedal_applied
 
     def get_bounding_corners(self) -> List[np.ndarray]:
         """
@@ -141,6 +149,14 @@ class BaseRaceVehicle:
     @property
     def heading_theta(self) -> float:
         return float(self.raw_vehicle.heading_theta) if self.raw_vehicle else 0.0
+
+    @property
+    def origin(self):
+        return getattr(self.raw_vehicle, "origin", None) if self.raw_vehicle else None
+
+    @property
+    def chassis(self):
+        return getattr(self.raw_vehicle, "chassis", None) if self.raw_vehicle else None
 
     @property
     def yaw_rate(self) -> float:
