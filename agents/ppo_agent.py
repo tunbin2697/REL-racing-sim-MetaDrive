@@ -16,7 +16,7 @@ class PPOAgent:
     def __init__(
         self,
         state_dim: int = 35,
-        action_dim: int = 2,
+        action_dim: int = 3,
         lr: float = 3e-4,
         gamma: float = 0.99,
         gae_lambda: float = 0.95,

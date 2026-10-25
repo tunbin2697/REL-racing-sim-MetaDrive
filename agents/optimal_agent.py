@@ -30,10 +30,12 @@ class OptimalRacingAgent:
         k_lat: float = 1.4,
         k_head: float = 1.2,
         max_steer_rad: float = 0.349,  # 20.0 độ chuẩn GT3
+        max_brk_pedal: float = 0.95,   # Khai thác 95% hành trình phanh thể thao chuẩn GT3
     ):
         self.k_lat = float(k_lat)
         self.k_head = float(k_head)
         self.max_steer_rad = float(max_steer_rad)
+        self.max_brk_pedal = float(max_brk_pedal)
         
         if custom_track_xy is not None:
             # Sử dụng track polyline tùy biến (ví dụ Oval circuit trong MultiAgentRacingEnv)
@@ -142,13 +144,13 @@ class OptimalRacingAgent:
         wheelbase = 2.75  # Chiều dài cơ sở GT3 (m)
         ds = max(0.5, self.circuit_length / self.num_points)
         
-        # Xử lý đề-pa xuất phát (Grid Launch Transition):
-        # Khi xuất phát ở lề phải mà racing line ở lề trái, mở rộng khoảng cách ngắm để tiếp cận thoai thoải,
-        # tránh bẻ hết lái ở tốc độ thấp làm lết bánh trước và triệt tiêu gia tốc dọc
+        # Pure Pursuit Lookahead thích ứng:
+        # Khi đề-pa xuất phát (Grid Launch), ngắm xa hơn (16m) để nhập về racing line mượt mà mà không bẻ gắt lái
+        is_grid_launch = bool(self.track_s[idx_near] < 180.0 and v_curr_kmh < 110.0)
         p_near = self.optimal_line_xy[idx_near]
         lat_err = float(np.linalg.norm(p_curr - p_near))
-        min_ld = max(4.8, 3.2 * lat_err) if v_curr_kmh < 50.0 else 4.8
-        L_d = float(np.clip(max(min_ld, 4.0 + 0.11 * v_curr_kmh), 4.8, 22.0))
+        base_min_ld = 14.0 if is_grid_launch else (max(4.5, 2.5 * lat_err) if v_curr_kmh < 50.0 else 4.5)
+        L_d = float(np.clip(max(base_min_ld, 4.0 + 0.11 * v_curr_kmh), 4.5, 22.0))
         
         lookahead_steps = int(round(L_d / ds))
         idx_target = (idx_near + lookahead_steps) % self.num_points
@@ -170,51 +172,62 @@ class OptimalRacingAgent:
         steer_rad = np.arctan(curvature * wheelbase)
         steer_norm = float(np.clip(steer_rad / self.max_steer_rad, -1.0, 1.0))
 
-        # 4. Điều khiển dọc: Lift-and-Coast + Kamm's Friction Circle Trail-Braking + Slew-Rate Limiter
+        # 4. Điều khiển dọc: Predictive Dynamic Braking Horizon + Kamm Trail-Braking
         v_curr_ms = max(0.1, v_curr_kmh / 3.6)
         
-        # Quét trước một cự ly ngắm thích ứng (0.35s) để đón đầu điểm giảm tốc
-        lookahead_m = float(np.clip(0.35 * v_curr_ms, 3.5, 14.0))
-        steps_ahead = max(1, int(round(lookahead_m / ds)))
-        idx_speed = (idx_near + steps_ahead) % self.num_points
-        v_target_kmh = float(self.optimal_speed_kmh[idx_speed])
+        # Predictive Dynamic Braking Horizon: Quét trước 60 mét theo cự ly phanh muộn (Late Braking)
+        max_scan_m = 60.0
+        n_scan = min(self.num_points - 1, max(5, int(round(max_scan_m / ds))))
+        scan_indices = (idx_near + np.arange(1, n_scan + 1)) % self.num_points
+        scan_speeds_ms = self.optimal_speed_kmh[scan_indices] / 3.6
+        scan_dists_m = np.arange(1, n_scan + 1) * ds
+        
+        # Gia tốc phanh khả dụng an toàn (m/s^2) - Kỹ thuật Late Braking khai thác công suất phanh GT3
+        a_brake_safe = 5.20
+        allowed_speeds_ms = np.sqrt(scan_speeds_ms ** 2 + 2.0 * a_brake_safe * scan_dists_m)
+        v_target_ms = min(float(self.optimal_speed_kmh[idx_near] / 3.6), float(np.min(allowed_speeds_ms)))
+        v_target_kmh = float(v_target_ms * 3.6)
         
         v_err_kmh = v_target_kmh - v_curr_kmh
 
         # Trail-Braking qua Elip ma sát Kamm (Friction Circle):
         steer_mag = abs(steer_norm)
         avail_long_grip = float(np.sqrt(max(0.10, 1.0 - min(0.90, (0.90 * steer_mag) ** 2))))
-        traction_factor = float(np.sqrt(max(0.35, 1.0 - min(0.85, (0.85 * steer_mag) ** 2))))
+        traction_factor = float(np.sqrt(max(0.40, 1.0 - min(0.80, (0.80 * steer_mag) ** 2))))
 
-        if v_err_kmh >= 0.0:
+        if is_grid_launch:
+            # Launch Control trên đoạn thẳng Hamilton Straight: Full ga tức thì
+            target_brake = 0.0
+            target_throttle = 1.0
+        elif v_err_kmh >= 0.0:
             # Tăng tốc (Acceleration): nhả phanh, mở ga
             target_brake = 0.0
-            if (steer_mag < 0.35 and v_curr_kmh < 80.0) or (steer_mag < 0.15 and v_curr_kmh < 118.0):
-                # Đoạn thẳng hoặc đề-pa xuất phát: full ga
+            if (steer_mag < 0.45 and v_curr_kmh < 98.0) or (steer_mag < 0.25 and v_curr_kmh < 119.5):
+                # Thoát cua sớm hoặc chạy trên đoạn thẳng: full ga
                 target_throttle = 1.0
             else:
-                # Trong cua hoặc thoát cua: ga tăng mượt theo sai số tốc độ kết hợp lực bám ngang
-                maint_thr = 0.20 if v_curr_kmh > 40.0 else 0.0
-                target_throttle = float(np.clip(maint_thr + (v_err_kmh / 8.0) * (1.0 - maint_thr), 0.0, 1.0)) * traction_factor
+                # Trong cua: ga tăng mượt theo sai số tốc độ kết hợp lực bám ngang và bù lực cản chà lốp
+                maint_thr = 0.42 if v_curr_kmh > 35.0 else 0.22
+                target_throttle = float(np.clip(maint_thr + (v_err_kmh / 4.0) * (1.0 - maint_thr), 0.0, 1.0)) * traction_factor
         else:
             # Giảm tốc (Deceleration):
             overspeed_kmh = -v_err_kmh
-            if overspeed_kmh <= 2.5:
-                # Lift-and-Coast: Chỉ nhả bớt ga, TUYỆT ĐỐI KHÔNG CHẠM PHANH
+            if overspeed_kmh <= 2.0:
+                # Lift-and-Coast: Tận dụng quán tính và lực cản tự nhiên, chỉ nhả ga không cần phanh
                 target_throttle = 0.0
                 target_brake = 0.0
             else:
                 # Phanh lũy tiến liên tục theo sai số tốc độ và độ bám dọc còn lại của Elip Kamm
                 target_throttle = 0.0
-                brk_fraction = float(np.clip((overspeed_kmh - 2.5) / 10.0, 0.0, 1.0))
-                max_brk_pedal = 0.35
+                brk_fraction = float(np.clip((overspeed_kmh - 2.0) / 5.5, 0.0, 1.0))
+                max_brk_pedal = getattr(self, "max_brk_pedal", 0.95)
                 target_brake = float(brk_fraction * max_brk_pedal * avail_long_grip)
 
-        # Bộ lọc thông thấp bậc 1 (1st-Order Low-Pass Filter / EMA, alpha=0.20):
-        # Làm mượt độc lập cả 2 kênh chân ga và chân phanh
-        alpha = 0.20
-        self.filtered_throttle = float((1.0 - alpha) * self.filtered_throttle + alpha * target_throttle)
-        self.filtered_brake = float((1.0 - alpha) * self.filtered_brake + alpha * target_brake)
+        # Bộ lọc làm mượt: Phanh phản hồi nhanh nhạy (alpha=0.80), ga dứt khoát thể thao (alpha=0.85)
+        alpha_thr = 0.85
+        alpha_brk = 0.80
+        self.filtered_throttle = float((1.0 - alpha_thr) * self.filtered_throttle + alpha_thr * target_throttle)
+        self.filtered_brake = float((1.0 - alpha_brk) * self.filtered_brake + alpha_brk * target_brake)
 
         # Chuẩn hóa về [-1, 1]^3 khớp định dạng 3 trục của Gym Action Space
         throttle_action = float(np.clip(self.filtered_throttle * 2.0 - 1.0, -1.0, 1.0))

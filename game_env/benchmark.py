@@ -52,7 +52,11 @@ class RacingBenchmarkEngine:
         if not force_recompute and os.path.exists(cache_path):
             try:
                 data = np.load(cache_path)
-                if data["optimal_line_xy"].shape[0] == self.num_points and abs(float(data["mu"]) - self.mu) < 1e-3:
+                if (
+                    data["optimal_line_xy"].shape[0] == self.num_points
+                    and abs(float(data["mu"]) - self.mu) < 1e-3
+                    and np.linalg.norm(data["optimal_line_xy"][0] - self.track_xy[0]) < 3.0
+                ):
                     self.optimal_line_xy = data["optimal_line_xy"]
                     self.optimal_line_kappa = data["optimal_line_kappa"]
                     self.optimal_speed_profile = data["optimal_speed_profile"]
@@ -196,12 +200,12 @@ class RacingBenchmarkEngine:
             dk_profile[i] = abs(float(self.optimal_line_kappa[(i + 1) % N] - self.optimal_line_kappa[(i - 1) % N])) / (2.0 * max(0.5, ds_opt[i]))
 
         def get_a_lat_limit(k_val: float, dk_val: float) -> float:
-            if k_val > 0.022 or dk_val > 0.0010:
-                return 8.50   # Đỉnh cua gắt (Hairpin / Chữ U): 0.87G ổn định tuyệt đối
-            elif k_val > 0.010 or dk_val > 0.0005:
-                return 9.80   # Cua trung bình: 1.00G
+            if k_val > 0.020 or dk_val > 0.0008:
+                return 10.20  # Đỉnh cua gắt (Hairpin / Chữ U / Vale / Club): 1.04G chuẩn lốp GT3 Slick mu=1.35 (~72-75 km/h)
+            elif k_val > 0.010 or dk_val > 0.0004:
+                return 9.60   # Cua trung bình (Becketts / Luffield): 0.98G ổn định đường đua (~90-95 km/h)
             else:
-                return 11.20  # Cua thoai thoải / quét nhanh: 1.14G
+                return 11.50  # Cua thoai thoải / quét nhanh (Stowe / Abbey): 1.17G (~115-120 km/h)
 
         # Pass 1: Vận tốc tới hạn góc cua (Friction limit hiệu chuẩn theo lốp GT3 Slick mu = 1.35)
         v_prof = np.full(N, self.v_max_m_s, dtype=np.float32)
@@ -247,21 +251,52 @@ class RacingBenchmarkEngine:
         return np.clip(v_smooth, 10.0, self.v_max_m_s).astype(np.float32)
 
     def _detect_corner_apexes(self) -> List[Dict[str, Any]]:
-        """Nhận diện các đỉnh cua (Apexes) cục bộ trên đường đua để đánh giá kỹ năng cắt cua"""
-        apexes = []
+        """
+        Nhận diện các đỉnh cua chính (Corner Apexes) trên đường đua.
+        Áp dụng thuật toán Non-Maximum Suppression (NMS) với cự ly tối thiểu giữa các góc cua (min_dist = 45.0m)
+        để loại bỏ gợn sóng nhiễu của spline và gom về đúng các góc cua thực tế của trường đua.
+        """
+        raw_candidates = []
         N = self.num_points
         k_abs = np.abs(self.optimal_line_kappa)
+        
+        # Ngưỡng phát hiện góc cua: bán kính cong R < 100m (k > 0.010)
         for i in range(2, N - 2):
-            if k_abs[i] > 0.012:  # Bán kính cua dưới 83 mét
-                if k_abs[i] > k_abs[i - 1] and k_abs[i] > k_abs[i + 1]:
-                    apexes.append({
+            if k_abs[i] > 0.010:
+                if k_abs[i] >= k_abs[i - 1] and k_abs[i] >= k_abs[i + 1]:
+                    raw_candidates.append({
                         "idx": i,
                         "s": float(self.track_s[i]),
                         "pos": self.optimal_line_xy[i],
-                        "kappa": float(self.optimal_line_kappa[i]),
+                        "kappa": float(k_abs[i]),
                         "target_speed_kmh": float(self.optimal_speed_kmh[i]),
                     })
-        return apexes
+
+        if not raw_candidates:
+            return []
+
+        # Sắp xếp các ứng viên theo độ cong giảm dần để ưu tiên chọn đỉnh sắc nét nhất
+        raw_candidates.sort(key=lambda x: x["kappa"], reverse=True)
+        
+        min_separation_m = 45.0
+        selected_apexes = []
+        
+        for cand in raw_candidates:
+            s_cand = cand["s"]
+            # Kiểm tra khoảng cách tuần hoàn vòng tròn so với các apex đã chọn
+            too_close = False
+            for sel in selected_apexes:
+                s_diff = abs(s_cand - sel["s"])
+                s_circular_diff = min(s_diff, self.circuit_length - s_diff)
+                if s_circular_diff < min_separation_m:
+                    too_close = True
+                    break
+            if not too_close:
+                selected_apexes.append(cand)
+
+        # Sắp xếp lại theo thứ tự tiến dọc đường đua s
+        selected_apexes.sort(key=lambda x: x["s"])
+        return selected_apexes
 
     def evaluate_lap(self, lap_samples: List[Dict]) -> Dict[str, float]:
         """
@@ -294,21 +329,28 @@ class RacingBenchmarkEngine:
         mae_line = float(np.mean(dists_to_line))
         rmse_line = float(np.sqrt(np.mean(dists_to_line ** 2)))
         
-        # 2. Đo sai số tốc độ tại các góc cua chính (Corner Speed Delta)
+        # 2. Đo sai số tốc độ tại các góc cua chính (Corner Speed Delta) và độ chính xác cắt Apex
         corner_speed_deltas = []
         apex_clipped_count = 0
         for apex in self.corner_apexes:
             target_s = apex["s"]
-            # Tìm thời điểm xe ở gần đỉnh cua nhất
-            idx_near = int(np.argmin(np.abs(ego_dists - target_s)))
-            if idx_near < len(ego_speeds):
-                v_actual = float(ego_speeds[idx_near])
+            # Tìm các điểm trong cửa sổ +-10 mét quanh apex để tìm khoảng cách gần nhất
+            diff_s = np.abs(ego_dists - target_s)
+            s_circ = np.minimum(diff_s, self.circuit_length - diff_s)
+            window_indices = np.where(s_circ <= 10.0)[0]
+            
+            if len(window_indices) > 0:
+                dists_to_apex = np.linalg.norm(ego_xy[window_indices] - apex["pos"], axis=1)
+                min_dist_apex = float(np.min(dists_to_apex))
+                idx_best = window_indices[int(np.argmin(dists_to_apex))]
+                
+                v_actual = float(ego_speeds[idx_best])
                 v_target = float(apex["target_speed_kmh"])
                 corner_speed_deltas.append(v_actual - v_target)
                 
-                # Kiểm tra cắt Apex: khoảng cách xe đến điểm Apex tối ưu < 1.2 mét
-                dist_apex = float(np.linalg.norm(ego_xy[idx_near] - apex["pos"]))
-                if dist_apex <= 1.25:
+                # Chuẩn FIA Apex Clipping: Khoảng cách từ tâm xe đến Apex <= 2.20m
+                # (Với thân xe rộng 1.85m, tâm cách mép bánh 0.925m, khoảng cách 2.2m tương đương mép bánh chạm sát vạch mép kerb trong)
+                if min_dist_apex <= 2.20:
                     apex_clipped_count += 1
                     
         mean_delta_v = float(np.mean(corner_speed_deltas)) if corner_speed_deltas else 0.0

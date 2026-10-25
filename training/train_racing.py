@@ -58,6 +58,7 @@ def parse_args():
     parser.add_argument("--steps-to-run", type=int, default=None, help="Số bước muốn chạy thêm khi resume")
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
     parser.add_argument("--vehicle", type=str, default="gt3", choices=["gt3", "sedan"], help="Loại xe đua ('gt3' hoặc 'sedan' đối chứng)")
+    parser.add_argument("--max-laps", type=int, default=2, help="Số vòng đua tối đa mỗi episode (mặc định 2 laps: Lap 1 Standing Start + Lap 2 Flying Lap)")
     parser.add_argument("--save-dir", type=str, default="models", help="Thư mục lưu weights")
     parser.add_argument("--log-dir", type=str, default="logs", help="Thư mục lưu log số liệu")
     parser.add_argument("--tb-logdir", type=str, default="runs", help="Thư mục lưu TensorBoard logs")
@@ -75,6 +76,9 @@ def evaluate_agent(env, agent, num_episodes=3):
     eval_center_rew = []
     eval_idle_pen = []
     eval_macros_rew = []
+    eval_lap1_times = []
+    eval_lap2_times = []
+    eval_best_lap_times = []
     crash_locations = []
     crash_count = 0
     
@@ -98,7 +102,11 @@ def evaluate_agent(env, agent, num_episodes=3):
         ep_idle = 0.0
         ep_macro = 0.0
         speeds = []
+        ep_lap1_time = None
+        ep_lap2_time = None
+        ep_best_lap = None
         
+        max_eval_steps = 1500 * max(1, getattr(env, "max_laps", 1))
         while True:
             action, _, _ = agent.select_action(obs, deterministic=True)
             obs, reward, terminated, truncated, info = env.step(action)
@@ -111,7 +119,18 @@ def evaluate_agent(env, agent, num_episodes=3):
             ep_macro += float(info.get("macro_reward", 0.0))
             speeds.append(info.get("speed_km_h", 0.0))
             
-            if terminated or truncated:
+            # Ghi nhận thời gian khi hoàn thành từng lap
+            if info.get("lap_completed", False):
+                comp_lap_num = int(info.get("completed_lap_number", 1))
+                comp_lap_t = float(info.get("completed_lap_time", info.get("lap_time", 0.0)))
+                if comp_lap_num == 1 and ep_lap1_time is None:
+                    ep_lap1_time = comp_lap_t
+                elif comp_lap_num >= 2 and ep_lap2_time is None:
+                    ep_lap2_time = comp_lap_t
+                if ep_best_lap is None or comp_lap_t < ep_best_lap:
+                    ep_best_lap = comp_lap_t
+            
+            if terminated or truncated or ep_len >= max_eval_steps:
                 is_crash = info.get("crash", False) or info.get("crash_sidewalk", False) or (info.get("termination_reason") == "crash_or_track_limit")
                 if is_crash:
                     crash_count += 1
@@ -132,6 +151,13 @@ def evaluate_agent(env, agent, num_episodes=3):
         eval_idle_pen.append(ep_idle)
         eval_macros_rew.append(ep_macro)
         
+        if ep_lap1_time is not None:
+            eval_lap1_times.append(ep_lap1_time)
+        if ep_lap2_time is not None:
+            eval_lap2_times.append(ep_lap2_time)
+        if ep_best_lap is not None:
+            eval_best_lap_times.append(ep_best_lap)
+        
         # Đánh giá benchmark qua Telemetry OOP (Ground Truth Racing Line & Speed Profile)
         if hasattr(env, "evaluate_current_lap_benchmark"):
             bench = env.evaluate_current_lap_benchmark()
@@ -144,12 +170,16 @@ def evaluate_agent(env, agent, num_episodes=3):
             if "theoretical_best_lap_time" in bench and bench["theoretical_best_lap_time"] > 0:
                 theoretical_best_lap_time = bench["theoretical_best_lap_time"]
         
+    mean_lap_t = float(np.mean(eval_best_lap_times)) if eval_best_lap_times else float(np.mean(eval_times))
     return {
         "mean_return": float(np.mean(eval_returns)),
         "mean_length": float(np.mean(eval_lengths)),
-        "mean_time": float(np.mean(eval_times)),
+        "mean_time": mean_lap_t,
         "mean_completion": float(np.mean(eval_completions)),
         "mean_speed": float(np.mean(eval_speeds)),
+        "mean_lap1_time": float(np.mean(eval_lap1_times)) if eval_lap1_times else 0.0,
+        "mean_lap2_time": float(np.mean(eval_lap2_times)) if eval_lap2_times else 0.0,
+        "best_lap_time": float(np.min(eval_best_lap_times)) if eval_best_lap_times else 0.0,
         "mean_progress_reward": float(np.mean(eval_progress_rew)),
         "mean_steer_smooth_reward": float(np.mean(eval_steer_smooth_rew)),
         "mean_center_reward": float(np.mean(eval_center_rew)),
@@ -204,6 +234,7 @@ def main():
         map_config=args.map,
         start_seed=args.seed,
         vehicle=race_car,
+        max_laps=args.max_laps,
     )
     
     obs_shape = env.observation_space.shape
@@ -227,6 +258,7 @@ def main():
     update_idx = 0
     best_eval_completion = 0.0
     best_eval_lap_time = float("inf")
+    best_eval_flying_time = float("inf")
     best_eval_speed = 0.0
     total_finishes = 0
 
@@ -235,6 +267,9 @@ def main():
         "eval_return": [],
         "eval_completion": [],
         "eval_speed": [],
+        "eval_lap1_time": [],
+        "eval_lap2_time": [],
+        "eval_best_lap_time": [],
         "crash_rate": [],
         "policy_loss": [],
         "value_loss": [],
@@ -306,6 +341,9 @@ def main():
             curr_std = float(torch.exp(agent.ac.actor_logstd[0, 0]).item())
             print(f">> EXPLORATION TUNING: Đã thiết lập actor_logstd = {args.reset_logstd} (Action std sigma = {curr_std:.3f})")
         target_total_steps = args.total_steps
+        
+    if args.steps_to_run is not None:
+        target_total_steps = global_step + args.steps_to_run
 
     # Bộ đệm Rollout Storage
     states = np.zeros((args.rollout_len, obs_dim), dtype=np.float32)
@@ -358,6 +396,12 @@ def main():
     writer.add_scalar("Performance/Crash_Rate", eval_res["crash_rate"], global_step)
     writer.add_scalar("Performance/Episode_Length", eval_res["mean_length"], global_step)
     writer.add_scalar("Performance/Total_Finishes", total_finishes, global_step)
+    if eval_res["mean_lap1_time"] > 0:
+        writer.add_scalar("Performance/Lap1_Standing_Time", eval_res["mean_lap1_time"], global_step)
+    if eval_res["mean_lap2_time"] > 0:
+        writer.add_scalar("Performance/Lap2_Flying_Time", eval_res["mean_lap2_time"], global_step)
+    if eval_res["best_lap_time"] > 0:
+        writer.add_scalar("Performance/Best_Lap_Time", eval_res["best_lap_time"], global_step)
     
     # Ghi log Benchmark Học thuật (Academic Benchmark) cho Step 0
     writer.add_scalar("Benchmark/Racing_Line_MAE_m", eval_res["racing_line_mae_m"], global_step)
@@ -369,7 +413,6 @@ def main():
     writer.add_scalars("Reward_Breakdown/Streams", {
         "Progress": eval_res["mean_progress_reward"],
         "Steer_Smooth": eval_res["mean_steer_smooth_reward"],
-        "Center": eval_res["mean_center_reward"],
         "Idle": eval_res["mean_idle_penalty"],
         "Macro": eval_res["mean_macro_reward"],
     }, global_step)
@@ -393,12 +436,14 @@ def main():
             is_done = bool(terminated) or bool(truncated)
             dones[step] = 1.0 if is_done else 0.0
             
-            # Ghi nhận số lần hoàn thành trong train rollout (KHÔNG lưu model tại đây)
-            if step_info.get("termination_reason") == "lap_completed" or step_info.get("route_completion", 0.0) >= 0.985:
+            # Ghi nhận số lần hoàn thành trong train rollout (cả Standing Lap 1 và Flying Lap 2)
+            if step_info.get("lap_completed", False) or step_info.get("termination_reason") == "lap_completed" or step_info.get("arrive_dest", False):
                 total_finishes += 1
-                lap_time = step_info.get("lap_time", 0.0)
-                mean_spd = step_info.get("mean_speed_km_h", step_info.get("speed_km_h", 0.0))
-                print(f"  🏁 [TRAIN FINISH #{total_finishes}] Step {global_step} | Lap Time: {lap_time:.2f}s | Mean Speed: {mean_spd:.1f} km/h")
+                comp_num = int(step_info.get("completed_lap_number", step_info.get("current_lap", 1)))
+                lap_time = float(step_info.get("completed_lap_time", step_info.get("lap_time", 0.0)))
+                mean_spd = float(step_info.get("mean_speed_km_h", step_info.get("speed_km_h", 0.0)))
+                lap_tag = "Flying Lap 🚀" if comp_num >= 2 else "Standing Lap 🏁"
+                print(f"  🏁 [TRAIN FINISH #{total_finishes}] Step {global_step} | Lap {comp_num} ({lap_tag}) | Time: {lap_time:.2f}s | Speed: {mean_spd:.1f} km/h")
             
             obs = next_obs
             if is_done:
@@ -433,10 +478,25 @@ def main():
             metrics.setdefault("friction_utilization_pct", []).append(eval_res["friction_utilization_pct"])
             metrics.setdefault("lap_efficiency_pct", []).append(eval_res["lap_efficiency_pct"])
             
+            lap1_val = eval_res["mean_lap1_time"]
+            lap2_val = eval_res["mean_lap2_time"]
+            best_lap_val = eval_res["best_lap_time"]
+            
+            metrics.setdefault("eval_lap1_time", []).append(lap1_val)
+            metrics.setdefault("eval_lap2_time", []).append(lap2_val)
+            metrics.setdefault("eval_best_lap_time", []).append(best_lap_val)
+            
             if eval_res['crash_locations']:
                 crash_info_str = f" | Crashes at: {eval_res['crash_locations']}"
-            elif eval_res['mean_completion'] >= 98.0:
-                crash_info_str = f" | Clean Lap 🏁 (Time: {eval_res['mean_time']:.1f}s, Mean Speed: {eval_res['mean_speed']:.1f} km/h)"
+            elif best_lap_val > 0 or eval_res['mean_completion'] >= 98.0:
+                lap_details = []
+                if lap1_val > 0:
+                    lap_details.append(f"Lap 1: {lap1_val:.2f}s")
+                if lap2_val > 0:
+                    lap_details.append(f"Lap 2 (Flying): {lap2_val:.2f}s")
+                if not lap_details:
+                    lap_details.append(f"Time: {eval_res['mean_time']:.1f}s")
+                crash_info_str = f" | Clean 🏁 ({', '.join(lap_details)}, Mean Speed: {eval_res['mean_speed']:.1f} km/h)"
             else:
                 crash_info_str = " | Stalled on track"
             print(
@@ -461,17 +521,30 @@ def main():
             # CHỈ LƯU DUY NHẤT BEST_AGENT TRONG QUÁ TRÌNH VALIDATION
             cur_comp = eval_res["mean_completion"]
             cur_speed = eval_res["mean_speed"]
-            cur_time = eval_res["mean_time"]
+            cur_time = best_lap_val if best_lap_val > 0 else eval_res["mean_time"]
             is_new_best = False
             record_msg = ""
 
-            if cur_comp >= 98.0:
-                if best_eval_completion < 98.0 or cur_time < best_eval_lap_time or cur_speed > best_eval_speed:
-                    best_eval_lap_time = min(best_eval_lap_time, cur_time)
+            if best_lap_val > 0 or cur_comp >= 98.0:
+                if best_eval_completion < 98.0 or cur_time < best_eval_lap_time:
+                    best_eval_lap_time = cur_time
                     best_eval_speed = max(best_eval_speed, cur_speed)
                     best_eval_completion = max(best_eval_completion, cur_comp)
                     is_new_best = True
-                    record_msg = f"Clean Lap 🏁 Time: {cur_time:.1f}s | Speed: {cur_speed:.1f} km/h"
+                    if lap2_val > 0:
+                        best_eval_flying_time = min(best_eval_flying_time, lap2_val)
+                        record_msg = f"Flying Lap 🚀 {lap2_val:.2f}s (Lap 1: {lap1_val:.2f}s) | Speed: {cur_speed:.1f} km/h"
+                    else:
+                        record_msg = f"Standing Lap 🏁 {cur_time:.2f}s | Speed: {cur_speed:.1f} km/h"
+                elif lap2_val > 0 and lap2_val < best_eval_flying_time:
+                    best_eval_flying_time = lap2_val
+                    best_eval_lap_time = min(best_eval_lap_time, cur_time)
+                    is_new_best = True
+                    record_msg = f"Kỷ lục Flying Lap 🚀 {lap2_val:.2f}s | Speed: {cur_speed:.1f} km/h"
+                elif cur_speed > best_eval_speed and cur_time <= best_eval_lap_time * 1.02:
+                    best_eval_speed = cur_speed
+                    is_new_best = True
+                    record_msg = f"Top Speed Mới: {cur_speed:.1f} km/h (Lap: {cur_time:.2f}s)"
             else:
                 if cur_comp > best_eval_completion:
                     best_eval_completion = cur_comp
@@ -493,6 +566,12 @@ def main():
             writer.add_scalar("Performance/Crash_Rate", eval_res["crash_rate"], global_step)
             writer.add_scalar("Performance/Episode_Length", eval_res["mean_length"], global_step)
             writer.add_scalar("Performance/Total_Finishes", total_finishes, global_step)
+            if lap1_val > 0:
+                writer.add_scalar("Performance/Lap1_Standing_Time", lap1_val, global_step)
+            if lap2_val > 0:
+                writer.add_scalar("Performance/Lap2_Flying_Time", lap2_val, global_step)
+            if best_lap_val > 0:
+                writer.add_scalar("Performance/Best_Lap_Time", best_lap_val, global_step)
             
             # Ghi log Benchmark Học thuật (Academic Benchmark)
             writer.add_scalar("Benchmark/Racing_Line_MAE_m", eval_res["racing_line_mae_m"], global_step)
@@ -504,7 +583,6 @@ def main():
             writer.add_scalars("Reward_Breakdown/Streams", {
                 "Progress": eval_res["mean_progress_reward"],
                 "Steer_Smooth": eval_res["mean_steer_smooth_reward"],
-                "Center": eval_res["mean_center_reward"],
                 "Idle": eval_res["mean_idle_penalty"],
                 "Macro": eval_res["mean_macro_reward"],
             }, global_step)

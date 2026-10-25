@@ -28,7 +28,7 @@ class GhostCar:
         vehicle: Optional[BaseRaceVehicle] = None,
     ):
         self.agent: OptimalRacingAgent = agent or OptimalRacingAgent(optimal_profile_file=optimal_profile_file)
-        self.car: BaseRaceVehicle = vehicle if vehicle is not None else GT3RaceCar()
+        self.car: BaseRaceVehicle = vehicle.clone() if vehicle is not None else GT3RaceCar()
         self.raw_vehicle: Optional[DefaultVehicle] = None
         self.active: bool = False
         self.step_count: int = 0
@@ -55,13 +55,15 @@ class GhostCar:
             pos = spawn_lane.position(longitudinal, lateral)
             heading = float(spawn_lane.heading_theta_at(longitudinal))
             
-            # Cấu hình xe Ghost: sử dụng màu đặc biệt (special color) để phân biệt trực quan
+            # Cấu hình xe Ghost: đồng bộ hoàn toàn từ self.car.cfg (OOP - Single Source of Truth)
             ghost_config = {
                 "use_special_color": True,
-                "max_speed_km_h": 120.0,
-                "max_engine_force": 850.0,
-                "max_brake_force": 650.0,
-                "wheel_friction": 1.35,
+                "max_speed_km_h": float(self.car.cfg.max_speed_km_h),
+                "max_engine_force": float(self.car.cfg.max_engine_force),
+                "max_brake_force": float(self.car.cfg.max_brake_force),
+                "wheel_friction": float(self.car.cfg.wheel_friction),
+                "max_steering": float(self.car.cfg.max_steering_deg),
+                "mass": float(self.car.cfg.mass),
             }
             
             self.raw_vehicle = engine.spawn_object(
@@ -109,13 +111,16 @@ class GhostCar:
             self.raw_vehicle = None
             return False
 
-    def spawn_from_env(self, env: Any, longitudinal: float = 0.0, lateral: float = 2.25) -> bool:
+    def spawn_from_env(self, env: Any, longitudinal: Optional[float] = None, lateral: float = 0.0) -> bool:
         """Helper OOP tự động trích xuất engine và spawn_lane từ MetaRacingEnv an toàn tuyệt đối"""
         try:
             raw_env = getattr(env, "env", env)
             engine = getattr(raw_env, "engine", None)
             map_obj = getattr(raw_env, "current_map", None)
             agent = getattr(raw_env, "agent", None)
+            # Đồng bộ cấu hình phương tiện từ xe chính nếu có (tạo thực thể độc lập cùng cấu hình)
+            if hasattr(env, "car") and env.car is not None and (self.car is None or self.car is env.car):
+                self.car = env.car.clone()
             if engine is None or map_obj is None or agent is None:
                 return False
             road_network = getattr(map_obj, "road_network", None)
@@ -124,10 +129,26 @@ class GhostCar:
             lane = road_network.get_lane(agent.lane_index)
             if lane is None:
                 return False
+            if longitudinal is None or longitudinal == 0.0:
+                # Tự động xếp so le sau xe chính 8m trên vạch xuất phát P2
+                long_val, lat_val = lane.local_coordinates(agent.position)
+                longitudinal = max(0.0, float(long_val) - 8.0)
+                if lateral == 0.0 and abs(float(lat_val)) > 0.1:
+                    lateral = float(lat_val)
             return self.spawn(engine, lane, longitudinal=longitudinal, lateral=lateral)
         except Exception as e:
             print(f">> [GHOST CAR] Lỗi spawn_from_env: {e}")
             return False
+
+    def reset(self):
+        """Khởi tạo lại trạng thái của Ghost Car khi bắt đầu vòng đua mới"""
+        self.step_count = 0
+        self.lap_time = 0.0
+        self.lap_completed = False
+        self.last_action = None
+        self.car.reset_state()
+        if self.agent is not None:
+            self.agent.reset()
 
     def step(self, dt: float = 0.10) -> Optional[np.ndarray]:
         """
@@ -143,7 +164,7 @@ class GhostCar:
         self.lap_time += dt
         
         # 1. Tính toán hành động tối ưu 3 trục [steer, throttle, brake]
-        action, _, _ = self.agent.select_action(vehicle=self.raw_vehicle)
+        action, _, _ = self.agent.select_action(vehicle=self.car)
         self.last_action = action
         
         # 2. Xử lý chuẩn OOP qua BaseRaceVehicle (DRY - Không trùng lặp code)
@@ -151,6 +172,14 @@ class GhostCar:
         
         # 3. Áp dụng vào Bullet raycast vehicle
         self.raw_vehicle.before_step(action_applied)
+        
+        # 4. Áp dụng lực cản chà lốp khi bẻ lái ở tốc độ cao (Steering Scrub Drag)
+        self.car.ext_physics.apply_steering_scrub_drag(
+            raw_vehicle=self.raw_vehicle,
+            applied_steer=float(action_applied[0]),
+            speed_m_s=self.car.speed_m_s,
+            dt=dt,
+        )
         return action
 
     def destroy(self, engine: Any = None):

@@ -41,6 +41,7 @@ def parse_args():
     parser.add_argument("--map", type=str, default="silverstone", help="Bản đồ đua ('silverstone' hoặc 'racing')")
     parser.add_argument("--traffic", type=float, default=0.0, help="Mật độ chướng ngại vật/xe khác (0.0 - 0.2)")
     parser.add_argument("--seed", type=int, default=42, help="Seed tạo bản đồ")
+    parser.add_argument("--laps", type=int, default=2, help="Số vòng đua liên tục mỗi lượt chạy (mặc định 2: Lap 1 Standing Start + Lap 2 Flying Lap)")
     parser.add_argument("--stochastic", action="store_true", help="Chạy PPO ở chế độ Stochastic (hành vi thực chiến)")
     parser.add_argument("--hide-line", action="store_true", help="Bắt đầu mô phỏng với Racing Line 3D ẩn (bật lại bằng phím [L])")
     return parser.parse_args()
@@ -77,6 +78,7 @@ def main():
         map_config=args.map,
         start_seed=args.seed,
         vehicle=race_car,
+        max_laps=args.laps,
     )
 
     # Khởi tạo Tác tử chính
@@ -103,7 +105,7 @@ def main():
     ghost_car = None
     if args.ghost:
         print(">> Kích hoạt Ghost Car (Bóng ma đối chứng) trên đường đua 3D...")
-        ghost_car = GhostCar()
+        ghost_car = GhostCar(vehicle=race_car)
 
     try:
         obs, info = env.reset(seed=args.seed)
@@ -127,7 +129,7 @@ def main():
 
         # Spawn Ghost Car tại vạch xuất phát
         if ghost_car is not None:
-            ghost_car.spawn_from_env(env, longitudinal=0.0, lateral=2.25)
+            ghost_car.spawn_from_env(env, longitudinal=0.0, lateral=0.0)
 
         # Khởi tạo Bộ điều khiển Camera Thể thao Đa góc nhìn (Rear-view / Ghost Cam)
         camera_controller = None
@@ -168,8 +170,8 @@ def main():
             speed_kmh = info.get("speed_km_h", info.get("speed_kmh", 0.0))
             comp = info.get("route_completion", 0.0) * 100.0
             # Lựa chọn action hiển thị dựa trên xe camera đang theo dõi
-            if camera_controller is not None and getattr(camera_controller, "target_name", "main") == "ghost" and ghost_car is not None and getattr(ghost_car, "last_action", None) is not None:
-                g_act = ghost_car.last_action
+            g_act = ghost_car.last_action if ghost_car is not None else None
+            if camera_controller is not None and getattr(camera_controller, "target_name", "main") == "ghost" and g_act is not None:
                 g_steer = g_act[0]
                 g_thr = 0.5 * (float(g_act[1]) + 1.0)
                 g_brk = 0.5 * (float(g_act[2]) + 1.0)
@@ -196,9 +198,18 @@ def main():
             else:
                 mode_str = "DETERMINISTIC" if not args.stochastic else "STOCHASTIC"
 
+            # Thông báo khi xe hoàn thành từng vòng đua
+            if info.get("lap_completed", False):
+                comp_lap_num = int(info.get("completed_lap_number", 1))
+                comp_lap_t = float(info.get("completed_lap_time", info.get("lap_time", 0.0)))
+                lap_tag = "🚀 FLYING LAP" if comp_lap_num >= 2 else "🏁 STANDING LAP"
+                print(f"🏁 [HOÀN THÀNH LAP {comp_lap_num}] {lap_tag} | Thời gian: {comp_lap_t:.2f}s | Tốc độ TB: {info.get('mean_speed_km_h', 0.0):.1f} km/h")
+
             # 4. Tạo Text HUD với thông số Sim Racing chuyên nghiệp
+            cur_lap_display = info.get("current_lap", 1)
+            max_laps_display = info.get("max_laps", args.laps)
             hud_text = {
-                "RACING SPECTATOR": f"Lap: {lap_count} | Step: {step} [{mode_str}]",
+                "RACING SPECTATOR": f"Lap: {cur_lap_display}/{max_laps_display} | Step: {step} [{mode_str}]",
                 "Delta Bar": f"[{delta_color.upper()}] {delta_str}",
                 "Current Lap": f"{info.get('lap_time', 0.0):.2f}s",
                 "Best Lap": f"{info.get('best_lap_time', 0.0):.2f}s",
@@ -230,12 +241,12 @@ def main():
                 reason = info.get("termination_reason", "unknown")
                 is_win = reason == "lap_completed" or info.get("arrive_dest", False)
                 if is_win:
-                    print(f"🎉 [HOÀN THÀNH VÒNG ĐUA] Vòng {lap_count} về đích thành công tại step {step}! (Completion: {comp:.1f}%, Lap Time: {info.get('lap_time', 0.0):.2f}s)")
+                    print(f"🎉 [HOÀN THÀNH LƯỢT ĐUA {lap_count}] Về đích trọn vẹn {max_laps_display} vòng tại step {step}! (Best Lap: {info.get('best_lap_time', 0.0):.2f}s)")
                     bench = env.evaluate_current_lap_benchmark()
                     if bench:
-                        print(f"   >> Benchmark: MAE Racing Line = {bench.get('racing_line_mae_m', 0.0):.2f}m | Apex Acc = {bench.get('apex_speed_accuracy_pct', 0.0):.1f}% | Lap Diff = {bench.get('lap_time_diff_s', 0.0):+.2f}s")
+                        print(f"   >> Benchmark: MAE Racing Line = {bench.get('racing_line_mae_m', 0.0):.2f}m | Apex Acc = {bench.get('apex_cutting_accuracy_pct', 0.0):.1f}% | Best Lap Diff = {bench.get('lap_time_diff_s', 0.0):+.2f}s")
                 else:
-                    print(f"💥 [KẾT THÚC] Vòng {lap_count} dừng tại step {step}: Lý do = {reason} (Completion: {comp:.1f}%)")
+                    print(f"💥 [KẾT THÚC] Lượt đua {lap_count} dừng tại step {step} (Lap {cur_lap_display}/{max_laps_display}): Lý do = {reason} (Completion: {comp:.1f}%)")
                     
                 lap_count += 1
                 step = 0
@@ -246,7 +257,7 @@ def main():
                 if opt_agent is not None:
                     opt_agent.reset()
                 if ghost_car is not None:
-                    ghost_car.spawn_from_env(env, longitudinal=0.0, lateral=2.25)
+                    ghost_car.spawn_from_env(env, longitudinal=0.0, lateral=0.0)
                 if camera_controller is not None:
                     camera_controller.on_reset(main_vehicle=env.car, ghost_car=ghost_car)
 

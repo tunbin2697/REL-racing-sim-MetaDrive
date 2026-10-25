@@ -10,6 +10,8 @@ from dataclasses import dataclass
 from typing import List, Tuple, Optional
 import numpy as np
 
+from game_env.extended_physics import ExtendedVehiclePhysics, ExtendedPhysicsConfig
+
 
 @dataclass
 class VehicleConfig:
@@ -29,18 +31,31 @@ class VehicleConfig:
 
 class BaseRaceVehicle:
     """Lớp cơ sở đóng gói thực thể phương tiện đua xe (Race Vehicle Entity)"""
-    def __init__(self, config: Optional[VehicleConfig] = None):
+    def __init__(
+        self,
+        config: Optional[VehicleConfig] = None,
+        ext_physics_config: Optional[ExtendedPhysicsConfig] = None,
+    ):
         self.cfg = config or VehicleConfig()
+        self.ext_physics = ExtendedVehiclePhysics(ext_physics_config)
         self.raw_vehicle = None
         self.last_action = np.zeros(2, dtype=np.float32)
         self.last_steer = 0.0
         self.last_pedal = 0.0
 
     def reset_state(self):
-        """Khởi tạo lại trạng thái điều khiển"""
+        """Khởi tạo lại trạng thái điều khiển và vật lý mở rộng"""
         self.last_action = np.zeros(2, dtype=np.float32)
         self.last_steer = 0.0
         self.last_pedal = 0.0
+        self.ext_physics.reset()
+
+    def clone(self) -> "BaseRaceVehicle":
+        """Tạo thực thể xe độc lập mới với cùng cấu hình cơ khí và vật lý mở rộng (OOP Prototype pattern)"""
+        import copy
+        new_cfg = copy.deepcopy(self.cfg)
+        new_ext_cfg = copy.deepcopy(self.ext_physics.cfg)
+        return self.__class__(config=new_cfg, ext_physics_config=new_ext_cfg)
 
     def attach_agent(self, vehicle_agent):
         """
@@ -66,7 +81,8 @@ class BaseRaceVehicle:
     def process_action(self, raw_action) -> Tuple[np.ndarray, float, float]:
         """
         Xử lý action thô từ policy RL:
-        - Giới hạn tốc độ đánh lái (Slew Rate Limiter) chống rung lắc 10Hz
+        - Điều chế góc lái và tốc độ đánh lái theo vận tốc (Speed-Sensitive Steering qua ExtendedVehiclePhysics)
+        - Lọc quán tính chân ga/phanh (Powertrain Inertia)
         - Chuyển đổi [steer, pedal] sang định dạng chấp hành của MetaDrive
         Trả về: (action_applied, delta_steer, net_pedal)
         """
@@ -85,14 +101,15 @@ class BaseRaceVehicle:
             
         raw_pedal = float(np.clip(raw_pedal, -1.0, 1.0))
         
-        # Slew rate limiter: Chống giật cục và triệt tiêu rung chấn vô-lăng và chân ga/phanh
-        delta_steer = steer - self.last_steer
-        steer_applied = self.last_steer + np.clip(delta_steer, -self.cfg.max_steer_rate, self.cfg.max_steer_rate)
-        steer_applied = float(np.clip(steer_applied, -1.0, 1.0))
-
-        delta_pedal = raw_pedal - self.last_pedal
-        pedal_applied = self.last_pedal + np.clip(delta_pedal, -self.cfg.max_pedal_rate, self.cfg.max_pedal_rate)
-        pedal_applied = float(np.clip(pedal_applied, -1.0, 1.0))
+        # Cơ cấu chấp hành vật lý mở rộng: Speed-Sensitive Steering & Powertrain Lag
+        steer_applied, delta_steer = self.ext_physics.process_steering(
+            raw_steer=steer,
+            speed_km_h=self.speed_km_h,
+            base_max_rate=self.cfg.max_steer_rate,
+        )
+        
+        # Lọc quán tính chân ga/phanh (Powertrain Inertia Filter)
+        pedal_applied = self.ext_physics.process_pedal(target_pedal=raw_pedal)
         
         self.last_steer = steer_applied
         self.last_pedal = pedal_applied
@@ -177,8 +194,12 @@ class BaseRaceVehicle:
 
 class GT3RaceCar(BaseRaceVehicle):
     """Cấu hình xe đua thể thao chuyên nghiệp chuẩn GT3"""
-    def __init__(self):
-        super().__init__(VehicleConfig(
+    def __init__(
+        self,
+        config: Optional[VehicleConfig] = None,
+        ext_physics_config: Optional[ExtendedPhysicsConfig] = None,
+    ):
+        cfg = config or VehicleConfig(
             name="GT3_RaceCar",
             mass=1100.0,
             max_engine_force=850.0,
@@ -189,13 +210,18 @@ class GT3RaceCar(BaseRaceVehicle):
             length=4.50,
             width=1.85,
             max_speed_km_h=120.0,
-        ))
+        )
+        super().__init__(cfg, ext_physics_config)
 
 
 class DefaultCivilianSedan(BaseRaceVehicle):
     """Cấu hình xe sedan dân dụng nguyên bản của MetaDrive (dành cho đối chứng / Ablation Study)"""
-    def __init__(self):
-        super().__init__(VehicleConfig(
+    def __init__(
+        self,
+        config: Optional[VehicleConfig] = None,
+        ext_physics_config: Optional[ExtendedPhysicsConfig] = None,
+    ):
+        cfg = config or VehicleConfig(
             name="Default_Civilian_Sedan",
             mass=1100.0,
             max_engine_force=789.2,
@@ -206,7 +232,8 @@ class DefaultCivilianSedan(BaseRaceVehicle):
             length=4.50,
             width=1.85,
             max_speed_km_h=120.0,
-        ))
+        )
+        super().__init__(cfg, ext_physics_config)
 
 
 def get_vehicle(name: Optional[str] = "gt3") -> BaseRaceVehicle:

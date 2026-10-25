@@ -29,6 +29,7 @@ import matplotlib.pyplot as plt
 from game_env.racing_env import MetaRacingEnv
 from game_env.vehicle import get_vehicle
 from agents.ppo_agent import PPOAgent
+from agents.optimal_agent import OptimalRacingAgent
 
 # Danh sách góc cua chính trên đường đua 2186m
 TRACK_CORNERS = [
@@ -43,7 +44,8 @@ TRACK_CORNERS = [
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Standalone Telemetry Diagnostic Tool")
-    parser.add_argument("--model", type=str, default="models/best_agent.pt", help="Checkpoint cần chẩn đoán")
+    parser.add_argument("--agent", type=str, default="ppo", choices=["ppo", "optimal"], help="Loại tác tử lái ('ppo' hoặc 'optimal')")
+    parser.add_argument("--model", type=str, default="models/best_agent.pt", help="Checkpoint cần chẩn đoán (nếu dùng agent ppo)")
     parser.add_argument("--vehicle", type=str, default="gt3", choices=["gt3", "sedan"], help="Loại xe chẩn đoán ('gt3' hoặc 'sedan')")
     parser.add_argument("--save-path", type=str, default="plots/telemetry_diagnostic.png", help="Đường dẫn lưu biểu đồ")
     parser.add_argument("--seed", type=int, default=42, help="Seed mô phỏng")
@@ -55,28 +57,34 @@ def main():
     print("=" * 75)
     print("🏎️  CHẨN ĐOÁN SIM RACING TELEMETRY ĐỘC LẬP")
     print("=" * 75)
-    print(f"  - Model checkpoint: {args.model}")
+    print(f"  - Agent Type: {args.agent.upper()}")
+    if args.agent == "ppo":
+        print(f"  - Model checkpoint: {args.model}")
     print(f"  - Vehicle Spec: {race_car.cfg.name}")
     print(f"  - File xuất: {args.save_path}")
     print(f"  - Seed: {args.seed}")
     
     env = MetaRacingEnv(use_render=False, milestone_respawn=False, vehicle=race_car)
-    obs_shape = getattr(env.observation_space, "shape", None)
-    act_shape = getattr(env.action_space, "shape", None)
-    obs_dim = int(obs_shape[0]) if obs_shape is not None else 35
-    act_dim = int(act_shape[0]) if act_shape is not None else 2
     
-    agent = PPOAgent(state_dim=obs_dim, action_dim=act_dim)
-    
-    if os.path.exists(args.model):
-        try:
-            agent.load(args.model)
-            print(f">> [INFO] Đã nạp thành công checkpoint: {args.model} (State Dim: {obs_dim})")
-        except Exception as e:
-            print(f">> [CẢNH BÁO] Không thể nạp checkpoint: {e}")
-            print(">> Sử dụng trọng số mặc định hiện tại để chẩn đoán.")
+    if args.agent == "optimal":
+        agent = OptimalRacingAgent()
+        print(">> [INFO] Sử dụng Theoretical Optimal Benchmark Agent (Convex QP + Lipp & Boyd)")
     else:
-        print(f">> [CẢNH BÁO] Không tìm thấy file {args.model}. Sử dụng chính sách ngẫu nhiên.")
+        obs_shape = getattr(env.observation_space, "shape", None)
+        act_shape = getattr(env.action_space, "shape", None)
+        obs_dim = int(obs_shape[0]) if obs_shape is not None else 35
+        act_dim = int(act_shape[0]) if act_shape is not None else 2
+        agent = PPOAgent(state_dim=obs_dim, action_dim=act_dim)
+        
+        if os.path.exists(args.model):
+            try:
+                agent.load(args.model)
+                print(f">> [INFO] Đã nạp thành công checkpoint: {args.model} (State Dim: {obs_dim})")
+            except Exception as e:
+                print(f">> [CẢNH BÁO] Không thể nạp checkpoint: {e}")
+                print(">> Sử dụng trọng số mặc định hiện tại để chẩn đoán.")
+        else:
+            print(f">> [CẢNH BÁO] Không tìm thấy file {args.model}. Sử dụng chính sách ngẫu nhiên.")
         
     obs, info = env.reset(seed=args.seed, options={"force_start": True})
     step = 0
@@ -85,12 +93,15 @@ def main():
     term_reason = "Running"
     
     while not (terminated or truncated):
-        action, _, _ = agent.select_action(obs, deterministic=True)
+        if args.agent == "optimal":
+            action, _, _ = agent.select_action(vehicle=env.car.raw_vehicle)
+        else:
+            action, _, _ = agent.select_action(obs, deterministic=True)
         obs, reward, terminated, truncated, step_info = env.step(action)
         step += 1
         
         if terminated:
-            if step_info.get("arrive_dest", False):
+            if step_info.get("arrive_dest", False) or step_info.get("termination_reason") == "lap_completed":
                 term_reason = "Về đích trọn vẹn (Finish Lap) 🏁"
             elif step_info.get("crash", False) or step_info.get("out_of_road", False):
                 term_reason = f"Đâm xe / Chệch đường tại s = {env.telemetry.cumulative_distance:.1f}m 💥"
@@ -161,7 +172,10 @@ def main():
     final_time = times[-1]
     max_spd = np.max(speeds)
     mean_spd = np.mean(speeds)
-    completion_pct = (final_dist / track_len) * 100.0
+    if "Finish" in term_reason or step_info.get("arrive_dest", False) or step_info.get("termination_reason") == "lap_completed":
+        completion_pct = 100.0
+    else:
+        completion_pct = float(np.clip((final_dist / track_len) * 100.0, 0.0, 100.0))
 
     print("-" * 75)
     print("📊 KẾT QUẢ CHẨN ĐOÁN & ACADEMIC BENCHMARK:")
@@ -180,9 +194,10 @@ def main():
 
     os.makedirs(os.path.dirname(args.save_path), exist_ok=True)
     fig, axes = plt.subplots(3, 2, figsize=(16, 14), dpi=300)
+    agent_label = "Optimal Benchmark Agent (Convex QP + Lipp & Boyd)" if args.agent == "optimal" else f"PPO: {os.path.basename(args.model)}"
     fig.suptitle(
         f"Sim Racing Telemetry & Dynamic Benchmark Dashboard\n"
-        f"Model: {os.path.basename(args.model)} | Dist: {final_dist:.1f}m ({completion_pct:.1f}%) | Time: {final_time:.2f}s (Opt: {t_opt:.1f}s) | Line MAE: {bench_metrics['racing_line_mae_m']:.2f}m | Apex: {bench_metrics['apex_cutting_accuracy_pct']:.0f}%",
+        f"{agent_label} | Dist: {final_dist:.1f}m ({completion_pct:.1f}%) | Time: {final_time:.2f}s (Opt: {t_opt:.1f}s) | Line MAE: {bench_metrics['racing_line_mae_m']:.2f}m | Apex: {bench_metrics['apex_cutting_accuracy_pct']:.0f}%",
         fontsize=13, fontweight="bold"
     )
 
