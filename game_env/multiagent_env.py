@@ -178,7 +178,7 @@ class MultiAgentRacingEnv:
             and self.num_track_points > 1
         ):
             dists = np.sum((self.track_xy - pos) ** 2, axis=1)
-            idx = int(np.argmin(dists))
+            idx = int(dists.argmin())
             current_s = float(self.track_s[idx])
             track_pt = self.track_xy[idx]
             track_heading = float(self.track_theta[idx])

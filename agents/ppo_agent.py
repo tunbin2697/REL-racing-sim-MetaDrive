@@ -52,6 +52,19 @@ class PPOAgent:
         self.lr_critic = lr
         self.actor_optimizer = optim.Adam(self.actor_params, lr=self.lr_actor, eps=1e-5)
         self.critic_optimizer = optim.Adam(self.critic_params, lr=self.lr_critic, eps=1e-5)
+
+    def set_lr(self, lr: float):
+        """Cập nhật learning rate động cho Actor và Critic optimizers"""
+        self.lr_actor = float(lr)
+        self.lr_critic = float(lr)
+        for param_group in self.actor_optimizer.param_groups:
+            param_group["lr"] = float(lr)
+        for param_group in self.critic_optimizer.param_groups:
+            param_group["lr"] = float(lr)
+
+    def get_lr(self) -> float:
+        """Lấy learning rate hiện hành của Actor optimizer"""
+        return float(self.actor_optimizer.param_groups[0]["lr"])
         
     @property
     def network(self):

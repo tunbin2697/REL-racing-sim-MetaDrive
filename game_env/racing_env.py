@@ -242,7 +242,7 @@ class MetaRacingEnv(gym.Env):
         # Định vị vạch xuất phát / cán đích (Start/Finish Grid) tại x = 60.0m trên Hamilton Straight
         # Khớp chuẩn với vị trí vạch xuất phát thực tế của F1 Silverstone GP
         dists_to_grid = np.sum((np.array([p["pos"] for p in track_points]) - np.array([60.0, 2.25])) ** 2, axis=1)
-        grid_k = int(np.argmin(dists_to_grid))
+        grid_k = int(dists_to_grid.argmin())
         if grid_k > 0:
             track_points = track_points[grid_k:] + track_points[:grid_k]
 
@@ -265,17 +265,17 @@ class MetaRacingEnv(gym.Env):
         pos_2d = np.array(pos[:2], dtype=np.float32)
         if hint_idx is None or self.num_track_points <= 1:
             dists = np.sum((self.track_xy - pos_2d) ** 2, axis=1)
-            idx = int(np.argmin(dists))
+            idx = int(dists.argmin())
         elif hint_idx < 40:
             # Gần vạch xuất phát: KHÔNG cho phép tìm lùi vòng ra đuôi đường đua (chống bug về đích ảo)
             indices = np.arange(0, min(self.num_track_points, hint_idx + 60))
             dists = np.sum((self.track_xy[indices] - pos_2d) ** 2, axis=1)
-            idx = int(indices[np.argmin(dists)])
+            idx = int(indices[dists.argmin()])
         else:
             window = 60
             indices = np.arange(hint_idx - 15, hint_idx + window) % self.num_track_points
             dists = np.sum((self.track_xy[indices] - pos_2d) ** 2, axis=1)
-            idx = int(indices[np.argmin(dists)])
+            idx = int(indices[dists.argmin()])
             
         return idx, float(self.track_s[idx])
 
@@ -507,17 +507,20 @@ class MetaRacingEnv(gym.Env):
         throttle = max(0.0, net_pedal)
         brake = max(0.0, -net_pedal)
         
-        _, _, terminated, truncated, info = self.env.step(action_applied)
-        
+        # 2. Áp dụng các định luật vật lý 3 trục tự nhiên (Induced Drag, Kamm Circle, Load Transfer)
         vehicle = self.env.agent
         assert vehicle is not None, "Vehicle agent was lost during step"
-        # Áp dụng lực cản chà lốp khi bẻ lái ở tốc độ cao (Steering Scrub Drag)
-        scrub_speed_loss = self.car.ext_physics.apply_steering_scrub_drag(
+        scrub_speed_loss = self.car.ext_physics.apply_dynamics(
             raw_vehicle=vehicle,
             applied_steer=float(action_applied[0]),
+            applied_pedal=float(action_applied[1]),
             speed_m_s=self.car.speed_m_s,
+            heading_theta=float(vehicle.heading_theta),
             dt=self.dt,
+            base_friction=float(self.car.cfg.wheel_friction),
         )
+
+        _, _, terminated, truncated, info = self.env.step(action_applied)
         
         # 2. Kiểm tra Runoff & Track Limits theo chuẩn FIA 4 bánh
         on_runoff, is_full_out = self.check_track_limits_and_apply_runoff()
@@ -662,6 +665,8 @@ class MetaRacingEnv(gym.Env):
         info["max_laps"] = int(self.max_laps)
         info["best_lap_time"] = float(self.best_lap_time)
         info["speed_km_h"] = float(speed_km_h)
+        info["scrub_loss_km_h"] = float(scrub_speed_loss)
+        info["is_oversteering"] = bool(getattr(self.car.ext_physics, "is_oversteering", False))
         mean_lap_speed = float(np.mean([s["speed_km_h"] for s in self.telemetry.current_lap_data])) if self.telemetry.current_lap_data else speed_km_h
         info["mean_speed_km_h"] = float(mean_lap_speed)
         info["track_s"] = float(current_s)

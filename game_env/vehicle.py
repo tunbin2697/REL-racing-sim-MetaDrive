@@ -177,7 +177,9 @@ class BaseRaceVehicle:
 
     @property
     def yaw_rate(self) -> float:
-        return float(getattr(self.raw_vehicle, "yaw_rate", 0.0)) if self.raw_vehicle else 0.0
+        if self.raw_vehicle is not None and hasattr(self.raw_vehicle, "body") and hasattr(self.raw_vehicle.body, "get_angular_velocity"):
+            return float(self.raw_vehicle.body.get_angular_velocity()[2])
+        return 0.0
 
     @property
     def crash_vehicle(self) -> bool:

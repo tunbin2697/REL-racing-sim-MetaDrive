@@ -59,6 +59,10 @@ def parse_args():
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
     parser.add_argument("--vehicle", type=str, default="gt3", choices=["gt3", "sedan"], help="Loại xe đua ('gt3' hoặc 'sedan' đối chứng)")
     parser.add_argument("--max-laps", type=int, default=2, help="Số vòng đua tối đa mỗi episode (mặc định 2 laps: Lap 1 Standing Start + Lap 2 Flying Lap)")
+    parser.add_argument("--lr-decay", action="store_true", default=True, help="Tự động giảm dần Learning Rate tuyến tính từ --lr về --min-lr theo tiến trình tổng bước")
+    parser.add_argument("--no-lr-decay", action="store_false", dest="lr_decay", help="Tắt cơ chế giảm Learning Rate (giữ cố định)")
+    parser.add_argument("--min-lr", type=float, default=5e-5, help="Learning rate sàn khi dùng LR decay (mặc định 5e-5)")
+    parser.add_argument("--milestone-freq", type=int, default=500000, help="Khoảng bước lưu milestone snapshot (mặc định 500k steps)")
     parser.add_argument("--save-dir", type=str, default="models", help="Thư mục lưu weights")
     parser.add_argument("--log-dir", type=str, default="logs", help="Thư mục lưu log số liệu")
     parser.add_argument("--tb-logdir", type=str, default="runs", help="Thư mục lưu TensorBoard logs")
@@ -453,7 +457,13 @@ def main():
         _, _, next_value = agent.select_action(obs, deterministic=True)
         advantages, returns = agent.compute_gae(rewards, values, dones, next_value)
         
-        # 3. Cập nhật mạng Actor-Critic
+        # 3. Cập nhật Learning Rate theo lịch trình Linear Decay
+        if args.lr_decay and target_total_steps > 0:
+            frac = max(0.0, min(1.0, 1.0 - (global_step / target_total_steps)))
+            current_lr = args.min_lr + frac * (args.lr - args.min_lr)
+            agent.set_lr(current_lr)
+
+        # Cập nhật mạng Actor-Critic
         train_info = agent.update(states, actions, log_probs, advantages, returns, values)
         update_idx += 1
         
@@ -556,10 +566,25 @@ def main():
                 agent.save(best_model_path)
                 print(f"  🏆 [VALID RECORD - BEST AGENT SAVED] {best_model_path} ({record_msg})")
 
+            # Luôn lưu checkpoint mới nhất (last_agent.pt) để có thể resume bất kỳ lúc nào
+            last_model_path = os.path.join(args.save_dir, "last_agent.pt")
+            agent.save(last_model_path)
+
+            # Lưu Milestone Snapshot định kỳ (mỗi milestone_freq steps, vd: 500k, 1000k...)
+            if args.milestone_freq > 0:
+                prev_milestone = (global_step - args.rollout_len * args.eval_freq) // args.milestone_freq
+                curr_milestone = global_step // args.milestone_freq
+                if curr_milestone > prev_milestone and curr_milestone > 0:
+                    milestone_step = curr_milestone * args.milestone_freq
+                    milestone_path = os.path.join(args.save_dir, f"agent_step_{milestone_step // 1000}k.pt")
+                    agent.save(milestone_path)
+                    print(f"  💾 [MILESTONE SAVED] Đã lưu snapshot tại: {milestone_path}")
+
             # Lưu metrics JSON định kỳ
             save_metrics_json(metrics, log_dir=args.log_dir)
             
             # Ghi log liên tục lên TensorBoard Dashboard
+            writer.add_scalar("Hyperparameters/Learning_Rate", agent.get_lr(), global_step)
             writer.add_scalar("Performance/Eval_Return", eval_res["mean_return"], global_step)
             writer.add_scalar("Performance/Track_Completion_Pct", eval_res["mean_completion"], global_step)
             writer.add_scalar("Performance/Mean_Speed_kmh", eval_res["mean_speed"], global_step)

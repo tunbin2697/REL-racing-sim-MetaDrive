@@ -13,13 +13,97 @@ Tác Tử Đua Xe Tối Ưu Lý Thuyết (Theoretical Dynamic Optimal Agent)
 import os
 from typing import Dict, List, Optional, Tuple, Any
 import numpy as np
+from scipy.optimize import lsq_linear
+
+
+class LongitudinalRacingMPC:
+    """
+    Bộ điều khiển Dự báo Mô hình Dọc (Longitudinal Model Predictive Control)
+    Áp dụng Tối ưu hóa Lồi Quadratic Programming (Convex QP) để tìm chuỗi gia tốc a_x tối ưu
+    trong cửa sổ dự báo tương lai N steps, giải quyết triệt để hiện tượng nhấp nhả phanh và lỡ trớn.
+    """
+    def __init__(
+        self,
+        horizon: int = 15,
+        dt: float = 0.10,
+        max_brake_acc: float = 6.5,
+        max_engine_acc: float = 3.5,
+        mu: float = 1.35,
+    ):
+        self.N = horizon
+        self.dt = dt
+        self.max_brake = max_brake_acc
+        self.max_engine = max_engine_acc
+        self.mu = mu
+        self.g = 9.81
+
+        # Trọng số tối ưu hóa (Cost Function Weights)
+        self.q_v = 1.2        # Phạt sai số vận tốc so với mục tiêu (m/s)
+        self.r_a = 0.05       # Phạt công suất gia tốc
+        self.w_da = 2.5       # Phạt độ giật (Jerk rate: Delta a_x) -> Triệt tiêu 100% nhấp nhả ga/phanh
+
+        N = self.N
+        # Ma trận động lực học dọc: v_k = v_0 + dt * sum_{j=0}^{k-1} a_j
+        self.L_lower = np.tril(np.ones((N, N))) * self.dt
+
+        # Toán tử biến thiên gia tốc Delta a_k = a_k - a_{k-1}
+        self.M = np.eye(N)
+        for i in range(1, N):
+            self.M[i, i - 1] = -1.0
+        self.M0 = np.zeros(N)
+        self.M0[0] = 1.0
+
+        # Ma trận bài toán Bounded Least Squares: min || A_ls * A_vec - b_ls ||_2^2
+        self.A_ls = np.vstack([
+            np.sqrt(self.q_v) * self.L_lower,
+            np.sqrt(self.r_a) * np.eye(N),
+            np.sqrt(self.w_da) * self.M
+        ])
+
+    def solve(
+        self,
+        v_curr_ms: float,
+        target_v_ms: np.ndarray,
+        target_kappa: np.ndarray,
+        a_prev: float,
+        steer_norm: float = 0.0,
+    ) -> float:
+        """
+        Giải bài toán QP lồi trong thời gian < 0.1 ms bằng trf bounded least-squares
+        Trả về gia tốc tối ưu bước đầu tiên a_opt (m/s^2)
+        """
+        N = self.N
+        err_v = target_v_ms - v_curr_ms
+        b_ls = np.concatenate([
+            np.sqrt(self.q_v) * err_v,
+            np.zeros(N),
+            np.sqrt(self.w_da) * (self.M0 * a_prev)
+        ])
+
+        # Ràng buộc Kamm Friction Circle Ellipse
+        mu_g = self.mu * self.g * 0.94
+        steer_mag = abs(steer_norm)
+        avail_long_grip = float(np.sqrt(max(0.10, 1.0 - min(0.90, (0.88 * steer_mag) ** 2))))
+
+        lb = np.zeros(N)
+        ub = np.zeros(N)
+        for k in range(N):
+            v_targ = max(4.0, float(target_v_ms[k]))
+            kap = abs(float(target_kappa[k]))
+            a_lat = (v_targ ** 2) * kap
+            max_a_long = np.sqrt(max(0.2, mu_g ** 2 - min(mu_g ** 2 - 0.2, a_lat ** 2)))
+            lb[k] = -min(self.max_brake, max_a_long * avail_long_grip)
+            ub[k] = min(self.max_engine, max_a_long)
+
+        res = lsq_linear(self.A_ls, b_ls, bounds=(lb, ub), method='trf', max_iter=15, tol=1e-3)
+        return float(res.x[0])
 
 
 class OptimalRacingAgent:
     """
     Tác tử Đua xe Chuẩn mực (Ground Truth Dynamic Optimal Benchmark Agent)
-    Sử dụng mô hình điều khiển học Stanley kết hợp Feedforward Braking để bám sát
-    Racing Line và Profile tốc độ tối ưu thời gian.
+    Sử dụng mô hình điều khiển học Pure Pursuit bám Racing Line kết hợp Bộ điều khiển
+    Dự báo Mô hình Dọc (Longitudinal MPC) để bám sát Profile tốc độ tối ưu thời gian.
     """
     def __init__(
         self,
@@ -31,11 +115,13 @@ class OptimalRacingAgent:
         k_head: float = 1.2,
         max_steer_rad: float = 0.349,  # 20.0 độ chuẩn GT3
         max_brk_pedal: float = 0.95,   # Khai thác 95% hành trình phanh thể thao chuẩn GT3
+        use_mpc: bool = True,          # Bật bộ điều khiển Longitudinal MPC
     ):
         self.k_lat = float(k_lat)
         self.k_head = float(k_head)
         self.max_steer_rad = float(max_steer_rad)
         self.max_brk_pedal = float(max_brk_pedal)
+        self.use_mpc = bool(use_mpc)
         
         if custom_track_xy is not None:
             # Sử dụng track polyline tùy biến (ví dụ Oval circuit trong MultiAgentRacingEnv)
@@ -92,12 +178,23 @@ class OptimalRacingAgent:
         self.last_hint_idx = 0
         self.filtered_throttle = 0.5
         self.filtered_brake = 0.0
+        self.last_a_opt = 0.0
+        self.mu = 1.35
+        if self.use_mpc:
+            self.mpc = LongitudinalRacingMPC(
+                horizon=15,
+                dt=0.10,
+                max_brake_acc=6.5,
+                max_engine_acc=3.5,
+                mu=self.mu,
+            )
 
     def reset(self):
         """Khởi tạo lại trạng thái của Agent khi bắt đầu vòng đua mới"""
         self.last_hint_idx = 0
         self.filtered_throttle = 0.5
         self.filtered_brake = 0.0
+        self.last_a_opt = 0.0
 
     def select_action(
         self,
@@ -145,18 +242,22 @@ class OptimalRacingAgent:
         ds = max(0.5, self.circuit_length / self.num_points)
         
         # Pure Pursuit Lookahead thích ứng theo độ cong và vận tốc:
-        # Khi đề-pa xuất phát (Grid Launch), ngắm xa hơn (14m) để nhập về racing line mượt mà
-        is_grid_launch = bool(self.track_s[idx_near] < 180.0 and v_curr_kmh < 110.0)
+        # Nhận diện đề-pa xuất phát (Grid Launch) bao gồm cả trường hợp xe xếp so le sau vạch đích (Hamilton Straight wrap-around)
+        is_grid_launch = bool(
+            (self.track_s[idx_near] < 180.0 or self.track_s[idx_near] > self.circuit_length - 150.0)
+            and v_curr_kmh < 100.0
+        )
         p_near = self.optimal_line_xy[idx_near]
         k_near = abs(float(self.optimal_line_kappa[idx_near]))
         
         if is_grid_launch:
-            L_d = 14.0
+            # Cự ly ngắm 16m giúp thân xe ngắm xa dọc thẳng Hamilton Straight, chống bẻ gắt sang ngang gây kẹt xe
+            L_d = 16.0
         else:
-            raw_ld = 4.5 + 0.11 * v_curr_kmh
+            raw_ld = max(6.0, 5.0 + 0.12 * v_curr_kmh)
             # Rút ngắn cự ly ngắm khi vào cua gắt hoặc cua S (Maggots/Becketts/Vale) để bám sát Apex thay vì ngắm xuyên cua
-            curv_damping = 1.0 + 14.0 * k_near
-            L_d = float(np.clip(raw_ld / curv_damping, 4.0, 18.0))
+            curv_damping = 1.0 + 10.0 * k_near
+            L_d = float(np.clip(raw_ld / curv_damping, 5.0, 20.0))
         
         lookahead_steps = int(round(L_d / ds))
         idx_target = (idx_near + lookahead_steps) % self.num_points
@@ -199,37 +300,81 @@ class OptimalRacingAgent:
         # Trail-Braking & Traction Control qua Elip ma sát Kamm (Friction Circle):
         steer_mag = abs(steer_norm)
         avail_long_grip = float(np.sqrt(max(0.10, 1.0 - min(0.90, (0.90 * steer_mag) ** 2))))
-        # Giới hạn bướm ga theo góc lái: không thể dậm full ga khi đang bẻ lái gắt trong cua (tránh understeer)
-        traction_factor = float(np.clip(1.0 - 1.20 * (steer_mag ** 1.3), 0.18, 1.0))
+        # Traction Control chuẩn Sim Racing:
+        # Ở tốc độ thấp (v < 35 km/h) hoặc khi đề-pa xuất phát: Luôn mở 100% bướm ga, chống bẫy lực cản chà lốp
+        # Ở tốc độ cao: Điều hòa bướm ga mượt mà chống understeer nhưng không bao giờ cắt dưới 35%
+        if v_curr_kmh < 35.0 or is_grid_launch:
+            traction_factor = 1.0
+        else:
+            traction_factor = float(np.clip(1.0 - 0.70 * (steer_mag ** 1.5), 0.35, 1.0))
 
         if is_grid_launch:
             # Launch Control trên đoạn thẳng Hamilton Straight: Full ga tức thì
             target_brake = 0.0
             target_throttle = 1.0
+            self.last_a_opt = 3.5
+        elif self.use_mpc:
+            # 4a. Điều khiển dọc tối ưu hóa đa bước: Longitudinal Racing MPC (Convex QP)
+            indices_fut = []
+            idx_cursor = idx_near
+            for k in range(self.mpc.N):
+                v_est = max(4.0, float(self.optimal_speed_kmh[idx_cursor] / 3.6))
+                step_adv = max(1, int(round((v_est * self.mpc.dt) / ds)))
+                idx_cursor = (idx_cursor + step_adv) % self.num_points
+                indices_fut.append(idx_cursor)
+
+            target_v_ms = (self.optimal_speed_kmh[indices_fut] / 3.6).copy()
+            target_kappa = self.optimal_line_kappa[indices_fut]
+
+            # Quét trước 110m để bảo toàn cự ly phanh muộn (Predictive Dynamic Braking Horizon)
+            for k in range(self.mpc.N):
+                ik = indices_fut[k]
+                scan_idx = (ik + np.arange(1, n_scan + 1)) % self.num_points
+                scan_v = self.optimal_speed_kmh[scan_idx] / 3.6
+                scan_d = np.arange(1, n_scan + 1) * ds
+                allowed_v = np.sqrt(scan_v ** 2 + 2.0 * a_brake_safe * scan_d)
+                target_v_ms[k] = min(target_v_ms[k], float(np.min(allowed_v)))
+
+            # Giải bài toán QP tìm chuỗi gia tốc tối ưu trong < 0.1 ms
+            a_opt = self.mpc.solve(v_curr_ms, target_v_ms, target_kappa, self.last_a_opt, steer_norm)
+            self.last_a_opt = a_opt
+
+            # Ánh xạ gia tốc a_opt sang chân ga và phanh trơn liên tục, triệt tiêu 100% nhấp nhả
+            if a_opt >= 0.0:
+                maint_thr = 0.40 if v_curr_kmh > 40.0 else 0.20
+                thr_factor = float(np.clip(a_opt / self.mpc.max_engine, 0.0, 1.0))
+                target_throttle = float(maint_thr + thr_factor * (1.0 - maint_thr)) * traction_factor
+                target_brake = 0.0
+            else:
+                overspeed_acc = -a_opt
+                if overspeed_acc <= 0.8:
+                    # Coasting / Engine Drag tự nhiên - Tuyệt đối không nhấp nhả phanh
+                    maint_thr = 0.40 if v_curr_kmh > 40.0 else 0.20
+                    target_throttle = float(maint_thr * (1.0 - overspeed_acc / 0.8)) * traction_factor
+                    target_brake = 0.0
+                else:
+                    target_throttle = 0.0
+                    brk_norm = float(np.clip((overspeed_acc - 0.8) / (self.mpc.max_brake - 0.8), 0.0, 1.0))
+                    target_brake = float(brk_norm * avail_long_grip * self.max_brk_pedal)
         elif v_err_kmh >= 0.0:
-            # Tăng tốc tịnh tiến (Proportional Throttle): Càng gần v_target thì ga càng mềm mại
+            # 4b. Chế độ dự phòng (Heuristic Proportional Throttle): Càng gần v_target thì ga càng mềm mại
             target_brake = 0.0
             maint_thr = 0.45 if v_curr_kmh > 40.0 else 0.22
             thr_factor = float(np.clip(v_err_kmh / 4.5, 0.0, 1.0))
             target_throttle = float(maint_thr + thr_factor * (1.0 - maint_thr)) * traction_factor
         else:
-            # Giảm tốc: Điều chế chân ga mượt mà (Partial Throttle Roll-off) cho các góc cua rộng
+            # Giảm tốc dự phòng: Điều chế chân ga mượt mà (Partial Throttle Roll-off)
             overspeed_kmh = -v_err_kmh
             lift_band = 2.0
             if overspeed_kmh <= lift_band:
-                # Trong dải vượt tốc nhẹ (0 -> 2 km/h ở cua rộng hoặc lối vào cua lơi):
-                # Tuyệt đối KHÔNG đạp phanh gây nhấp nhả; giảm ga tỷ lệ từ maint_thr về 0
-                # để động cơ và khí động tự ghìm xe bám đường êm ái
                 maint_thr = 0.45 if v_curr_kmh > 40.0 else 0.22
                 target_throttle = float(maint_thr * (1.0 - overspeed_kmh / lift_band)) * traction_factor
                 target_brake = 0.0
             else:
-                # Vượt quá 2 km/h (cần giảm tốc mạnh vào cua hẹp/hairpin): Phanh trail-braking lũy tiến
                 target_throttle = 0.0
                 excess_speed = overspeed_kmh - lift_band
                 brk_fraction = float(np.clip(excess_speed / 4.5, 0.0, 1.0))
-                max_brk_pedal = getattr(self, "max_brk_pedal", 0.95)
-                target_brake = float(brk_fraction * max_brk_pedal * avail_long_grip)
+                target_brake = float(brk_fraction * self.max_brk_pedal * avail_long_grip)
 
         # Bộ lọc làm mượt: Phanh phản hồi nhanh nhạy (alpha=0.85), ga dứt khoát thể thao (alpha=0.85)
         alpha_thr = 0.85

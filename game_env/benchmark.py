@@ -342,7 +342,7 @@ class RacingBenchmarkEngine:
             if len(window_indices) > 0:
                 dists_to_apex = np.linalg.norm(ego_xy[window_indices] - apex["pos"], axis=1)
                 min_dist_apex = float(np.min(dists_to_apex))
-                idx_best = window_indices[int(np.argmin(dists_to_apex))]
+                idx_best = window_indices[int(dists_to_apex.argmin())]
                 
                 v_actual = float(ego_speeds[idx_best])
                 v_target = float(apex["target_speed_kmh"])
