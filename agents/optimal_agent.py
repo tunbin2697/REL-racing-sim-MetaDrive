@@ -136,7 +136,7 @@ class OptimalRacingAgent:
         window = 100
         indices = np.arange(self.last_hint_idx - 20, self.last_hint_idx + window) % self.num_points
         d_sq = np.sum((self.optimal_line_xy[indices] - p_curr) ** 2, axis=1)
-        min_local = int(np.argmin(d_sq))
+        min_local = int(d_sq.argmin())
         idx_near = int(indices[min_local])
         self.last_hint_idx = idx_near
 
@@ -144,13 +144,19 @@ class OptimalRacingAgent:
         wheelbase = 2.75  # Chiều dài cơ sở GT3 (m)
         ds = max(0.5, self.circuit_length / self.num_points)
         
-        # Pure Pursuit Lookahead thích ứng:
-        # Khi đề-pa xuất phát (Grid Launch), ngắm xa hơn (16m) để nhập về racing line mượt mà mà không bẻ gắt lái
+        # Pure Pursuit Lookahead thích ứng theo độ cong và vận tốc:
+        # Khi đề-pa xuất phát (Grid Launch), ngắm xa hơn (14m) để nhập về racing line mượt mà
         is_grid_launch = bool(self.track_s[idx_near] < 180.0 and v_curr_kmh < 110.0)
         p_near = self.optimal_line_xy[idx_near]
-        lat_err = float(np.linalg.norm(p_curr - p_near))
-        base_min_ld = 14.0 if is_grid_launch else (max(4.5, 2.5 * lat_err) if v_curr_kmh < 50.0 else 4.5)
-        L_d = float(np.clip(max(base_min_ld, 4.0 + 0.11 * v_curr_kmh), 4.5, 22.0))
+        k_near = abs(float(self.optimal_line_kappa[idx_near]))
+        
+        if is_grid_launch:
+            L_d = 14.0
+        else:
+            raw_ld = 4.5 + 0.11 * v_curr_kmh
+            # Rút ngắn cự ly ngắm khi vào cua gắt hoặc cua S (Maggots/Becketts/Vale) để bám sát Apex thay vì ngắm xuyên cua
+            curv_damping = 1.0 + 14.0 * k_near
+            L_d = float(np.clip(raw_ld / curv_damping, 4.0, 18.0))
         
         lookahead_steps = int(round(L_d / ds))
         idx_target = (idx_near + lookahead_steps) % self.num_points
@@ -175,57 +181,59 @@ class OptimalRacingAgent:
         # 4. Điều khiển dọc: Predictive Dynamic Braking Horizon + Kamm Trail-Braking
         v_curr_ms = max(0.1, v_curr_kmh / 3.6)
         
-        # Predictive Dynamic Braking Horizon: Quét trước 60 mét theo cự ly phanh muộn (Late Braking)
-        max_scan_m = 60.0
+        # Predictive Dynamic Braking Horizon: Quét trước 110 mét theo cự ly phanh muộn (Late Braking)
+        max_scan_m = 110.0
         n_scan = min(self.num_points - 1, max(5, int(round(max_scan_m / ds))))
         scan_indices = (idx_near + np.arange(1, n_scan + 1)) % self.num_points
         scan_speeds_ms = self.optimal_speed_kmh[scan_indices] / 3.6
         scan_dists_m = np.arange(1, n_scan + 1) * ds
         
         # Gia tốc phanh khả dụng an toàn (m/s^2) - Kỹ thuật Late Braking khai thác công suất phanh GT3
-        a_brake_safe = 5.20
+        a_brake_safe = 5.80
         allowed_speeds_ms = np.sqrt(scan_speeds_ms ** 2 + 2.0 * a_brake_safe * scan_dists_m)
         v_target_ms = min(float(self.optimal_speed_kmh[idx_near] / 3.6), float(np.min(allowed_speeds_ms)))
         v_target_kmh = float(v_target_ms * 3.6)
         
         v_err_kmh = v_target_kmh - v_curr_kmh
 
-        # Trail-Braking qua Elip ma sát Kamm (Friction Circle):
+        # Trail-Braking & Traction Control qua Elip ma sát Kamm (Friction Circle):
         steer_mag = abs(steer_norm)
         avail_long_grip = float(np.sqrt(max(0.10, 1.0 - min(0.90, (0.90 * steer_mag) ** 2))))
-        traction_factor = float(np.sqrt(max(0.40, 1.0 - min(0.80, (0.80 * steer_mag) ** 2))))
+        # Giới hạn bướm ga theo góc lái: không thể dậm full ga khi đang bẻ lái gắt trong cua (tránh understeer)
+        traction_factor = float(np.clip(1.0 - 1.20 * (steer_mag ** 1.3), 0.18, 1.0))
 
         if is_grid_launch:
             # Launch Control trên đoạn thẳng Hamilton Straight: Full ga tức thì
             target_brake = 0.0
             target_throttle = 1.0
         elif v_err_kmh >= 0.0:
-            # Tăng tốc (Acceleration): nhả phanh, mở ga
+            # Tăng tốc tịnh tiến (Proportional Throttle): Càng gần v_target thì ga càng mềm mại
             target_brake = 0.0
-            if (steer_mag < 0.45 and v_curr_kmh < 98.0) or (steer_mag < 0.25 and v_curr_kmh < 119.5):
-                # Thoát cua sớm hoặc chạy trên đoạn thẳng: full ga
-                target_throttle = 1.0
-            else:
-                # Trong cua: ga tăng mượt theo sai số tốc độ kết hợp lực bám ngang và bù lực cản chà lốp
-                maint_thr = 0.42 if v_curr_kmh > 35.0 else 0.22
-                target_throttle = float(np.clip(maint_thr + (v_err_kmh / 4.0) * (1.0 - maint_thr), 0.0, 1.0)) * traction_factor
+            maint_thr = 0.45 if v_curr_kmh > 40.0 else 0.22
+            thr_factor = float(np.clip(v_err_kmh / 4.5, 0.0, 1.0))
+            target_throttle = float(maint_thr + thr_factor * (1.0 - maint_thr)) * traction_factor
         else:
-            # Giảm tốc (Deceleration):
+            # Giảm tốc: Điều chế chân ga mượt mà (Partial Throttle Roll-off) cho các góc cua rộng
             overspeed_kmh = -v_err_kmh
-            if overspeed_kmh <= 2.0:
-                # Lift-and-Coast: Tận dụng quán tính và lực cản tự nhiên, chỉ nhả ga không cần phanh
-                target_throttle = 0.0
+            lift_band = 2.0
+            if overspeed_kmh <= lift_band:
+                # Trong dải vượt tốc nhẹ (0 -> 2 km/h ở cua rộng hoặc lối vào cua lơi):
+                # Tuyệt đối KHÔNG đạp phanh gây nhấp nhả; giảm ga tỷ lệ từ maint_thr về 0
+                # để động cơ và khí động tự ghìm xe bám đường êm ái
+                maint_thr = 0.45 if v_curr_kmh > 40.0 else 0.22
+                target_throttle = float(maint_thr * (1.0 - overspeed_kmh / lift_band)) * traction_factor
                 target_brake = 0.0
             else:
-                # Phanh lũy tiến liên tục theo sai số tốc độ và độ bám dọc còn lại của Elip Kamm
+                # Vượt quá 2 km/h (cần giảm tốc mạnh vào cua hẹp/hairpin): Phanh trail-braking lũy tiến
                 target_throttle = 0.0
-                brk_fraction = float(np.clip((overspeed_kmh - 2.0) / 5.5, 0.0, 1.0))
+                excess_speed = overspeed_kmh - lift_band
+                brk_fraction = float(np.clip(excess_speed / 4.5, 0.0, 1.0))
                 max_brk_pedal = getattr(self, "max_brk_pedal", 0.95)
                 target_brake = float(brk_fraction * max_brk_pedal * avail_long_grip)
 
-        # Bộ lọc làm mượt: Phanh phản hồi nhanh nhạy (alpha=0.80), ga dứt khoát thể thao (alpha=0.85)
+        # Bộ lọc làm mượt: Phanh phản hồi nhanh nhạy (alpha=0.85), ga dứt khoát thể thao (alpha=0.85)
         alpha_thr = 0.85
-        alpha_brk = 0.80
+        alpha_brk = 0.85
         self.filtered_throttle = float((1.0 - alpha_thr) * self.filtered_throttle + alpha_thr * target_throttle)
         self.filtered_brake = float((1.0 - alpha_brk) * self.filtered_brake + alpha_brk * target_brake)
 
