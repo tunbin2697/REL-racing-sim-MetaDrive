@@ -168,7 +168,7 @@ def main():
 
     obs_shape = env.observation_space.shape
     act_shape = env.action_space.shape
-    obs_dim = int(obs_shape[0]) if obs_shape is not None else 42
+    obs_dim = int(obs_shape[0]) if obs_shape is not None else 40
     act_dim = int(act_shape[0]) if act_shape is not None else 3
 
     agent = PPOAgent(

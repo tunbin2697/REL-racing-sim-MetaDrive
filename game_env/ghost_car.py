@@ -2,12 +2,12 @@
 GhostCar: Thực thể Xe Bóng Ma Đối Chứng (Ghost Car Entity) trong Mô phỏng 3D
 Áp dụng Lập trình Hướng đối tượng (OOP) & Single Responsibility Principle (SRP):
 - Đóng gói toàn bộ logic khởi tạo, quản lý vòng đời và điều khiển của xe đối chứng (Ghost Car).
-- Tích hợp bộ điều khiển OptimalRacingAgent (Pure Pursuit + Feedforward Braking).
+- Tích hợp bộ điều khiển OptimalRacingAgent (Pure Pursuit + Longitudinal MPC).
 - Thu thập và cung cấp telemetry thời gian thực (Ghost Speed, Delta Time, Track s, Trajectory Error).
 - Hoàn toàn độc lập với tác tử PPO, đảm bảo tính liêm chính học thuật (không rò rỉ dữ liệu).
 """
 
-from typing import Optional, Dict, Any, Tuple
+from typing import Optional, Dict, Any
 import numpy as np
 
 from metadrive.component.vehicle.vehicle_type import DefaultVehicle
@@ -43,17 +43,27 @@ class GhostCar:
         spawn_lane: Any,
         longitudinal: float = 0.0,
         lateral: float = 0.0,
+        exact_pos: Optional[np.ndarray] = None,
+        exact_heading: Optional[float] = None,
     ) -> bool:
         """
         Khởi tạo xe Ghost Car vào thế giới vật lý của MetaDrive
+        cùng vị trí xuất phát và vận tốc đứng yên 0 km/h như xe chính.
         """
         self.engine = engine
         if self.raw_vehicle is not None:
             self.destroy(engine)
             
         try:
-            pos = spawn_lane.position(longitudinal, lateral)
-            heading = float(spawn_lane.heading_theta_at(longitudinal))
+            if exact_pos is not None:
+                pos = [float(exact_pos[0]), float(exact_pos[1])]
+            else:
+                pos = spawn_lane.position(longitudinal, lateral)
+                
+            if exact_heading is not None:
+                heading = float(exact_heading)
+            else:
+                heading = float(spawn_lane.heading_theta_at(longitudinal))
             
             # Cấu hình xe Ghost: đồng bộ hoàn toàn từ self.car.cfg (OOP - Single Source of Truth)
             ghost_config = {
@@ -73,9 +83,11 @@ class GhostCar:
                 heading=heading,
             )
             
-            # Cấu hình lốp xe bám đường chuẩn GT3
+            # Cấu hình lốp xe bám đường chuẩn GT3 & đặt vận tốc xuất phát từ 0 km/h
             if self.raw_vehicle is not None:
                 self.car.attach_agent(self.raw_vehicle)
+                self.raw_vehicle.set_position(pos)
+                self.raw_vehicle.set_velocity([0.0, 0.0])
                 wheels = getattr(self.raw_vehicle, "wheels", None)
                 if wheels is not None:
                     for wheel in wheels:
@@ -111,8 +123,11 @@ class GhostCar:
             self.raw_vehicle = None
             return False
 
-    def spawn_from_env(self, env: Any, longitudinal: Optional[float] = None, lateral: float = 0.0) -> bool:
-        """Helper OOP tự động trích xuất engine và spawn_lane từ MetaRacingEnv an toàn tuyệt đối"""
+    def spawn_from_env(self, env: Any, longitudinal: Optional[float] = None, lateral: Optional[float] = None) -> bool:
+        """
+        Helper OOP tự động trích xuất engine và vị trí xuất phát từ MetaRacingEnv:
+        Đặt Ghost Car tại CÙNG VỊ TRÍ và CÙNG VẬN TỐC 0 km/h với xe chính để đối chứng công bằng.
+        """
         try:
             raw_env = getattr(env, "env", env)
             engine = getattr(raw_env, "engine", None)
@@ -129,13 +144,21 @@ class GhostCar:
             lane = road_network.get_lane(agent.lane_index)
             if lane is None:
                 return False
-            if longitudinal is None or longitudinal == 0.0:
-                # Tự động xếp so le sau xe chính 8m trên vạch xuất phát P2
-                long_val, lat_val = lane.local_coordinates(agent.position)
-                longitudinal = max(0.0, float(long_val) - 8.0)
-                if lateral == 0.0 and abs(float(lat_val)) > 0.1:
-                    lateral = float(lat_val)
-            return self.spawn(engine, lane, longitudinal=longitudinal, lateral=lateral)
+                
+            long_val, lat_val = lane.local_coordinates(agent.position)
+            spawn_long = float(long_val) if longitudinal is None else float(longitudinal)
+            spawn_lat = float(lat_val) if lateral is None else float(lateral)
+            exact_pos = np.array(agent.position[:2], dtype=np.float32) if longitudinal is None and lateral is None else None
+            exact_heading = float(agent.heading_theta) if longitudinal is None and lateral is None else None
+            
+            return self.spawn(
+                engine,
+                lane,
+                longitudinal=spawn_long,
+                lateral=spawn_lat,
+                exact_pos=exact_pos,
+                exact_heading=exact_heading,
+            )
         except Exception as e:
             print(f">> [GHOST CAR] Lỗi spawn_from_env: {e}")
             return False
@@ -172,9 +195,6 @@ class GhostCar:
         
         # 3. Áp dụng vào Bullet raycast vehicle
         self.raw_vehicle.before_step(action_applied)
-        
-        # 4. Áp dụng các định luật vật lý 3 trục tự nhiên (OOP Encapsulation)
-        self.car.apply_step_dynamics(dt)
         return action
 
     def destroy(self, engine: Any = None):

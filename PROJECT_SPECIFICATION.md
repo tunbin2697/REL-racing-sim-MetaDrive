@@ -118,21 +118,21 @@ Toàn bộ các nút thắt trên nhánh `main` cũ đã được nhóm nghiên 
    * $24$ chiều Lookahead Horizon Preview: 6 waypoint tim đường tại các cự ly $[10, 25, 45, 70, 105, 150]\text{m}$. Tầm nhìn 150m giúp xe tự tin phanh sớm từ tốc độ $> 110\text{ km/h}$.
 3. **Không Gian Hành Động 3 Chiều Độc Lập & Bộ Trộn Chân Ga/Phanh $C^1$**:
    * Phân tách riêng biệt Chân Ga (`throttle`) và Chân Phanh (`brake`), kết hợp bộ trộn Drive-by-Wire liên tục $C^1$ và Slew Rate Limiter, triệt tiêu 100% bẫy bão hòa chân ga và rung giật bàn đạp.
-4. **Kháng Rung Lắc Tay Lái (Anti-Chatter) Bằng Động Lực Học Tự Nhiên**:
-   * Giữ nguyên cơ chế vật lý **Induced Steering Drag** ($F_{\text{drag}} = F_y \sin|\delta|$ qua tâm khối) trong [game_env/extended_physics.py](file:///c:/Users/tunbi/Project/school/REL%20Assignment/game_env/extended_physics.py): Đánh lái dư thừa sẽ tự sinh lực cản dọc làm tụt tốc độ, gián tiếp làm giảm phần thưởng tiến độ mà không cần can thiệp mô-men xoắn nhân tạo.
+4. **Kháng Rung Lắc Tay Lái (Anti-Chatter) Qua Slew Rate Limiter & Phạt Vi Sai Lái**:
+   * Sử dụng trực tiếp cơ chế vật lý Bullet nguyên bản của thư viện MetaDrive kết hợp **Slew Rate Limiter** ($\Delta\text{steer}_{\max} = 0.18/\text{step}$) trong [game_env/vehicle.py](file:///c:/Users/tunbi/Project/school/REL%20Assignment/game_env/vehicle.py) và hình phạt đạo hàm góc lái $r_{\text{steer\_smooth}} = -0.10 (\Delta\text{steer})^2$.
 5. **Hàm Thưởng Chuẩn Hóa Markovian (Không Phạt Tim Đường)**:
    * Loại bỏ hoàn toàn hình phạt lệch tim đường ($r_{\text{center}} = 0$) để Agent tự do mở rộng góc vào cua Out - In - Out và chém Apex.
-   * Thưởng tiến độ dọc trục Frenet $\Delta s$, phạt vi sai lái nhẹ $r_{\text{steer\_smooth}} = -0.01 (\Delta\text{steer})^2$, và thưởng cán đích kết hợp thời gian.
+   * Thưởng tiến độ dọc trục Frenet $\Delta s$, phạt vi sai lái $r_{\text{steer\_smooth}} = -0.10 (\Delta\text{steer})^2$, và thưởng cán đích hàm bậc 3 phi tuyến $R_{\text{finish}} = 50 + 100 \cdot \text{clip}\left(\frac{180 - T_{\text{lap}}}{90}, 0, 1\right)^3$.
 
 ---
 
 ## 📊 6. Outcome Kỳ Vọng & Mốc Benchmark Đối Chiếu
 
 ### 6.1. Xây dựng Mốc So Sánh Độc Lập (Reference Benchmark)
-Đồ án đã xây dựng độc lập động cơ phân tích học thuật `RacingBenchmarkEngine` ([game_env/benchmark.py](file:///c:/Users/tunbi/Project/school/REL%20Assignment/game_env/benchmark.py)) và tác tử giải tích `OptimalRacingAgent`:
-* **Quỹ đạo Cực tiểu Độ cong (Convex QP Minimum Curvature Line)**: Tối ưu hóa độ dịch chuyển ngang $d_{\text{lat}}$ bằng bộ giải bậc hai OSQP để giảm thiểu lực ly tâm $a_y = v^2 \kappa$.
-* **Profile Tốc độ Cực hạn (Lipp & Boyd 3-Pass Method)**: Tính toán phân bố tốc độ tối ưu thời gian dọc quỹ đạo, mang lại mốc thời gian cận trên lý thuyết:
-  $$\mathbf{T^* = 116.99\text{s}} \quad (V_{\text{avg}} = 103.5\text{ km/h}, V_{\max} = 120.0\text{ km/h})$$
+Đồ án đã xây dựng độc lập động cơ phân tích học thuật `RacingBenchmarkEngine` ([game_env/benchmark.py](file:///c:/Users/tunbi/Project/school/REL%20Assignment/game_env/benchmark.py)) và tác tử giải tích `OptimalRacingAgent` (sử dụng `LongitudinalRacingMPC`):
+* **Quỹ đạo Cực tiểu Độ cong (Convex QP Minimum Curvature Line + C2 Gaussian Smoothing)**: Tối ưu hóa độ dịch chuyển ngang $d_{\text{lat}}$ bằng bộ giải bậc hai để giảm thiểu lực ly tâm $a_y = v^2 \kappa$ trên mặt đường nhựa thật $4.5\text{m}$.
+* **Profile Tốc độ Cực hạn (Lipp & Boyd 3-Pass Method)**: Tính toán phân bố tốc độ tối ưu thời gian dọc quỹ đạo khớp với vật lý Bullet nguyên bản, mang lại mốc thời gian cận trên lý thuyết:
+  $$\mathbf{T^* = 110.41\text{s}} \quad (\text{Optimal Agent Flying Lap: } 112.60\text{s}, \text{ Standing Start: } 117.40\text{s}, \text{ Apex Accuracy: } 100\%)$$
 * **Cam kết Zero Data Leakage**: Dữ liệu cận trên lý thuyết chỉ được dùng làm thước đo đánh giá ngoại tuyến, tuyệt đối không mớm vào Observation hay Reward của PPO.
 
 ### 6.2. Các Chỉ Số Định Lượng Đánh Giá Độc Lập

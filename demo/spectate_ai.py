@@ -5,7 +5,7 @@ với nhiều góc quay camera điện ảnh và hiển thị tia quét LiDAR th
 
 Cách chạy:
     conda activate rel_racing
-    python demo/spectate_ai.py --model models/best_agent.pt --map 3
+    python demo/spectate_ai.py --model models/best_agent.pt --ghost
 """
 
 import os
@@ -90,7 +90,7 @@ def main():
             opt_agent = OptimalRacingAgent()
         else:
             obs_shape = env.observation_space.shape
-            state_dim = int(obs_shape[0]) if obs_shape is not None else 42
+            state_dim = int(obs_shape[0]) if obs_shape is not None else 40
             act_shape = env.action_space.shape
             action_dim = int(act_shape[0]) if act_shape is not None else 3
             ppo_agent = PPOAgent(state_dim=state_dim, action_dim=action_dim)
@@ -108,7 +108,7 @@ def main():
         ghost_car = GhostCar(vehicle=race_car)
 
     try:
-        obs, info = env.reset(seed=args.seed)
+        obs, info = env.reset(seed=args.seed, options={"start_mode": "standing"})
         if opt_agent is not None:
             opt_agent.reset()
             
@@ -127,9 +127,9 @@ def main():
                 )
                 print(">> [3D VISUALIZER] Khởi tạo Racing Line 3D thành công! Nhấn phím [L] để Bật/Tắt.")
 
-        # Spawn Ghost Car tại vạch xuất phát
+        # Spawn Ghost Car cùng vị trí vạch xuất phát và cùng vận tốc 0 km/h với xe chính
         if ghost_car is not None:
-            ghost_car.spawn_from_env(env, longitudinal=0.0, lateral=0.0)
+            ghost_car.spawn_from_env(env)
 
         # Khởi tạo Bộ điều khiển Camera Thể thao Đa góc nhìn (Rear-view / Ghost Cam)
         camera_controller = None
@@ -253,11 +253,11 @@ def main():
                 time.sleep(1.0)
                 if ghost_car is not None:
                     ghost_car.destroy(getattr(env.env, "engine", None))
-                obs, info = env.reset(seed=args.seed)
+                obs, info = env.reset(seed=args.seed, options={"start_mode": "standing"})
                 if opt_agent is not None:
                     opt_agent.reset()
                 if ghost_car is not None:
-                    ghost_car.spawn_from_env(env, longitudinal=0.0, lateral=0.0)
+                    ghost_car.spawn_from_env(env)
                 if camera_controller is not None:
                     camera_controller.on_reset(main_vehicle=env.car, ghost_car=ghost_car)
 

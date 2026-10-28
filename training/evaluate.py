@@ -45,7 +45,7 @@ def main():
     env = MetaRacingEnv(use_render=False, num_scenarios=args.episodes, start_seed=100, vehicle=race_car)
     obs_shape = getattr(env.observation_space, "shape", None)
     act_shape = getattr(env.action_space, "shape", None)
-    obs_dim = int(obs_shape[0]) if obs_shape is not None else 42
+    obs_dim = int(obs_shape[0]) if obs_shape is not None else 40
     act_dim = int(act_shape[0]) if act_shape is not None else 3
 
     agent = PPOAgent(state_dim=obs_dim, action_dim=act_dim)
