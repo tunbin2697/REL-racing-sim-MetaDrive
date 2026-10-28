@@ -173,13 +173,8 @@ class GhostCar:
         # 3. Áp dụng vào Bullet raycast vehicle
         self.raw_vehicle.before_step(action_applied)
         
-        # 4. Áp dụng lực cản chà lốp khi bẻ lái ở tốc độ cao (Steering Scrub Drag)
-        self.car.ext_physics.apply_steering_scrub_drag(
-            raw_vehicle=self.raw_vehicle,
-            applied_steer=float(action_applied[0]),
-            speed_m_s=self.car.speed_m_s,
-            dt=dt,
-        )
+        # 4. Áp dụng các định luật vật lý 3 trục tự nhiên (OOP Encapsulation)
+        self.car.apply_step_dynamics(dt)
         return action
 
     def destroy(self, engine: Any = None):

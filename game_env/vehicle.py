@@ -117,9 +117,62 @@ class BaseRaceVehicle:
         
         return self.last_action, float(delta_steer), pedal_applied
 
+    def apply_step_dynamics(self, dt: float) -> float:
+        """
+        Áp dụng các mô hình động lực học mở rộng (Induced Drag, Kamm Friction Circle, Load Transfer)
+        lên thân xe thực tế trong engine Bullet của MetaDrive.
+        Đóng gói hoàn toàn ExtendedVehiclePhysics theo nguyên lý OOP & Law of Demeter.
+        """
+        if self.raw_vehicle is None or self.ext_physics is None:
+            return 0.0
+        return self.ext_physics.apply_dynamics(
+            raw_vehicle=self.raw_vehicle,
+            applied_steer=float(self.last_action[0]),
+            applied_pedal=float(self.last_action[1]),
+            speed_m_s=self.speed_m_s,
+            heading_theta=self.heading_theta,
+            dt=dt,
+            base_friction=float(self.cfg.wheel_friction),
+        )
+
+    @property
+    def is_oversteering(self) -> bool:
+        """Kiểm tra xe có đang rơi vào trạng thái thừa lái (văng đuôi / oversteer) không"""
+        if self.ext_physics is None:
+            return False
+        return bool(getattr(self.ext_physics, "is_oversteering", False))
+
+    def get_wheel_positions(self) -> List[np.ndarray]:
+        """
+        Tính toán tọa độ 2D của 4 tâm bánh xe (FL, FR, RL, RR) phục vụ kiểm tra giới hạn đường đua chuẩn FIA.
+        Thông số xe đua GT3:
+        - Chiều dài cơ sở (Wheelbase): 2.75m -> Trục trước/sau cách trọng tâm +-1.375m
+        - Độ rộng cơ sở (Wheel Track): 1.65m -> Tâm bánh xe cách trục giữa +-0.825m
+        - Bề rộng lốp đua: 0.30m (bán kính lốp 0.15m)
+        """
+        if self.raw_vehicle is None:
+            return []
+        pos = np.array(self.raw_vehicle.position[:2], dtype=np.float32)
+        heading = float(self.raw_vehicle.heading_theta)
+        cos_h = np.cos(heading)
+        sin_h = np.sin(heading)
+        fwd = np.array([cos_h, sin_h], dtype=np.float32)
+        lat = np.array([-sin_h, cos_h], dtype=np.float32)
+        
+        l_front = 1.375
+        l_rear = -1.375
+        w_track = 0.825
+        
+        return [
+            pos + l_front * fwd + w_track * lat,  # Bánh trước Trái (Front-Left)
+            pos + l_front * fwd - w_track * lat,  # Bánh trước Phải (Front-Right)
+            pos + l_rear * fwd + w_track * lat,   # Bánh sau Trái (Rear-Left)
+            pos + l_rear * fwd - w_track * lat,   # Bánh sau Phải (Rear-Right)
+        ]
+
     def get_bounding_corners(self) -> List[np.ndarray]:
         """
-        Tính toán tọa độ 2D của 4 góc xe phục vụ kiểm tra giới hạn đường đua (FIA Track Limits)
+        Tính toán tọa độ 2D của 4 góc cản xe (Bounding Box thân xe 4.50m x 1.85m)
         """
         if self.raw_vehicle is None:
             return []

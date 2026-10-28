@@ -15,13 +15,13 @@ from .networks import ActorCritic
 class PPOAgent:
     def __init__(
         self,
-        state_dim: int = 35,
+        state_dim: int = 40,
         action_dim: int = 3,
         lr: float = 3e-4,
         gamma: float = 0.99,
         gae_lambda: float = 0.95,
-        clip_coef: float = 0.2,
-        ent_coef: float = 0.01,
+        clip_coef: float = 0.15,
+        ent_coef: float = 0.005,
         vf_coef: float = 0.5,
         max_grad_norm: float = 0.5,
         update_epochs: int = 10,
@@ -65,6 +65,14 @@ class PPOAgent:
     def get_lr(self) -> float:
         """Lấy learning rate hiện hành của Actor optimizer"""
         return float(self.actor_optimizer.param_groups[0]["lr"])
+
+    def set_ent_coef(self, ent_coef: float):
+        """Cập nhật hệ số thưởng Entropy động theo lịch trình annealing"""
+        self.ent_coef = float(ent_coef)
+
+    def get_ent_coef(self) -> float:
+        """Lấy hệ số thưởng Entropy hiện hành"""
+        return float(self.ent_coef)
         
     @property
     def network(self):

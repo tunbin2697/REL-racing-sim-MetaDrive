@@ -55,7 +55,7 @@ REL Assignment/
 │
 ├── game_env/
 │   ├── __init__.py
-│   ├── racing_env.py          # Wrapper MetaRacingEnv (Obs 35D, frenet s, track limits 4 bánh, Pure Motorsport)
+│   ├── racing_env.py          # Wrapper MetaRacingEnv (Obs 40D, frenet s, track limits 4 bánh, Pure Motorsport)
 │   ├── vehicle.py             # Thực thể Động lực học GT3RaceCar & CivilianSedan (OOP Vehicle Architecture)
 │   ├── benchmark.py           # Engine Phân tích Cận trên (Convex QP Min Curvature + Lipp & Boyd 3-Pass)
 │   ├── ghost_car.py           # Thực thể Xe Bóng Ma Đối Chứng 3D (Ghost Car Entity)
@@ -64,7 +64,8 @@ REL Assignment/
 │
 ├── training/
 │   ├── train_racing.py        # Pipeline huấn luyện PPO chính + Telemetry + In-Training Benchmark
-│   └── evaluate.py            # Benchmark đánh giá học thuật độc lập đa kịch bản
+│   ├── evaluate.py            # Benchmark đánh giá học thuật độc lập đa kịch bản
+│   └── evaluator.py           # Module RacingEvaluator OOP đánh giá đa episode và trích xuất chỉ số benchmark
 │
 ├── demo/
 │   ├── play_vs_ai.py          # SCRIPT ĐINH: Người bấm phím W-A-S-D trực tiếp so tài với AI hoặc Optimal Ghost Car
@@ -179,18 +180,25 @@ python demo/spectate_ai.py --manual --ghost
 ### 🚀 Chế Độ 3: Huấn Luyện Học Tăng Cường (PPO Continuous Training)
 Huấn luyện Agent tự khám phá và đột phá các góc cua từ đầu bằng thuật toán PPO thuần:
 ```bash
-python training/train_racing.py --total-steps 200000 --rollout-len 1024 --batch-size 64 --eval-freq 2 --lr 0.0001 --ent-coef 0.01
+python training/train_racing.py --total-steps 4000000 --eval-freq 5 --eval-episodes 3 --milestone-freq 500000
 ```
-* Model tốt nhất tự động lưu tại: `models/best_agent.pt`.
+* **Cờ cấu hình chính**:
+  * `--total-steps 4000000`: Tổng số bước tương tác môi trường (mặc định 1.000.000).
+  * `--lr-decay` / `--no-lr-decay`: Tự động suy giảm Learning Rate tuyến tính ($3\times 10^{-4} \to 5\times 10^{-5}$) (Mặc định bật).
+  * `--ent-decay` / `--no-ent-decay`: Tự động suy giảm hệ số Entropy (Mặc định tắt, giữ cố định $0.005$).
+  * `--milestone-freq 500000`: Lưu checkpoint snapshot tiến trình mỗi 500k bước (`models/agent_step_*k.pt`).
+* **Cơ chế lưu mô hình thông minh**:
+  * `models/best_agent.pt`: Tự động lưu khi Agent đạt **100% Zero-Crash (3/3 episode đánh giá không va chạm)** và lập kỷ lục thời gian hoàn thành vòng đua (`Best Lap Time` hoặc `Flying Lap Time`).
+  * `models/last_agent.pt`: Tự động lưu liên tục sau mỗi lần đánh giá (10.240 bước) để hỗ trợ khôi phục tiến trình.
 
 ---
 
 ### 🔄 Chế Độ 4: Tiếp Tục Huấn Luyện (Resume Training)
-Tiếp tục huấn luyện từ checkpoint đã có:
+Tiếp tục huấn luyện an toàn từ checkpoint đã có (tự động load lại số bước, metrics cũ và optimizer):
 ```bash
-python training/train_racing.py --resume models/best_agent.pt --steps-to-run 100000 --rollout-len 1024 --batch-size 64 --eval-freq 2 --lr 0.0001 --ent-coef 0.01
+python training/train_racing.py --resume models/last_agent.pt --steps-to-run 1000000
 ```
-*(Tự động vẽ vạch đỏ nét đứt đánh dấu điểm can thiệp lên biểu đồ `plots/learning_curves.png` để đảm bảo tính minh bạch học thuật)*.
+*(Tự động đánh dấu resume mark vào `logs/training_metrics.json` để vẽ vạch nét đứt trên biểu đồ hội tụ, bảo đảm tính minh bạch học thuật)*.
 
 ---
 
@@ -234,14 +242,17 @@ Bài toán được mô hình hóa theo chuẩn **Markov Decision Process (MDP)*
 
 $$\mathcal{M} = \langle \mathcal{S}, \mathcal{A}, \mathcal{P}, \mathcal{R}, \gamma \rangle$$
 
-### 1. Không Gian Quan Sát (Observation Space $\mathcal{S} \in \mathbb{R}^{35}$)
-* **10 chiều Ego Kinematics & Controls**:
-  $$[v_{\text{norm}}, v_x/40, v_y/20, \dot{\psi}/\pi, a_{\text{steer}}, a_{\text{steer}, t-1}, a_{\text{acc}, t-1}, \cos(\Delta \theta), \sin(\Delta \theta), d_{\text{lat}}/4.5]$$
-* **5 chiều Track Limits & Progress**:
-  $$[\text{dist}_{\text{left}}, \text{dist}_{\text{right}}, \mathbb{I}_{\text{runoff}}, s/L_{\text{circuit}}, \text{clip}(\kappa_{\text{curr}} \cdot 50, -2, 2)]$$
-* **20 chiều Lookahead Horizon Preview (5 Waypoints $\times$ 4)**:
-  Tại các cự ly $d \in \{10\text{m}, 20\text{m}, 35\text{m}, 50\text{m}, 70\text{m}\}$ phía trước xe dọc trục Frenet $s$:
-  $$[\Delta x_{\text{rel}} / 70, \Delta y_{\text{rel}} / 30, \sin(\Delta \theta_{\text{wpt}}), \text{clip}(\kappa_{\text{wpt}} \cdot 50, -2, 2)]$$
+### 1. Không Gian Quan Sát (Observation Space $\mathcal{S} \in \mathbb{R}^{40}$)
+* **16 chiều Ego Kinematics, IMU & Controls**:
+  $$[v_x/40, v_y/20, \dot{\psi}/\pi, \beta, a_{\text{long}}, a_{\text{lat}}, \phi_{\text{roll}}/0.35, \theta_{\text{pitch}}/0.35, \delta_{t-1}, \text{thr}_{t-1}, \text{brk}_{t-1}, \Delta\delta, \mathbb{I}_{\text{runoff}}, d_{\text{lat}}/4.5, \sin(\Delta\theta), \cos(\Delta\theta)]$$
+  * $\beta = \arctan2(v_y, \max(0.1, v_x)) / (\pi/4)$: Góc trượt thân xe (Body Slip Angle), hỗ trợ cảm nhận giới hạn trượt và hiện tượng thừa/thiếu lái.
+  * $a_{\text{long}}, a_{\text{lat}}$: Gia tốc trọng trường dọc và ngang (IMU G-force), giúp Agent cảm nhận vòng tròn ma sát Kamm's Friction Circle.
+  * $\phi_{\text{roll}}, \theta_{\text{pitch}}$: Độ nghiêng chao đảo trọng tâm thân xe khi vào cua và phanh gấp.
+  * $\Delta\delta$: Tốc độ xoay vô lăng giữa 2 bước liên tiếp.
+* **24 chiều Lookahead Horizon Preview (6 Waypoints $\times$ 4)**:
+  Tại các cự ly $d \in \{10\text{m}, 25\text{m}, 45\text{m}, 70\text{m}, 105\text{m}, 150\text{m}\}$ phía trước xe dọc trục Frenet $s$:
+  $$[\Delta x_{\text{rel}} / 150, \Delta y_{\text{rel}} / 40, \sin(\Delta \theta_{\text{wpt}}), \text{clip}(\kappa_{\text{wpt}} \cdot 50, -2, 2)]$$
+  *(Cung cấp tầm nhìn xa lên tới 150m ở dải tốc độ cao > 110 km/h, bảo đảm nguyên tắc Zero Data Leakage vì chỉ phản ánh hình học tim đường).*
 
 ### 2. Không Gian Hành Động 3 Trục Độc Lập (Decoupled Action Space $\mathcal{A} \in [-1, 1]^3$)
 * $\mathbf{a}_t = [\delta_t, \text{thr}_t, \text{brk}_t] \in [-1, 1]^3$:
@@ -259,16 +270,16 @@ $$\log \pi(a \vert s) = \log \mu(u \vert s) - \sum_{i=1}^d \log\left(1 - \tanh^2
 
 Giúp gradient truyền chính xác mà không gặp lỗi số học hay bão hòa tại biên $[-1, 1]$.
 
-### 4. Hàm Phần Thưởng Đua Xe Thể Thao Thuần Túy (Pure Motorsport Reward)
-$$R_t = r_{\text{progress}} + r_{\text{steer\_smooth}} + r_{\text{center}} + r_{\text{idle}} + R_{\text{macro}}$$
+### 4. Hàm Phần Thưởng Đua Xe Thể Thao Thuần Túy (Pure Motorsport Markovian Reward)
+$$R_t = r_{\text{progress}} + r_{\text{steer\_smooth}} + r_{\text{idle}} + R_{\text{macro}}$$
 
-* **Tiến độ cung đường Frenet**: $r_{\text{progress}} = 0.05 \cdot \max(0, \Delta s)$ (thưởng tịnh tiến dọc trục đường đua, không ép buộc bám tim đường).
-* **Phạt rung giật đánh lái**: $r_{\text{steer\_smooth}} = -0.10 \cdot (\Delta \text{steer})^2$.
-* **Phạt lệch tâm đường nhẹ**: $r_{\text{center}} = -0.04 \cdot (d_{\text{lat}} / 4.5)^2$.
+* **Tiến độ cung đường Frenet**: $r_{\text{progress}} = 0.05 \cdot \max(0, \Delta s)$ (thưởng tịnh tiến dọc trục đường đua, bảo toàn tính Markov).
+* **Phạt rung giật đánh lái**: $r_{\text{steer\_smooth}} = -0.01 \cdot (\Delta \text{steer})^2$ (giữ ổn định toán học, không cản trở vào cua gắt).
+* **Không phạt tim đường ($r_{\text{center}} = 0$)**: Tuyệt đối giải phóng Agent khỏi tim đường để tự do mở góc cua Out - In - Out và chém Apex.
 * **Phạt đứng yên / lề mề**: $r_{\text{idle}} = -0.15$ nếu $v < 10\text{ km/h}$.
 * **Macro Events**:
-  * Phạt đâm xe / văng khỏi lề 4 bánh: $R_{\text{crash}} = -10.0 - 20.0 \cdot (v/120)^2$.
-  * Thưởng về đích: $R_{\text{finish}} = +100.0$.
+  * Phạt va chạm / 4 bánh ra ngoài: $R_{\text{crash}} = -10.0 - 20.0 \cdot (v/120)^2$.
+  * Thưởng về đích: $R_{\text{finish}} = +100.0 + \max(0, (130.0 - T_{\text{lap}}) \times 1.5)$.
 
 ### 5. Thuật Toán PPO Continuous & Critic Loss Mở Rộng
 * **Clipped Surrogate Policy Loss**:

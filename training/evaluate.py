@@ -6,9 +6,7 @@ Xuất số liệu thống kê chuẩn mực để đưa vào báo cáo và slid
 
 import os
 import sys
-import json
 import argparse
-import numpy as np
 
 # UTF-8 encoding
 if sys.platform == "win32":
@@ -22,6 +20,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from game_env.racing_env import MetaRacingEnv
 from game_env.vehicle import get_vehicle
 from agents.ppo_agent import PPOAgent
+from training.evaluator import RacingEvaluator
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Evaluate Trained RL Agent")
@@ -46,125 +45,23 @@ def main():
     env = MetaRacingEnv(use_render=False, num_scenarios=args.episodes, start_seed=100, vehicle=race_car)
     obs_shape = getattr(env.observation_space, "shape", None)
     act_shape = getattr(env.action_space, "shape", None)
-    obs_dim = int(obs_shape[0]) if obs_shape is not None else 35
-    act_dim = int(act_shape[0]) if act_shape is not None else 2
+    obs_dim = int(obs_shape[0]) if obs_shape is not None else 42
+    act_dim = int(act_shape[0]) if act_shape is not None else 3
 
     agent = PPOAgent(state_dim=obs_dim, action_dim=act_dim)
     if os.path.exists(args.model):
         agent.load(args.model)
         print(f">> Nạp thành công weights từ {args.model} (State Dim: {obs_dim})")
     else:
-        print(f">> [CẢNH BÁO] Không tìm thấy file {args.model}!")
-        return
-    
-    returns = []
-    lengths = []
-    completions = []
-    mean_speeds = []
-    max_speeds = []
-    crashes = 0
-    successes = 0
-    
-    # Chỉ số Động cơ Phân tích Chuẩn mực (Academic Benchmark)
-    line_maes = []
-    line_rmses = []
-    apex_accuracies = []
-    corner_deltas = []
-    friction_utils = []
-    lap_efficiencies = []
-    theoretical_best_time = 98.65
+        print(f">> [CẢNH BÁO] Không tìm thấy file {args.model}! Đánh giá agent ngẫu nhiên (chưa huấn luyện)...")
 
-    for ep in range(args.episodes):
-        obs, info = env.reset(seed=env.start_seed + ep)
-        ep_ret = 0.0
-        ep_len = 0
-        speeds = []
-        
-        while True:
-            action, _, _ = agent.select_action(obs, deterministic=True)
-            obs, reward, terminated, truncated, step_info = env.step(action)
-            
-            ep_ret += reward
-            ep_len += 1
-            speeds.append(step_info.get("speed_km_h", step_info.get("velocity", 0.0) * 3.6))
-            
-            if terminated or truncated:
-                crashed = (
-                    step_info.get("crash", False)
-                    or step_info.get("crash_sidewalk", False)
-                    or step_info.get("crash_vehicle", False)
-                    or step_info.get("crash_object", False)
-                    or (step_info.get("termination_reason") == "crash_or_track_limit")
-                )
-                arrived = step_info.get("arrive_dest", False)
-                comp = step_info.get("route_completion", 0.0) * 100.0
-                
-                if crashed:
-                    crashes += 1
-                if arrived:
-                    successes += 1
-                    
-                returns.append(ep_ret)
-                lengths.append(ep_len)
-                completions.append(comp)
-                mean_speeds.append(np.mean(speeds) if speeds else 0.0)
-                max_speeds.append(np.max(speeds) if speeds else 0.0)
-                
-                # Đo lường Benchmark qua Telemetry OOP
-                bench = env.evaluate_current_lap_benchmark()
-                line_maes.append(bench["racing_line_mae_m"])
-                line_rmses.append(bench["racing_line_rmse_m"])
-                apex_accuracies.append(bench["apex_cutting_accuracy_pct"])
-                corner_deltas.append(bench["mean_corner_delta_v_kmh"])
-                friction_utils.append(bench["friction_circle_utilization_pct"])
-                lap_efficiencies.append(bench["lap_efficiency_pct"])
-                theoretical_best_time = bench["theoretical_best_lap_time"]
-                
-                status_str = "ARRIVED" if arrived else ("CRASH_TRACK_LIMIT" if crashed else "OUT_OF_TIME")
-                print(f"  - Round {ep+1:02d}: Return: {ep_ret:+6.2f} | Progress: {comp:5.1f}% | Avg Speed: {np.mean(speeds):4.1f} km/h | Status: {status_str} | Line MAE: {bench['racing_line_mae_m']:.2f}m | Apex: {bench['apex_cutting_accuracy_pct']:.0f}%")
-                break
-
+    evaluator = RacingEvaluator(env=env, agent=agent)
+    results = evaluator.evaluate(num_episodes=args.episodes, deterministic=True, verbose=True)
     env.close()
 
-    results = {
-        "num_episodes": args.episodes,
-        "mean_return": float(np.mean(returns)),
-        "std_return": float(np.std(returns)),
-        "mean_completion_rate": float(np.mean(completions)),
-        "success_rate": float(successes / args.episodes),
-        "crash_rate": float(crashes / args.episodes),
-        "mean_speed_kmh": float(np.mean(mean_speeds)),
-        "max_speed_kmh": float(np.max(max_speeds)),
-        "mean_episode_length": float(np.mean(lengths)),
-        "racing_line_mae_m": float(np.mean(line_maes)) if line_maes else 0.0,
-        "racing_line_rmse_m": float(np.mean(line_rmses)) if line_rmses else 0.0,
-        "apex_cutting_accuracy_pct": float(np.mean(apex_accuracies)) if apex_accuracies else 0.0,
-        "mean_corner_delta_v_kmh": float(np.mean(corner_deltas)) if corner_deltas else 0.0,
-        "friction_circle_utilization_pct": float(np.mean(friction_utils)) if friction_utils else 0.0,
-        "lap_efficiency_pct": float(np.mean(lap_efficiencies)) if lap_efficiencies else 0.0,
-        "theoretical_best_lap_time_s": float(theoretical_best_time),
-    }
-
-    os.makedirs(os.path.dirname(args.out), exist_ok=True)
-    with open(args.out, "w", encoding="utf-8") as f:
-        json.dump(results, f, indent=2)
-
-    print("\n" + "=" * 70)
-    print("🏆 KẾT QUẢ ĐÁNH GIÁ CHUẨN MỰC (FINAL ACADEMIC BENCHMARK SUMMARY)")
-    print("=" * 70)
-    print(f"  - Mean Episodic Return:        {results['mean_return']:+.2f} ± {results['std_return']:.2f}")
-    print(f"  - Average Track Completion:    {results['mean_completion_rate']:.1f}%")
-    print(f"  - Lap Success Rate:            {results['success_rate']*100:.1f}%")
-    print(f"  - Crash Rate:                  {results['crash_rate']*100:.1f}%")
-    print(f"  - Average Velocity:            {results['mean_speed_kmh']:.1f} km/h (Max: {results['max_speed_kmh']:.1f} km/h)")
-    print(f"  - Racing Line Cross-Track MAE: {results['racing_line_mae_m']:.2f} m (RMSE: {results['racing_line_rmse_m']:.2f} m)")
-    print(f"  - Apex Cutting Accuracy:       {results['apex_cutting_accuracy_pct']:.1f}%")
-    print(f"  - Corner Speed Delta (ΔV):     {results['mean_corner_delta_v_kmh']:+.1f} km/h")
-    print(f"  - Friction Grip Utilization:   {results['friction_circle_utilization_pct']:.1f}%")
-    print(f"  - Lap Time Efficiency:         {results['lap_efficiency_pct']:.1f}% (vs Theoretical {results['theoretical_best_lap_time_s']:.2f}s)")
-    print(f"  - Mean Steps per Episode:      {results['mean_episode_length']:.1f}")
-    print(f">> Dữ liệu chi tiết đã lưu vào: {args.out}")
-    print("=" * 70)
+    evaluator.print_summary(results)
+    evaluator.save_json(results, args.out)
+    print(f">> Dữ liệu chi tiết đã lưu vào: {args.out}\n")
 
 if __name__ == "__main__":
     main()

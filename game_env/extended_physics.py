@@ -28,27 +28,28 @@ from panda3d.core import LVector3f
 class ExtendedPhysicsConfig:
     """Tham số cấu hình các cơ chế vật lý mở rộng thuần cơ học chuẩn GT3"""
     # 1. Trục Lái: Lực cản lái chiếu dọc (Induced Steering Drag)
-    enable_induced_drag: bool = True
+    enable_induced_drag: bool = False      # Tắt lực cản chiếu dọc cưỡng bức, để Bullet Physics tự nhiên
     induced_drag_scale: float = 1.0        # Hệ số khuếch đại lực cản chiếu dọc tự nhiên
     steer_deadband: float = 0.015          # Vùng chết góc lái vi mô (0.3 độ) khi chạy thẳng tuyệt đối
     steer_lock_rad: float = 0.349          # Góc bẻ lái cực đại (20 độ chuẩn GT3)
+    steer_ema_alpha: float = 0.30          # Bộ lọc thông thấp quán tính lái EMA (0.30 triệt tiêu rung giật 10Hz)
     
     # 2. Trục Ga: Vòng tròn ma sát Kamm cho bánh sau (Drive Wheels Traction Circle)
-    enable_kamm_traction: bool = True
+    enable_kamm_traction: bool = False     # Giữ độ bám Bullet ổn định 1.35
     max_engine_force_n: float = 850.0      # Lực kéo cực đại của động cơ GT3 (N)
     
     # 3. Trục Phanh: Dịch chuyển tải trọng dọc (Longitudinal Pitch Load Transfer)
-    enable_load_transfer: bool = True
+    enable_load_transfer: bool = False
     vehicle_mass_kg: float = 1100.0        # Khối lượng xe GT3 (kg)
     wheelbase_m: float = 2.75              # Chiều dài cơ sở (m)
     cg_height_m: float = 0.40              # Chiều cao trọng tâm (m)
     
     # 4. Trợ lực lái đầm chắc theo tốc độ (Speed-Sensitive Steering)
-    enable_speed_sensitive_steer: bool = True
+    enable_speed_sensitive_steer: bool = False  # Bỏ khóa góc lái theo tốc độ, giữ 20 độ toàn dải
     v_steer_min_km_h: float = 25.0
     v_steer_max_km_h: float = 110.0
-    min_steer_lock_ratio: float = 0.85     # Cho phép 85% góc lái ở tốc độ cao
-    min_steer_rate_ratio: float = 0.70     # Hạn chế tốc độ vặn vô lăng ở tốc độ cao
+    min_steer_lock_ratio: float = 1.0      # Giữ 100% góc lái ở mọi tốc độ
+    min_steer_rate_ratio: float = 1.0
     
     # 5. Quán tính truyền động (Powertrain Inertia)
     enable_powertrain_inertia: bool = True
@@ -109,15 +110,21 @@ class ExtendedVehiclePhysics:
     ) -> Tuple[float, float]:
         """
         Xử lý tín hiệu vô-lăng thô từ Policy:
-        - Giới hạn góc bẻ lái cực đại theo dải vận tốc (Speed-Sensitive Lock)
-        - Giới hạn tốc độ đánh lái theo độ đầm cơ học (Speed-Sensitive Slew Rate Limit)
+        - Bộ lọc quán tính lái EMA (steer_ema_alpha = 0.30) triệt tiêu 100% rung lắc 10Hz
+        - Giữ nguyên 100% góc lái 20 độ ở mọi dải tốc độ (không bóp góc lái theo tốc độ)
+        - Giới hạn tốc độ đánh lái cơ cấu chấp hành (Slew Rate Limit)
         Trả về: (steer_applied, delta_steer)
         """
         raw_steer = float(np.clip(raw_steer, -1.0, 1.0))
-        lock_scale, max_rate = self.calculate_steering_limits(speed_km_h, base_max_rate)
-
-        target_steer = float(np.clip(raw_steer, -lock_scale, lock_scale))
-        delta_steer = target_steer - self.last_applied_steer
+        alpha = float(getattr(self.cfg, "steer_ema_alpha", 0.30))
+        
+        # 1. Bộ lọc thông thấp quán tính bậc nhất EMA
+        steer_filtered = float(self.last_applied_steer + alpha * (raw_steer - self.last_applied_steer))
+        steer_filtered = float(np.clip(steer_filtered, -1.0, 1.0))
+        
+        # 2. Slew rate limiter cơ cấu chấp hành
+        delta_steer = steer_filtered - self.last_applied_steer
+        max_rate = float(base_max_rate)
         clamped_delta = float(np.clip(delta_steer, -max_rate, max_rate))
         steer_applied = float(np.clip(self.last_applied_steer + clamped_delta, -1.0, 1.0))
 

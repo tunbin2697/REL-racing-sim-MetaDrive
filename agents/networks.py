@@ -16,7 +16,7 @@ class ActorCritic(nn.Module):
     Actor: Ước lượng vector trung bình mu(s), kết hợp tham số log_std để lấy mẫu phân phối Gaussian.
     Critic: Ước lượng hàm giá trị trạng thái V(s).
     """
-    def __init__(self, state_dim: int, action_dim: int = 2, hidden_dim: int = 256, init_log_std: float = -0.8):
+    def __init__(self, state_dim: int, action_dim: int = 3, hidden_dim: int = 256, init_log_std: float = -0.8):
         super().__init__()
         
         # Mạng Critic V(s)
@@ -36,10 +36,8 @@ class ActorCritic(nn.Module):
         # Action 2 = Brake (-0.8: ban đầu không kẹt phanh, nhưng sigma rộng cho phép khám phá phanh)
         if actor_out.bias is not None:
             actor_out.bias.data[0] = 0.0
-            if action_dim == 2:
-                actor_out.bias.data[1] = 0.6
-            elif action_dim >= 3:
-                actor_out.bias.data[1] = 0.5
+            actor_out.bias.data[1] = 0.5
+            if action_dim >= 3:
                 actor_out.bias.data[2] = -0.8
             
         self.actor_mean = nn.Sequential(
@@ -56,7 +54,7 @@ class ActorCritic(nn.Module):
     def actor_forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """Trả về (u_mean, action_logstd)"""
         u_mean = self.actor_mean(x)
-        action_logstd = torch.clamp(self.actor_logstd.expand_as(u_mean), min=-2.3, max=0.5)
+        action_logstd = torch.clamp(self.actor_logstd.expand_as(u_mean), min=-2.3, max=0.0)
         return u_mean, action_logstd
 
     def get_value(self, x: torch.Tensor) -> torch.Tensor:
@@ -69,8 +67,8 @@ class ActorCritic(nn.Module):
         Hành động sinh ra luôn nằm nghiêm ngặt trong [-1.0, 1.0], triệt tiêu lỗi Action Boundary Mismatch.
         """
         action_mean = self.actor_mean(x)
-        # Kẹp logstd trong [-2.3, 0.5] (tương ứng sigma trong [0.10, 1.65]) để chống sập phương sai
-        action_logstd = torch.clamp(self.actor_logstd.expand_as(action_mean), min=-2.3, max=0.5)
+        # Kẹp logstd trong [-2.3, 0.0] (tương ứng sigma trong [0.10, 1.00]) để bảo toàn khám phá mà chống nổ phương sai
+        action_logstd = torch.clamp(self.actor_logstd.expand_as(action_mean), min=-2.3, max=0.0)
         action_std = torch.exp(action_logstd)
         probs = Normal(action_mean, action_std)
         

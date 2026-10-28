@@ -90,7 +90,7 @@ def main():
             opt_agent = OptimalRacingAgent()
         else:
             obs_shape = env.observation_space.shape
-            state_dim = int(obs_shape[0]) if obs_shape is not None else 35
+            state_dim = int(obs_shape[0]) if obs_shape is not None else 42
             act_shape = env.action_space.shape
             action_dim = int(act_shape[0]) if act_shape is not None else 3
             ppo_agent = PPOAgent(state_dim=state_dim, action_dim=action_dim)
