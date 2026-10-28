@@ -12,6 +12,7 @@ from metadrive.envs.marl_envs import MultiAgentMetaDrive
 from metadrive.envs.marl_envs.marl_racing_env import RacingMapManager
 from metadrive.policy.manual_control_policy import KeyboardController
 from game_env.telemetry import TelemetryTracker
+from game_env.vehicle import GT3RaceCar
 
 
 class MultiAgentRacingMetaDrive(MultiAgentMetaDrive):
@@ -28,8 +29,8 @@ class MultiAgentRacingEnv:
         window_size=(1280, 720),
         horizon: int = 3000,
         start_seed: int = 42,
-        reference_lap_file: str = "logs/reference_lap.json",
         map_config=None,
+        vehicle=None,
         **kwargs,
     ):
         self.use_render = use_render
@@ -37,10 +38,15 @@ class MultiAgentRacingEnv:
         self.horizon = horizon
         self.start_seed = start_seed
         self.dt = 0.02
+        self.keyboard_controller = None
+        
+        from game_env.vehicle import GT3RaceCar
+        self.car_player = vehicle if vehicle is not None else GT3RaceCar()
+        self.car_ai = GT3RaceCar()
         
         # Telemetry trackers cho cả Player và AI
-        self.telemetry_player = TelemetryTracker(reference_lap_file=reference_lap_file)
-        self.telemetry_ai = TelemetryTracker(reference_lap_file=reference_lap_file)
+        self.telemetry_player = TelemetryTracker()
+        self.telemetry_ai = TelemetryTracker()
         
         map_cfg = {
             "lane_num": 2,
@@ -172,7 +178,7 @@ class MultiAgentRacingEnv:
             and self.num_track_points > 1
         ):
             dists = np.sum((self.track_xy - pos) ** 2, axis=1)
-            idx = int(np.argmin(dists))
+            idx = int(dists.argmin())
             current_s = float(self.track_s[idx])
             track_pt = self.track_xy[idx]
             track_heading = float(self.track_theta[idx])
@@ -265,6 +271,12 @@ class MultiAgentRacingEnv:
         if self.use_render and self.keyboard_controller is None:
             self.keyboard_controller = KeyboardController(pygame_control=False)
             
+        # Gắn kết cấu hình động lực học GT3 cho cả 2 xe
+        if "agent0" in self.vehicles:
+            self.car_player.attach_agent(self.vehicles["agent0"])
+        if "agent1" in self.vehicles:
+            self.car_ai.attach_agent(self.vehicles["agent1"])
+
         if self.compact_obs and "agent1" in self.vehicles:
             obs["agent1"] = self.get_compact_racing_obs(self.vehicles["agent1"])
             
@@ -282,10 +294,14 @@ class MultiAgentRacingEnv:
         actions: dict gồm {'agent0': action0, 'agent1': action1}
         """
         self.current_step += 1
+        processed_actions = dict(actions)
+        if "agent0" in actions:
+            processed_actions["agent0"] = self.car_player.process_action(actions["agent0"])
         if "agent1" in actions:
-            self.last_ai_action = list(actions["agent1"])
+            processed_actions["agent1"] = self.car_ai.process_action(actions["agent1"])
+            self.last_ai_action = list(processed_actions["agent1"])
             
-        obs, rewards, terminations, truncations, infos = self.env.step(actions)
+        obs, rewards, terminations, truncations, infos = self.env.step(processed_actions)
         current_time = self.current_step * self.dt
         
         # Cập nhật Telemetry cho cả 2 xe

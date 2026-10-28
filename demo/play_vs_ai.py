@@ -26,17 +26,22 @@ if sys.platform == "win32":
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from game_env.multiagent_env import MultiAgentRacingEnv
+from game_env.vehicle import get_vehicle
 from agents.ppo_agent import PPOAgent
+from agents.optimal_agent import OptimalRacingAgent
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Human vs AI 3D Racing Benchmark")
     parser.add_argument("--model", type=str, default="models/best_agent.pt", help="Đường dẫn file weights của AI")
+    parser.add_argument("--opponent", "--ai-type", dest="opponent", type=str, default="ppo", choices=["ppo", "optimal"], help="Loại đối thủ AI: 'ppo' (mô hình RL PPO) hoặc 'optimal' (Ghost / Benchmark Optimal Agent)")
     parser.add_argument("--map", type=str, default="O", help="Bản đồ đua ('O' cho oval track hoặc 'S', 'C', '3')")
+    parser.add_argument("--vehicle", type=str, default="gt3", choices=["gt3", "sedan"], help="Loại xe đua ('gt3' hoặc 'sedan')")
     parser.add_argument("--seed", type=int, default=42, help="Bản đồ ngẫu nhiên")
     return parser.parse_args()
 
 def main():
     args = parse_args()
+    race_car = get_vehicle(args.vehicle)
     
     print("=" * 70)
     print(">> KHOI DONG GIAI DUA 3D: HUMAN VS AI (REINFORCEMENT LEARNING)")
@@ -62,19 +67,25 @@ def main():
         except Exception:
             ckpt_dim = 35
 
-    ai_agent = PPOAgent(state_dim=ckpt_dim, action_dim=2)
-    if os.path.exists(args.model):
-        print(f">> Đang nạp mô hình AI từ: {args.model} (State Dim: {ckpt_dim})")
-        ai_agent.load(args.model)
-        print(">> Nạp trọng số AI thành công!")
+    ai_agent = None
+    opt_agent = None
+    if args.opponent == "ppo":
+        ai_agent = PPOAgent(state_dim=ckpt_dim, action_dim=2)
+        if os.path.exists(args.model):
+            print(f">> Đang nạp mô hình AI từ: {args.model} (State Dim: {ckpt_dim})")
+            ai_agent.load(args.model)
+            print(">> Nạp trọng số AI thành công!")
+        else:
+            print(f">> [CẢNH BÁO] Không tìm thấy file {args.model}. AI sẽ chạy với trọng số ngẫu nhiên!")
     else:
-        print(f">> [CẢNH BÁO] Không tìm thấy file {args.model}. AI sẽ chạy với trọng số ngẫu nhiên!")
+        print(">> Khởi tạo Đối thủ: OPTIMAL RACING BENCHMARK AGENT (Ghost Controller)")
 
     # Khởi tạo môi trường 2 xe
     racing_env = MultiAgentRacingEnv(
         use_render=True,
         map_config=args.map,
         start_seed=args.seed,
+        vehicle=race_car,
     )
     racing_env.compact_obs = (ckpt_dim == 35)
 
@@ -85,7 +96,15 @@ def main():
         ai_id = agent_names[1]
         racing_env.set_vehicle_colors(player_id, ai_id)
         
-        print(f">> Gán vai trò xe: [Player (Xanh): {player_id}] vs [AI Agent (Đỏ): {ai_id}]")
+        if args.opponent == "optimal":
+            racing_env._init_circuit_polyline()
+            opt_agent = OptimalRacingAgent(
+                custom_track_xy=racing_env.track_xy,
+                custom_track_kappa=racing_env.track_kappa,
+            )
+        
+        opp_name = "Optimal Benchmark Agent (Ghost)" if args.opponent == "optimal" else "PPO RL Agent"
+        print(f">> Gán vai trò xe: [Player (Xanh): {player_id}] vs [{opp_name} (Đỏ): {ai_id}]")
         print(">> Hãy click vào cửa sổ game 3D để bắt đầu đua!")
 
         winner = None
@@ -106,7 +125,18 @@ def main():
                     else:
                         actions[aid] = [0.0, 0.0]
                 elif aid == ai_id:
-                    if aid in obs_dict:
+                    if opt_agent is not None:
+                        ai_vehicle = racing_env.vehicles.get(ai_id)
+                        if ai_vehicle is not None:
+                            opt_act, _, _ = opt_agent.select_action(vehicle=ai_vehicle)
+                            steer = float(opt_act[0])
+                            thr = 0.5 * (float(opt_act[1]) + 1.0)
+                            brk = 0.5 * (float(opt_act[2]) + 1.0)
+                            pedal = thr * (1.0 - brk) - brk if brk > 0.05 else thr
+                            actions[aid] = np.array([steer, pedal], dtype=np.float32)
+                        else:
+                            actions[aid] = [0.0, 0.0]
+                    elif ai_agent is not None and aid in obs_dict:
                         ai_action, _, _ = ai_agent.select_action(obs_dict[aid], deterministic=True)
                         actions[aid] = ai_action
                     else:
@@ -188,6 +218,8 @@ def main():
                     
                 print(">> Dang khoi dong vong dua moi...")
                 obs_dict, info_dict = racing_env.reset(seed=args.seed)
+                if opt_agent is not None:
+                    opt_agent.reset()
                 agent_names = list(obs_dict.keys())
                 player_id = agent_names[0]
                 ai_id = agent_names[1]

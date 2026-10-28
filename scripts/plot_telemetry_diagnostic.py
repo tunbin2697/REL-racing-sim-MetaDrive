@@ -27,7 +27,9 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 from game_env.racing_env import MetaRacingEnv
+from game_env.vehicle import get_vehicle
 from agents.ppo_agent import PPOAgent
+from agents.optimal_agent import OptimalRacingAgent
 
 # Danh sách góc cua chính trên đường đua 2186m
 TRACK_CORNERS = [
@@ -42,37 +44,47 @@ TRACK_CORNERS = [
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Standalone Telemetry Diagnostic Tool")
-    parser.add_argument("--model", type=str, default="models/best_agent.pt", help="Checkpoint cần chẩn đoán")
+    parser.add_argument("--agent", type=str, default="ppo", choices=["ppo", "optimal"], help="Loại tác tử lái ('ppo' hoặc 'optimal')")
+    parser.add_argument("--model", type=str, default="models/best_agent.pt", help="Checkpoint cần chẩn đoán (nếu dùng agent ppo)")
+    parser.add_argument("--vehicle", type=str, default="gt3", choices=["gt3", "sedan"], help="Loại xe chẩn đoán ('gt3' hoặc 'sedan')")
     parser.add_argument("--save-path", type=str, default="plots/telemetry_diagnostic.png", help="Đường dẫn lưu biểu đồ")
     parser.add_argument("--seed", type=int, default=42, help="Seed mô phỏng")
     return parser.parse_args()
 
 def main():
     args = parse_args()
+    race_car = get_vehicle(args.vehicle)
     print("=" * 75)
     print("🏎️  CHẨN ĐOÁN SIM RACING TELEMETRY ĐỘC LẬP")
     print("=" * 75)
-    print(f"  - Model checkpoint: {args.model}")
+    print(f"  - Agent Type: {args.agent.upper()}")
+    if args.agent == "ppo":
+        print(f"  - Model checkpoint: {args.model}")
+    print(f"  - Vehicle Spec: {race_car.cfg.name}")
     print(f"  - File xuất: {args.save_path}")
     print(f"  - Seed: {args.seed}")
     
-    env = MetaRacingEnv(use_render=False, milestone_respawn=False)
-    obs_shape = getattr(env.observation_space, "shape", None)
-    act_shape = getattr(env.action_space, "shape", None)
-    obs_dim = int(obs_shape[0]) if obs_shape is not None else 35
-    act_dim = int(act_shape[0]) if act_shape is not None else 2
+    env = MetaRacingEnv(use_render=False, milestone_respawn=False, vehicle=race_car)
     
-    agent = PPOAgent(state_dim=obs_dim, action_dim=act_dim)
-    
-    if os.path.exists(args.model):
-        try:
-            agent.load(args.model)
-            print(f">> [INFO] Đã nạp thành công checkpoint: {args.model} (State Dim: {obs_dim})")
-        except Exception as e:
-            print(f">> [CẢNH BÁO] Không thể nạp checkpoint: {e}")
-            print(">> Sử dụng trọng số mặc định hiện tại để chẩn đoán.")
+    if args.agent == "optimal":
+        agent = OptimalRacingAgent()
+        print(">> [INFO] Sử dụng Theoretical Optimal Benchmark Agent (Convex QP + Lipp & Boyd)")
     else:
-        print(f">> [CẢNH BÁO] Không tìm thấy file {args.model}. Sử dụng chính sách ngẫu nhiên.")
+        obs_shape = getattr(env.observation_space, "shape", None)
+        act_shape = getattr(env.action_space, "shape", None)
+        obs_dim = int(obs_shape[0]) if obs_shape is not None else 35
+        act_dim = int(act_shape[0]) if act_shape is not None else 2
+        agent = PPOAgent(state_dim=obs_dim, action_dim=act_dim)
+        
+        if os.path.exists(args.model):
+            try:
+                agent.load(args.model)
+                print(f">> [INFO] Đã nạp thành công checkpoint: {args.model} (State Dim: {obs_dim})")
+            except Exception as e:
+                print(f">> [CẢNH BÁO] Không thể nạp checkpoint: {e}")
+                print(">> Sử dụng trọng số mặc định hiện tại để chẩn đoán.")
+        else:
+            print(f">> [CẢNH BÁO] Không tìm thấy file {args.model}. Sử dụng chính sách ngẫu nhiên.")
         
     obs, info = env.reset(seed=args.seed, options={"force_start": True})
     step = 0
@@ -81,12 +93,15 @@ def main():
     term_reason = "Running"
     
     while not (terminated or truncated):
-        action, _, _ = agent.select_action(obs, deterministic=True)
+        if args.agent == "optimal":
+            action, _, _ = agent.select_action(vehicle=env.car.raw_vehicle)
+        else:
+            action, _, _ = agent.select_action(obs, deterministic=True)
         obs, reward, terminated, truncated, step_info = env.step(action)
         step += 1
         
         if terminated:
-            if step_info.get("arrive_dest", False):
+            if step_info.get("arrive_dest", False) or step_info.get("termination_reason") == "lap_completed":
                 term_reason = "Về đích trọn vẹn (Finish Lap) 🏁"
             elif step_info.get("crash", False) or step_info.get("out_of_road", False):
                 term_reason = f"Đâm xe / Chệch đường tại s = {env.telemetry.cumulative_distance:.1f}m 💥"
@@ -113,6 +128,12 @@ def main():
         ego_x = None
         ego_y = None
     
+    bench_engine = env.get_benchmark_engine()
+    bench_metrics = env.evaluate_current_lap_benchmark()
+    opt_line_xy = bench_engine.optimal_line_xy
+    opt_speed_kmh = bench_engine.optimal_speed_kmh
+    track_s_prof = bench_engine.track_s
+    t_opt = bench_engine.theoretical_best_lap_time
     env.close()
     
     if not samples or len(samples) < 2:
@@ -151,14 +172,20 @@ def main():
     final_time = times[-1]
     max_spd = np.max(speeds)
     mean_spd = np.mean(speeds)
-    completion_pct = (final_dist / track_len) * 100.0
+    if "Finish" in term_reason or step_info.get("arrive_dest", False) or step_info.get("termination_reason") == "lap_completed":
+        completion_pct = 100.0
+    else:
+        completion_pct = float(np.clip((final_dist / track_len) * 100.0, 0.0, 100.0))
 
     print("-" * 75)
-    print("📊 KẾT QUẢ CHẨN ĐOÁN:")
+    print("📊 KẾT QUẢ CHẨN ĐOÁN & ACADEMIC BENCHMARK:")
     print(f"  • Quãng đường hoàn thành: {final_dist:.1f}m / {track_len:.1f}m ({completion_pct:.1f}%)")
-    print(f"  • Thời gian chạy: {final_time:.2f}s ({step} physics steps)")
-    print(f"  • Vận tốc cao nhất (V-max): {max_spd:.1f} km/h")
-    print(f"  • Vận tốc trung bình (V-avg): {mean_spd:.1f} km/h")
+    print(f"  • Thời gian chạy: {final_time:.2f}s (Cận dưới lý thuyết: {t_opt:.2f}s | Đạt {bench_metrics['lap_efficiency_pct']:.1f}%)")
+    print(f"  • Vận tốc cao nhất (V-max): {max_spd:.1f} km/h (V-avg: {mean_spd:.1f} km/h)")
+    print(f"  • Sai số Racing Line (MAE): {bench_metrics['racing_line_mae_m']:.2f}m (RMSE: {bench_metrics['racing_line_rmse_m']:.2f}m)")
+    print(f"  • Độ chuẩn xác cắt cua Apex: {bench_metrics['apex_cutting_accuracy_pct']:.1f}%")
+    print(f"  • Chênh lệch vận tốc góc cua (ΔV): {bench_metrics['mean_corner_delta_v_kmh']:+.1f} km/h")
+    print(f"  • Khai thác ma sát lốp G-G: {bench_metrics['friction_circle_utilization_pct']:.1f}%")
     print(f"  • Trạng thái kết thúc: {term_reason}")
     print("-" * 75)
 
@@ -167,34 +194,39 @@ def main():
 
     os.makedirs(os.path.dirname(args.save_path), exist_ok=True)
     fig, axes = plt.subplots(3, 2, figsize=(16, 14), dpi=300)
+    agent_label = "Optimal Benchmark Agent (Convex QP + Lipp & Boyd)" if args.agent == "optimal" else f"PPO: {os.path.basename(args.model)}"
     fig.suptitle(
-        f"Sim Racing Telemetry Diagnostic Dashboard\n"
-        f"Model: {os.path.basename(args.model)} | Dist: {final_dist:.1f}m ({completion_pct:.1f}%) | Time: {final_time:.2f}s | Result: {clean_reason}",
-        fontsize=14, fontweight="bold"
+        f"Sim Racing Telemetry & Dynamic Benchmark Dashboard\n"
+        f"{agent_label} | Dist: {final_dist:.1f}m ({completion_pct:.1f}%) | Time: {final_time:.2f}s (Opt: {t_opt:.1f}s) | Line MAE: {bench_metrics['racing_line_mae_m']:.2f}m | Apex: {bench_metrics['apex_cutting_accuracy_pct']:.0f}%",
+        fontsize=13, fontweight="bold"
     )
 
     # -------------------------------------------------------------
-    # 1. Speed Trace (v vs s) với Mốc Cua
+    # 1. Speed Trace (v vs s) với Mốc Cua & Theoretical Optimal Profile
     # -------------------------------------------------------------
     ax1 = axes[0, 0]
-    ax1.plot(dists, speeds, color="#007acc", lw=2.2, label=f"Speed (Max: {max_spd:.1f} km/h)")
+    ax1.plot(dists, speeds, color="#007acc", lw=2.2, label=f"AI Speed (Max: {max_spd:.1f} km/h)")
+    if track_s_prof is not None and opt_speed_kmh is not None:
+        ax1.plot(track_s_prof, opt_speed_kmh, color="crimson", linestyle="--", lw=1.8, alpha=0.85, label=f"Optimal Speed Target (Best: {t_opt:.1f}s)")
     for corner_dist, corner_name in TRACK_CORNERS:
         if corner_dist <= max(final_dist + 50, 100):
-            ax1.axvline(corner_dist, color="crimson", linestyle=":", lw=1.5, alpha=0.85)
+            ax1.axvline(corner_dist, color="crimson", linestyle=":", lw=1.2, alpha=0.6)
             y_pos = max_spd * 0.75 if max_spd > 20 else 50
             ax1.text(corner_dist + 5, y_pos, corner_name, fontsize=8, color="crimson", rotation=90, fontweight="bold")
-    ax1.set_title("1. Speed Trace (v vs s) & Corner Apexes", fontweight="bold")
+    ax1.set_title("1. Speed Trace (v vs s) vs Theoretical Optimal Profile", fontweight="bold")
     ax1.set_xlabel("Track Distance s (meters)")
     ax1.set_ylabel("Speed (km/h)")
     ax1.grid(True, linestyle="--", alpha=0.6)
     ax1.legend(loc="upper right", fontsize=8)
 
     # -------------------------------------------------------------
-    # 2. Quỹ Đạo Đua 2D (2D Trajectory vs Circuit Map)
+    # 2. Quỹ Đạo Đua 2D (2D Trajectory vs Optimal Racing Line)
     # -------------------------------------------------------------
     ax2 = axes[0, 1]
     if track_xy is not None and len(track_xy) > 0:
-        ax2.plot(track_xy[:, 0], track_xy[:, 1], color="lightgray", lw=4.0, linestyle="--", label="Circuit Centerline")
+        ax2.plot(track_xy[:, 0], track_xy[:, 1], color="lightgray", lw=3.0, linestyle="--", label="Circuit Centerline")
+    if opt_line_xy is not None and len(opt_line_xy) > 0:
+        ax2.plot(opt_line_xy[:, 0], opt_line_xy[:, 1], color="#e377c2", lw=2.0, linestyle="-.", alpha=0.9, label="Optimal Racing Line (QP Min Curv)")
     if ego_x is not None and ego_y is not None and len(ego_x) > 0 and len(ego_y) > 0:
         scatter_map = ax2.scatter(ego_x, ego_y, c=speeds, cmap="turbo", s=14, alpha=0.9, label="Vehicle Trajectory")
         cb_map = fig.colorbar(scatter_map, ax=ax2, pad=0.02)
@@ -204,7 +236,7 @@ def main():
         # Điểm dừng / đâm
         term_marker = "[FINISH]" if completion_pct >= 98.0 else "[STOP/CRASH]"
         ax2.plot(ego_x[-1], ego_y[-1], marker="X", color="red", markersize=12, label=f"Terminated ({term_marker})")
-    ax2.set_title("2. 2D Circuit Map & Trajectory Pace", fontweight="bold")
+    ax2.set_title("2. 2D Circuit Map & Optimal Racing Line", fontweight="bold")
     ax2.set_xlabel("X Coordinate (m)")
     ax2.set_ylabel("Y Coordinate (m)")
     ax2.axis("equal")

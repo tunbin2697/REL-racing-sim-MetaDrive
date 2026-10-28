@@ -15,13 +15,13 @@ from .networks import ActorCritic
 class PPOAgent:
     def __init__(
         self,
-        state_dim: int = 35,
-        action_dim: int = 2,
+        state_dim: int = 40,
+        action_dim: int = 3,
         lr: float = 3e-4,
         gamma: float = 0.99,
         gae_lambda: float = 0.95,
-        clip_coef: float = 0.2,
-        ent_coef: float = 0.01,
+        clip_coef: float = 0.15,
+        ent_coef: float = 0.005,
         vf_coef: float = 0.5,
         max_grad_norm: float = 0.5,
         update_epochs: int = 10,
@@ -48,10 +48,31 @@ class PPOAgent:
         self.actor_params = list(self.ac.actor_mean.parameters()) + [self.ac.actor_logstd]
         self.critic_params = list(self.ac.critic.parameters())
         
-        self.lr_actor = lr * 0.2
-        self.lr_critic = lr * 1.5
+        self.lr_actor = lr
+        self.lr_critic = lr
         self.actor_optimizer = optim.Adam(self.actor_params, lr=self.lr_actor, eps=1e-5)
         self.critic_optimizer = optim.Adam(self.critic_params, lr=self.lr_critic, eps=1e-5)
+
+    def set_lr(self, lr: float):
+        """Cập nhật learning rate động cho Actor và Critic optimizers"""
+        self.lr_actor = float(lr)
+        self.lr_critic = float(lr)
+        for param_group in self.actor_optimizer.param_groups:
+            param_group["lr"] = float(lr)
+        for param_group in self.critic_optimizer.param_groups:
+            param_group["lr"] = float(lr)
+
+    def get_lr(self) -> float:
+        """Lấy learning rate hiện hành của Actor optimizer"""
+        return float(self.actor_optimizer.param_groups[0]["lr"])
+
+    def set_ent_coef(self, ent_coef: float):
+        """Cập nhật hệ số thưởng Entropy động theo lịch trình annealing"""
+        self.ent_coef = float(ent_coef)
+
+    def get_ent_coef(self) -> float:
+        """Lấy hệ số thưởng Entropy hiện hành"""
+        return float(self.ent_coef)
         
     @property
     def network(self):
@@ -198,11 +219,36 @@ class PPOAgent:
         }, filepath)
 
     def load(self, filepath: str):
-        """Nạp checkpoint mô hình"""
+        """Nạp checkpoint mô hình (Tự động thích ứng với cấu hình 2D hoặc 3D action space)"""
         checkpoint = torch.load(filepath, map_location=self.device)
-        self.ac.load_state_dict(checkpoint["model_state_dict"])
+        state_dict = checkpoint.get("model_state_dict", checkpoint)
+        
+        # Tự động suy luận action_dim và state_dim từ metadata hoặc từ shape của trọng số
+        ckpt_action_dim = checkpoint.get("action_dim")
+        if ckpt_action_dim is None and "actor_logstd" in state_dict:
+            ckpt_action_dim = state_dict["actor_logstd"].shape[1]
+        ckpt_state_dim = checkpoint.get("state_dim")
+        if ckpt_state_dim is None and "actor_mean.0.weight" in state_dict:
+            ckpt_state_dim = state_dict["actor_mean.0.weight"].shape[1]
+            
+        if (ckpt_action_dim is not None and ckpt_action_dim != self.action_dim) or (ckpt_state_dim is not None and ckpt_state_dim != self.state_dim):
+            self.action_dim = int(ckpt_action_dim) if ckpt_action_dim is not None else self.action_dim
+            self.state_dim = int(ckpt_state_dim) if ckpt_state_dim is not None else self.state_dim
+            self.ac = ActorCritic(state_dim=self.state_dim, action_dim=self.action_dim).to(self.device)
+            self.actor_params = list(self.ac.actor_mean.parameters()) + [self.ac.actor_logstd]
+            self.critic_params = list(self.ac.critic.parameters())
+            self.actor_optimizer = torch.optim.Adam(self.actor_params, lr=self.lr_actor, eps=1e-5)
+            self.critic_optimizer = torch.optim.Adam(self.critic_params, lr=self.lr_critic, eps=1e-5)
+
+        self.ac.load_state_dict(state_dict)
         if "actor_optimizer_state_dict" in checkpoint:
-            self.actor_optimizer.load_state_dict(checkpoint["actor_optimizer_state_dict"])
+            try:
+                self.actor_optimizer.load_state_dict(checkpoint["actor_optimizer_state_dict"])
+            except Exception:
+                pass
         if "critic_optimizer_state_dict" in checkpoint:
-            self.critic_optimizer.load_state_dict(checkpoint["critic_optimizer_state_dict"])
+            try:
+                self.critic_optimizer.load_state_dict(checkpoint["critic_optimizer_state_dict"])
+            except Exception:
+                pass
         self.ac.eval()

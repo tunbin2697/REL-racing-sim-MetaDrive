@@ -12,10 +12,10 @@ import numpy as np
 
 
 class TelemetryTracker:
-    def __init__(self, reference_lap_file: Optional[str] = None, **kwargs):
-        self.reference_lap_file = reference_lap_file
-        # Dữ liệu của vòng chạy hiện tại
+    def __init__(self, **kwargs):
+        # Dữ liệu của vòng chạy hiện tại và vòng trước đó
         self.current_lap_data: List[Dict] = []
+        self.last_completed_lap_data: List[Dict] = []
         self.cumulative_distance: float = 0.0
         self.last_position = None
         self.last_velocity = None
@@ -143,3 +143,27 @@ class TelemetryTracker:
             color = "red"
             
         return float(delta_window), color
+
+    def evaluate_with_benchmark(self, benchmark_engine) -> Dict[str, float]:
+        """
+        Đánh giá vòng chạy của xe qua Động cơ phân tích chuẩn mực (RacingBenchmarkEngine):
+        - Đo MAE/RMSE lệch Racing line tối ưu (Minimum Curvature).
+        - Đo tỷ lệ cắt đỉnh cua Apex chuẩn xác.
+        - Đo sai số tốc độ tại các góc cua (Corner Speed Delta).
+        - Đo mức độ khai thác vòng tròn ma sát lốp (G-G Friction Utilization).
+        - Đo hiệu suất thời gian so với cận dưới lý thuyết.
+        """
+        if benchmark_engine is None:
+            return {
+                "racing_line_mae_m": 0.0,
+                "racing_line_rmse_m": 0.0,
+                "apex_cutting_accuracy_pct": 0.0,
+                "mean_corner_delta_v_kmh": 0.0,
+                "friction_circle_utilization_pct": 0.0,
+                "lap_efficiency_pct": 0.0,
+                "theoretical_best_lap_time": 0.0,
+            }
+        data_to_eval = self.current_lap_data
+        if len(data_to_eval) < 50 and hasattr(self, "last_completed_lap_data") and len(self.last_completed_lap_data) > 0:
+            data_to_eval = self.last_completed_lap_data
+        return benchmark_engine.evaluate_lap(data_to_eval)
