@@ -26,7 +26,7 @@ class RacingEvaluator:
         self,
         num_episodes: int = 3,
         deterministic: bool = True,
-        max_eval_steps_per_lap: int = 1500,
+        max_eval_steps_per_lap: int = 3000,
         verbose: bool = False,
     ) -> Dict[str, Any]:
         """

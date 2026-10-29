@@ -64,6 +64,7 @@ def parse_args():
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
     parser.add_argument("--vehicle", type=str, default="gt3", choices=["gt3", "sedan"], help="Loại xe đua ('gt3' hoặc 'sedan' đối chứng)")
     parser.add_argument("--max-laps", type=int, default=1, help="Số vòng đua tối đa mỗi episode (mặc định 1 lap: Clean Single Lap)")
+    parser.add_argument("--time-penalty", type=float, default=0.0, help="Áp lực thời gian: phạt hằng số mỗi bước 0.1s (vd 0.02 -> lap 150s chịu -30)")
     
     # Cờ điều khiển lịch trình suy giảm tham số (Schedules) - Mặc định KHÔNG decay, giữ cố định LR
     parser.add_argument("--lr-decay", action="store_true", default=False, help="Bật cờ này để tự động giảm dần Learning Rate tuyến tính từ --lr về --min-lr")
@@ -142,6 +143,7 @@ def main():
     print(f"  - Learning Rate: {args.lr} (Decay: {args.lr_decay}, Min: {args.min_lr})")
     print(f"  - Entropy Coef: {args.ent_coef} (Decay: {args.ent_decay}, Min: {args.min_ent_coef})")
     print(f"  - GAE Lambda: {args.gae_lambda} | Clip: {args.clip_coef} | Gamma: {args.gamma}")
+    print(f"  - Time Penalty: {args.time_penalty}/step")
 
     # Khởi tạo TensorBoard
     tb_run_name = f"ppo_racing_{time.strftime('%Y%m%d_%H%M%S')}"
@@ -164,6 +166,7 @@ def main():
         start_seed=args.seed,
         vehicle=race_car,
         max_laps=args.max_laps,
+        time_penalty=args.time_penalty,
     )
 
     obs_shape = env.observation_space.shape
@@ -219,6 +222,8 @@ def main():
     if args.resume and os.path.exists(args.resume):
         print(f">> RESUME: Nạp trọng số từ checkpoint: {args.resume}")
         agent.load(args.resume)
+        # load_state_dict của Adam khôi phục cả lr cũ trong checkpoint -> áp lại --lr theo CLI
+        agent.set_lr(args.lr)
 
         if args.reset_logstd is not None:
             agent.ac.actor_logstd.data.fill_(float(args.reset_logstd))

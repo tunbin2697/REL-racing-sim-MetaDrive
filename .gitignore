@@ -51,3 +51,6 @@ AGENTS.md
 GEMINI.md
 .antigravity/
 .agents/
+# Intermediate checkpoints of experiment runs (only keep final models)
+models/run_v*/
+models/multicar_v*/

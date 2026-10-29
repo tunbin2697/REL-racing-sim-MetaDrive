@@ -7,7 +7,7 @@ MetaRacingEnv: Môi trường Đua xe 3D chuẩn RL tối ưu hóa cao cho MetaD
   + Bỏ hoàn toàn gờ Kerb ảo, lấy chuẩn đúng mép đường nhựa thật 4.5m.
   + Vòng chạy hợp lệ khi còn ít nhất 1 lốp xe trên mặt nhựa (<= 4.5m), chỉ dừng cuộc đua khi cả 4 lốp hoàn toàn rơi khỏi mặt nhựa.
 - Đo đạc quãng đường chuẩn Frenet s: Miễn nhiễm với hiện tượng trượt drift hoặc quay vòng.
-- Hàm thưởng Markovian: Thưởng tiến độ Frenet s, phạt lắc tay lái (-0.10 * delta_steer^2), phạt đứng yên, và thưởng cán đích hàm bậc 3 theo thời gian vòng đua.
+- Hàm thưởng Markovian: Thưởng tiến độ Frenet s, phạt lắc tay lái (-0.10 * delta_steer^2), phạt đứng yên, áp lực thời gian tùy chọn (time_penalty/bước), và thưởng cán đích hàm bậc 3 theo thời gian vòng đua.
 """
 
 import os
@@ -98,9 +98,20 @@ class MetaRacingEnv(gym.Env):
         max_speed_km_h: float = 120.0,
         vehicle: Optional[BaseRaceVehicle] = None,
         max_laps: int = 1,
+        time_penalty: float = 0.0,
+        lane_num: int = 2,
+        lane_width: float = 4.5,
         **kwargs,
     ):
         super().__init__()
+        # Hình học mặt đường: làn 0 ở lateral 0, các làn sau xếp về phía lateral dương
+        # -> tim đường tại lateral (N-1)*w/2, mép nhựa cách tim N*w/2 (mặc định 2 làn: 2.25m / 4.5m)
+        self.lane_num = int(lane_num)
+        self.lane_width = float(lane_width)
+        self.center_lat = 0.5 * (self.lane_num - 1) * self.lane_width
+        self.half_width = 0.5 * self.lane_num * self.lane_width
+        # Áp lực thời gian r_time = -time_penalty mỗi bước 0.1s: tổng phạt tỉ lệ thuận với lap time
+        self.time_penalty = float(time_penalty)
         
         # Thực thể phương tiện đua xe chuyên biệt (OOP Race Car Entity)
         self.car: BaseRaceVehicle = vehicle if vehicle is not None else GT3RaceCar()
@@ -137,8 +148,8 @@ class MetaRacingEnv(gym.Env):
             "cull_lanes_outside_map": False,
             "map_type": map_type,
             "map_config": {
-                "lane_num": 2,
-                "lane_width": 4.5,
+                "lane_num": self.lane_num,
+                "lane_width": self.lane_width,
             },
             
             # Tắt tường bê tông rào chắn và phạt vạch để áp dụng cơ chế Runoff thể thao
@@ -226,13 +237,13 @@ class MetaRacingEnv(gym.Env):
             kappa = 0.0
             if hasattr(lane, "radius") and lane.radius > 0:
                 is_cw = lane.is_clockwise() if callable(getattr(lane, "is_clockwise", None)) else bool(getattr(lane, "is_clockwise", False))
-                r_mid = lane.radius + 2.25
+                r_mid = lane.radius + self.center_lat
                 kappa = (1.0 / float(r_mid)) * (-1.0 if is_cw else 1.0)
-                
+
             for s_l in s_samples:
-                # Tim đường thực tế của mặt đường 2 làn (làn 0 từ -2.25 đến +2.25, làn 1 từ +2.25 đến +6.75)
-                # Điểm tim chuẩn chính xác giữa 2 làn nằm tại lateral = 2.25
-                pos = lane.position(s_l, 2.25)
+                # Tim đường thực tế của mặt đường N làn (mặc định 2 làn: làn 0 từ -2.25 đến +2.25, làn 1 từ +2.25 đến +6.75)
+                # Điểm tim chuẩn chính xác nằm tại lateral = center_lat (2 làn: 2.25)
+                pos = lane.position(s_l, self.center_lat)
                 theta = float(lane.heading_theta_at(s_l))
                 track_points.append({
                     "pos": np.array(pos[:2], dtype=np.float32),
@@ -242,7 +253,7 @@ class MetaRacingEnv(gym.Env):
             
         # Định vị vạch xuất phát / cán đích (Start/Finish Grid) tại x = 60.0m trên Hamilton Straight
         # Khớp chuẩn với vị trí vạch xuất phát thực tế của F1 Silverstone GP
-        dists_to_grid = np.sum((np.array([p["pos"] for p in track_points]) - np.array([60.0, 2.25])) ** 2, axis=1)
+        dists_to_grid = np.sum((np.array([p["pos"] for p in track_points]) - np.array([60.0, self.center_lat])) ** 2, axis=1)
         grid_k = int(dists_to_grid.argmin())
         if grid_k > 0:
             track_points = track_points[grid_k:] + track_points[:grid_k]
@@ -286,6 +297,7 @@ class MetaRacingEnv(gym.Env):
         action_applied=None,
         delta_steer: float = 0.0,
         on_runoff: bool = False,
+        state=None,
     ) -> np.ndarray:
         """
         Xây dựng vector quan sát 40 chiều (Compact Racing State) - Zero Data Leakage:
@@ -296,18 +308,22 @@ class MetaRacingEnv(gym.Env):
           + [runoff_flag, lat_offset/4.5, sin_dh, cos_dh]
         - 24 chiều Lookahead Horizon dọc tim đường (6 waypoints x 4 values):
           + [dx_rel/150, dy_rel/40, sin(d_theta), kappa*50] tại các mốc [10, 25, 45, 70, 105, 150]m
+        state: đối tượng giữ trạng thái riêng của từng xe (current_track_idx, last_action, last_acc_long_g,
+          last_acc_lat_g); mặc định là chính env (đơn tác tử). Môi trường nhiều xe truyền trạng thái của từng xe.
         """
+        if state is None:
+            state = self
         if action_applied is None:
-            action_applied = self.last_action
-            
+            action_applied = state.last_action
+
         pos = np.array(vehicle.position[:2], dtype=np.float32)
         heading = float(vehicle.heading_theta)
         vel = np.array(vehicle.velocity[:2], dtype=np.float32)
         speed_m_s = float(np.linalg.norm(vel))
-        
+
         # Tìm vị trí tim đường hiện tại
-        idx, current_s = self._get_track_s(pos, self.current_track_idx)
-        self.current_track_idx = idx
+        idx, current_s = self._get_track_s(pos, state.current_track_idx)
+        state.current_track_idx = idx
         track_pt = self.track_xy[idx]
         track_heading = float(self.track_theta[idx])
         
@@ -353,7 +369,7 @@ class MetaRacingEnv(gym.Env):
                 pass
                 
         # Hành động bước trước
-        act_arr = np.array(self.last_action, dtype=np.float32)
+        act_arr = np.array(state.last_action, dtype=np.float32)
         prev_steer = float(act_arr[0]) if len(act_arr) > 0 else 0.0
         prev_throttle = float(act_arr[1]) if len(act_arr) > 1 else 0.0
         prev_brake = float(act_arr[2]) if len(act_arr) > 2 else 0.0
@@ -364,8 +380,8 @@ class MetaRacingEnv(gym.Env):
             float(np.clip(vy / 20.0, -1.5, 1.5)),               # 2. Vận tốc ngang thân xe
             float(np.clip(yaw_rate / 3.14159, -2.0, 2.0)),      # 3. Yaw rate quanh trục Z
             float(body_slip),                                   # 4. Góc trượt thân xe beta
-            float(np.clip(self.last_acc_long_g, -2.5, 2.5)),    # 5. Gia tốc dọc IMU (G)
-            float(np.clip(self.last_acc_lat_g, -2.5, 2.5)),     # 6. Gia tốc ngang IMU (G)
+            float(np.clip(state.last_acc_long_g, -2.5, 2.5)),   # 5. Gia tốc dọc IMU (G)
+            float(np.clip(state.last_acc_lat_g, -2.5, 2.5)),    # 6. Gia tốc ngang IMU (G)
             float(np.clip(roll_val / 0.35, -2.0, 2.0)),         # 7. Góc nghiêng thân xe roll
             float(np.clip(pitch_val / 0.35, -2.0, 2.0)),        # 8. Góc chúc/ngóc đầu pitch
             float(np.clip(prev_steer, -1.0, 1.0)),              # 9. Vô lăng bước trước
@@ -373,7 +389,7 @@ class MetaRacingEnv(gym.Env):
             float(np.clip(prev_brake, -1.0, 1.0)),              # 11. Chân phanh bước trước
             float(np.clip(delta_steer, -1.0, 1.0)),             # 12. Tốc độ xoay vô lăng
             float(1.0 if on_runoff else 0.0),                   # 13. Cờ lấn lề Runoff
-            float(np.clip(lat_offset / 4.5, -2.0, 2.0)),        # 14. Độ lệch ngang so với tim đường
+            float(np.clip(lat_offset / self.half_width, -2.0, 2.0)),  # 14. Độ lệch ngang so với tim đường (theo nửa bề rộng)
             float(sin_dh),                                      # 15. Sin góc lệch hướng
             float(cos_dh),                                      # 16. Cos góc lệch hướng
         ]
@@ -440,8 +456,8 @@ class MetaRacingEnv(gym.Env):
 
         self.is_flying_start = bool(start_mode == "flying")
 
-        # Đặt xe vào vị trí xuất phát Grid Slot P1 (x = 60.0m, y = 2.25m trên Hamilton Straight)
-        vehicle.set_position([60.0, 2.25])
+        # Đặt xe vào vị trí xuất phát Grid Slot P1 (x = 60.0m, y = tim đường trên Hamilton Straight)
+        vehicle.set_position([60.0, self.center_lat])
         if self.is_flying_start:
             vehicle.set_velocity([30.0, 0.0])  # 30 m/s = 108 km/h đà bay
         else:
@@ -475,28 +491,32 @@ class MetaRacingEnv(gym.Env):
         info["is_flying_start"] = bool(self.is_flying_start)
         return obs, info
 
-    def check_track_limits_and_apply_runoff(self):
+    def check_track_limits_and_apply_runoff(self, state=None, vehicle_contact_is_out: bool = True):
         """
         Quản lý lề Runoff & Giới hạn đường đua (Track Limits) chuẩn thể thao FIA 4 bánh:
-        - Tim đường thực tế nằm ở giữa 2 làn (mặt đường nhựa rộng 9.0m, khoảng cách tới mép nhựa +-4.5m).
-        - Bỏ hoàn toàn gờ Kerb ảo: lấy chuẩn đúng mép đường nhựa thật 4.5m để khớp 100% với hiển thị 3D.
+        - Tim đường thực tế nằm ở giữa mặt đường (mặc định 2 làn rộng 9.0m, khoảng cách tới mép nhựa +-half_width = 4.5m).
+        - Bỏ hoàn toàn gờ Kerb ảo: lấy chuẩn đúng mép đường nhựa thật để khớp 100% với hiển thị 3D.
         - Luật 4 bánh FIA:
-          + Một bánh xe (bề rộng 0.30m, nửa bán kính 0.15m) được coi là còn trên đường nhựa nếu mép trong lốp xe dist_inner <= 4.5m.
+          + Một bánh xe (bề rộng 0.30m, nửa bán kính 0.15m) được coi là còn trên đường nhựa nếu mép trong lốp xe dist_inner <= half_width.
           + Vòng chạy HOÀN TOÀN HỢP LỆ nếu còn ít nhất 1 bánh xe trên mặt nhựa (wheels_on_track >= 1).
-          + Bật cờ lấn lề (on_runoff = True) khi có từ 1 đến 3 bánh rơi khỏi mặt nhựa (> 4.5m).
+          + Bật cờ lấn lề (on_runoff = True) khi có từ 1 đến 3 bánh rơi khỏi mặt nhựa (> half_width).
           + Xử thua (is_full_out = True -> terminated) khi CẢ 4 BÁNH đều hoàn toàn rơi khỏi mặt nhựa (wheels_on_track == 0).
-          + Hoặc xe bị lật / va chạm đối thủ (is_airborne_or_flipped, crash_vehicle, crash_object).
+          + Hoặc xe bị lật / va chạm vật thể (is_airborne_or_flipped, crash_object) và va chạm xe khác nếu vehicle_contact_is_out.
+        state: trạng thái riêng từng xe (car, current_track_idx); mặc định là chính env (đơn tác tử).
+        vehicle_contact_is_out: đơn tác tử coi va chạm xe là bị loại; đua nhiều xe chỉ phạt va chạm ở hàm thưởng.
         """
-        wheels = self.car.get_wheel_positions()
+        if state is None:
+            state = self
+        wheels = state.car.get_wheel_positions()
         if not wheels:
             return False, False
-            
+
         tire_half_width = 0.15
-        asphalt_limit = 4.5
-        
+        asphalt_limit = self.half_width
+
         wheels_on_track = 0
         for w_pos in wheels:
-            idx, _ = self._get_track_s(w_pos, self.current_track_idx)
+            idx, _ = self._get_track_s(w_pos, state.current_track_idx)
             dist_to_center = float(np.linalg.norm(w_pos - self.track_xy[idx]))
             # Mép trong lốp xe gần tim đường hơn tâm bánh xe 0.15m
             dist_inner_edge = max(0.0, dist_to_center - tire_half_width)
@@ -505,14 +525,14 @@ class MetaRacingEnv(gym.Env):
                 
         is_full_out = False
         on_runoff = False
-        is_airborne_or_flipped = self.car.is_airborne_or_flipped()
-        
+        is_airborne_or_flipped = state.car.is_airborne_or_flipped()
+
         if (
             wheels_on_track == 0
             or is_airborne_or_flipped
-            or self.car.crash_object
-            or self.car.crash_vehicle
-            or self.car.crash_sidewalk
+            or state.car.crash_object
+            or (vehicle_contact_is_out and state.car.crash_vehicle)
+            or state.car.crash_sidewalk
         ):
             is_full_out = True
         elif wheels_on_track < 4:
@@ -536,8 +556,10 @@ class MetaRacingEnv(gym.Env):
         last_x = float(self.last_pos[0])
         curr_y = float(self.car.position[1])
         
-        # Kiểm tra xe đang trên đoạn thẳng Hamilton Straight (-2.5 <= y <= 7.0)
-        on_finish_straight = bool(-2.5 <= curr_y <= 7.0)
+        # Kiểm tra xe đang trên đoạn thẳng Hamilton Straight (mặc định 2 làn: -2.5 <= y <= 7.0)
+        y_min = -0.5 * self.lane_width - 0.25
+        y_max = 2.0 * self.center_lat + 0.5 * self.lane_width + 0.25
+        on_finish_straight = bool(y_min <= curr_y <= y_max)
         
         # Cán qua mặt phẳng x = 60.0m từ phía sau tới (last_x < 60.0 <= curr_x)
         crossed_finish_line = bool(on_finish_straight and last_x < 60.0 and curr_x >= 60.0)
@@ -629,9 +651,13 @@ class MetaRacingEnv(gym.Env):
 
         # d. Phạt đứng yên / quay mòng mòng tại chỗ (< 10 km/h)
         r_idle = -0.15 if speed_km_h < 10.0 else 0.0
-        
+
+        # e. Áp lực thời gian (Time Pressure): phạt hằng số mỗi bước, không phụ thuộc tốc độ
+        #    nên không biến thành thưởng đạp tốc mù quáng; xe chậm chịu tổng phạt lớn hơn
+        r_time = -self.time_penalty
+
         # Hàm thưởng vi mô thuần túy Markov:
-        micro_reward = r_progress + r_steer_smooth + r_idle
+        micro_reward = r_progress + r_steer_smooth + r_idle + r_time
         macro_reward = 0.0
         
         self.last_action = np.array(action, dtype=np.float32)
@@ -706,6 +732,7 @@ class MetaRacingEnv(gym.Env):
         info["r_steer_smooth"] = float(r_steer_smooth)
         info["r_center"] = 0.0
         info["r_idle"] = float(r_idle)
+        info["r_time"] = float(r_time)
         info["throttle"] = float(throttle)
         info["brake"] = float(brake)
         info["net_pedal"] = float(net_pedal)

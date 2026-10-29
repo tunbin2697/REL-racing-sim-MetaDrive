@@ -6,6 +6,7 @@ với nhiều góc quay camera điện ảnh và hiển thị tia quét LiDAR th
 Cách chạy:
     conda activate rel_racing
     python demo/spectate_ai.py --model models/best_agent.pt --ghost
+    python demo/spectate_ai.py --gamepad --ghost   # Tự lái bằng tay cầm Xbox đua với Ghost Car
 """
 
 import os
@@ -28,6 +29,7 @@ from game_env.vehicle import get_vehicle
 from game_env.ghost_car import GhostCar
 from game_env.visualizer import RacingLineVisualizer
 from game_env.camera import RacingCameraController
+from game_env.gamepad import XboxGamepad
 from agents.ppo_agent import PPOAgent
 from agents.optimal_agent import OptimalRacingAgent
 
@@ -37,6 +39,8 @@ def parse_args():
     parser.add_argument("--agent", type=str, default="ppo", choices=["ppo", "optimal"], help="Loại tác tử lái chính: 'ppo' (mạng neural PPO) hoặc 'optimal' (tác tử giải tích tối ưu lý thuyết)")
     parser.add_argument("--ghost", action="store_true", help="Bật xe bóng ma đối chứng (Ghost Car) điều khiển bởi OptimalRacingAgent")
     parser.add_argument("--manual", action="store_true", help="Chế độ tự lái bằng bàn phím (W-A-S-D) để so tài trực tiếp với Ghost Car")
+    parser.add_argument("--gamepad", action="store_true", help="Tự lái bằng tay cầm Xbox: Joystick trái = lái, RT = ga, LT = phanh")
+    parser.add_argument("--steer-gamma", type=float, default=1.0, help="Đường cong lái tay cầm (1.0 tuyến tính, 1.5-2.0 mềm hơn quanh tâm)")
     parser.add_argument("--vehicle", type=str, default="gt3", choices=["gt3", "sedan"], help="Loại xe biểu diễn ('gt3' hoặc 'sedan')")
     parser.add_argument("--map", type=str, default="silverstone", help="Bản đồ đua ('silverstone' hoặc 'racing')")
     parser.add_argument("--traffic", type=float, default=0.0, help="Mật độ chướng ngại vật/xe khác (0.0 - 0.2)")
@@ -49,12 +53,24 @@ def parse_args():
 def main():
     args = parse_args()
     race_car = get_vehicle(args.vehicle)
-    
+
+    # Tay cầm Xbox: kết nối trước khi mở cửa sổ 3D để báo lỗi sớm nếu chưa cắm
+    gamepad = None
+    if args.gamepad:
+        gamepad = XboxGamepad(steer_gamma=args.steer_gamma)
+        args.manual = False  # Action lấy từ tay cầm, không dùng bàn phím MetaDrive
+
     print("=" * 75)
     print("🎬 CHẾ ĐỘ XEM BIỂU DIỄN 3D & GHOST CAR RACING (CINEMATIC SPECTATOR)")
     print("=" * 75)
     print(f"Xe đua: {race_car.cfg.name} (Brake: {race_car.cfg.max_brake_force}N, Grip: {race_car.cfg.wheel_friction})")
-    print(f"Tác tử điều khiển xe chính: {'TỰ LÁI BÀN PHÍM (MANUAL W-A-S-D)' if args.manual else args.agent.upper()}")
+    if gamepad is not None:
+        driver_str = f"TỰ LÁI TAY CẦM ({gamepad.name})"
+    elif args.manual:
+        driver_str = "TỰ LÁI BÀN PHÍM (MANUAL W-A-S-D)"
+    else:
+        driver_str = args.agent.upper()
+    print(f"Tác tử điều khiển xe chính: {driver_str}")
     print(f"Xe bóng ma đối chứng (Ghost Car): {'BẬT (OPTIMAL AGENT)' if args.ghost else 'TẮT'}")
     print("Điều khiển camera & quan sát 360 độ tự do:")
     print("  - [Lia chuột (Mouse Look)]: Xoay tự do 360° quanh xe (không giới hạn góc, không tự reset)")
@@ -67,6 +83,8 @@ def main():
     print("  - [H]: Bật / Tắt menu trợ giúp phím tắt trên màn hình")
     if args.manual:
         print("  - [W/S/A/D]: Tăng ga / Thắng / Đánh lái")
+    if gamepad is not None:
+        print("  - [Joystick trái]: Đánh lái | [RT]: Ga | [LT]: Phanh")
     print("  - [Esc]: Thoát")
     print("=" * 75)
 
@@ -84,7 +102,7 @@ def main():
     # Khởi tạo Tác tử chính
     ppo_agent = None
     opt_agent = None
-    if not args.manual:
+    if not args.manual and gamepad is None:
         if args.agent == "optimal":
             print(">> Khởi tạo Theoretical Optimal Benchmark Agent (Convex QP + Lipp & Boyd)...")
             opt_agent = OptimalRacingAgent()
@@ -149,7 +167,9 @@ def main():
             step += 1
             
             # 1. Tác tử chính quyết định hành động
-            if args.manual:
+            if gamepad is not None:
+                action = gamepad.read()
+            elif args.manual:
                 # MetaDrive tự lấy input bàn phím khi manual_control=True
                 action = np.array([0.0, 0.0, -1.0], dtype=np.float32)
             elif opt_agent is not None:
@@ -191,7 +211,9 @@ def main():
             delta_str = f"+{delta_t:.2f}s" if delta_t >= 0 else f"{delta_t:.2f}s"
             delta_color = info.get("delta_color", "gray")
             
-            if args.manual:
+            if gamepad is not None:
+                mode_str = "GAMEPAD HUMAN"
+            elif args.manual:
                 mode_str = "MANUAL HUMAN"
             elif opt_agent is not None:
                 mode_str = "OPTIMAL QP BENCHMARK"
@@ -270,6 +292,8 @@ def main():
             camera_controller.destroy()
         if ghost_car is not None:
             ghost_car.destroy(getattr(getattr(env, "env", env), "engine", None))
+        if gamepad is not None:
+            gamepad.close()
         env.close()
         print(">> Đã đóng cửa sổ mô phỏng an toàn.")
 

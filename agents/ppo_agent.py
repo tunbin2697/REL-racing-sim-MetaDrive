@@ -173,6 +173,9 @@ class PPOAgent:
                 actor_loss.backward()
                 nn.utils.clip_grad_norm_(self.actor_params, self.max_grad_norm)
                 self.actor_optimizer.step()
+                # Chiếu actor_logstd về miền hợp lệ: tránh tham số trôi ra ngoài clamp (gradient = 0, sigma kẹt vĩnh viễn)
+                with torch.no_grad():
+                    self.ac.actor_logstd.clamp_(self.ac.LOGSTD_MIN, self.ac.LOGSTD_MAX)
                 
                 # 3. PPO Clipped Value Loss (Ổn định Critic, chống spike khi va chạm)
                 v_pred = new_value.view(-1)
@@ -241,6 +244,8 @@ class PPOAgent:
             self.critic_optimizer = torch.optim.Adam(self.critic_params, lr=self.lr_critic, eps=1e-5)
 
         self.ac.load_state_dict(state_dict)
+        with torch.no_grad():
+            self.ac.actor_logstd.clamp_(self.ac.LOGSTD_MIN, self.ac.LOGSTD_MAX)
         if "actor_optimizer_state_dict" in checkpoint:
             try:
                 self.actor_optimizer.load_state_dict(checkpoint["actor_optimizer_state_dict"])
