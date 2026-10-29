@@ -229,6 +229,40 @@ Hệ quả kèm theo khi chuyển sang 1:1:
 
 ---
 
+## F13. Ratio PPO nổ tới NaN sau bản vá F2 (hành động bão hòa sâu)
+
+### Hiện tượng [Đã kiểm chứng: run P1-main, commit `e0738e8`]
+- Trước khi nổ, run hoạt động tốt:
+  - σ = [0.21, 0.91, 0.23], dao động trong biên, tức F1 đã được khắc phục.
+  - Vòng sạch đầu tiên 143s; best 141.4s tại step 1,372,160.
+- Diễn biến:
+  - Step 1,382,400: policy loss = **1.3·10¹⁰**, value loss vẫn ≈ 1.
+  - Step 1,392,640: policy loss = 1.2·10⁶; eval crash tại mét 913, completion còn 16%.
+  - Update tiếp theo: `actor_mean` ra NaN, chương trình dừng với `ValueError` của `Normal(loc=nan)`.
+
+### Cơ chế [Đã kiểm chứng bằng TEST 4D]
+- Bản vá F2 kẹp action về ±0.999, sau đó tính log_prob tại $u = \operatorname{atanh}(\pm0.999) = \pm3.8$ cho **cả rollout lẫn update**. Hai đường đã khớp nhau, nhưng giá trị đó là mật độ tại **điểm bị kẹp**, không phải tại điểm thực sự được sample.
+- Agent học cách không phanh trên phần lớn đường đua, nên mean của chiều brake bị đẩy sâu vào vùng bão hòa (khoảng −5). Khi đó điểm −3.8 nằm cách mean khoảng 12σ (σ_brake ≈ 0.1–0.23), tức ở rất xa trong đuôi phân phối.
+- Log-density ở đuôi thay đổi rất nhanh theo mean. Chỉ cần mean dịch thêm 1σ về phía biên:
+  $$\Delta\log p = \frac{(12\sigma)^2 - (11\sigma)^2}{2\sigma^2} = 11.5 \;\Rightarrow\; r \approx 10^5$$
+  TEST 4D đo được: đường cũ cho max ratio = **1.08·10⁵**, đường mới chỉ **10**.
+- Clip của PPO không chặn được trường hợp này. Với advantage < 0, số hạng $r\cdot A$ không có cận trên, nên loss nổ, gradient nổ và trọng số thành NaN.
+- Vì sao code trước F2 không nổ: log_prob lúc rollout được tính tại $u$ đã sample (gần mean), còn lúc update lại tính tại 3.8 (ở đuôi). Do đó $r \to 0$: gradient bị **triệt tiêu** chứ không bùng nổ. Bản vá F2 làm hai đường khớp nhau nhưng đã chọn sai điểm để khớp.
+
+### Bản vá
+- **Lưu $u$ trước tanh vào buffer rollout** (`raw_us`) và tính lại log_prob tại đúng $u$ đó khi update. Cách này khớp tuyệt đối và dùng **mật độ thật**.
+- Jacobian tính bằng công thức ổn định số học: $\log(1-\tanh^2u) = 2(\log 2 - u - \text{softplus}(-2u))$.
+- Đường `action=` (u = atanh(clamp(action))) chỉ giữ lại cho evaluator và demo.
+- Lưới an toàn:
+  - kẹp `log_ratio` trong ±20;
+  - bỏ qua minibatch actor nếu loss không hữu hạn, đồng thời ghi lại số minibatch bị bỏ (`skipped_actor_updates`) và in cảnh báo `[NaN GUARD]`.
+
+### Bài học cho báo cáo
+- Một bản vá "làm hai đường khớp nhau" vẫn có thể sai nếu chọn sai điểm để khớp. Test chỉ kiểm tra sự khớp nhau (TEST 1B) không phát hiện được lỗi này. Cần test đo trực tiếp cơ chế (TEST 4D: dịch mean và so sánh ratio).
+- **Resume**: tiếp tục từ `best_agent.pt` (step 1.37M, lưu trước khi nổ). Metrics có mốc `resume_marks` ghi kèm commit mới. Đoạn 0 → 1.37M vẫn là bằng chứng hợp lệ cho F1.
+
+---
+
 ## Ma trận ablation đề xuất
 
 Cùng seed, mỗi run 500k step. Nếu đủ thời gian, chạy 2–3 seed. Metric theo dõi:

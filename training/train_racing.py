@@ -255,6 +255,19 @@ def main():
                     global_step = int(metrics["steps"][-1])
                 if metrics.get("eval_completion"):
                     best_eval_completion = float(max(metrics["eval_completion"]))
+                # Khôi phục kỷ lục lap time để eval đầu tiên sau resume không ghi đè best_agent.pt bằng vòng chậm hơn
+                # Chỉ lấy các lần eval sạch (crash 0%, completion >= 98%), đúng tiêu chí lưu best. Các list có thể lệch
+                # 1 phần tử ở đầu (eval ban đầu không ghi lap time) nên căn theo đuôi.
+                prev_laps = metrics.get("eval_best_lap_time", [])
+                n_laps = len(prev_laps)
+                prev_crash = metrics.get("crash_rate", [])[-n_laps:] if n_laps else []
+                prev_comp = metrics.get("eval_completion", [])[-n_laps:] if n_laps else []
+                clean_laps = [
+                    t for t, c, p in zip(prev_laps, prev_crash, prev_comp)
+                    if t and t > 0 and c == 0.0 and p >= 98.0
+                ]
+                if clean_laps:
+                    best_eval_lap_time = float(min(clean_laps))
                 total_finishes = int(metrics.get("total_finishes", 0))
                 print(f">> RESUME: Đã nạp lại lịch sử metrics! Bắt đầu từ Step {global_step} | Finishes cũ: {total_finishes} | Best Completion cũ: {best_eval_completion:.1f}%")
             except Exception as e:
@@ -265,6 +278,8 @@ def main():
         metrics["resume_marks"].append({
             "step": global_step,
             "source": os.path.basename(args.resume),
+            "git_commit": git_commit,
+            "args": vars(args),
         })
 
         if args.steps_to_run is not None:
@@ -299,6 +314,7 @@ def main():
     # Bộ đệm Rollout Storage
     states = np.zeros((args.rollout_len, obs_dim), dtype=np.float32)
     actions = np.zeros((args.rollout_len, act_dim), dtype=np.float32)
+    raw_us = np.zeros((args.rollout_len, act_dim), dtype=np.float32)  # u trước tanh, dùng tính lại log_prob khi update (F13)
     log_probs = np.zeros(args.rollout_len, dtype=np.float32)
     rewards = np.zeros(args.rollout_len, dtype=np.float32)
     values = np.zeros(args.rollout_len, dtype=np.float32)
@@ -349,11 +365,12 @@ def main():
         # 1. Thu thập Rollout
         for step in range(args.rollout_len):
             global_step += 1
-            action, log_prob, value = agent.select_action(obs, deterministic=False)
+            action, log_prob, value, raw_u = agent.select_action(obs, deterministic=False, return_raw=True)
             next_obs, reward, terminated, truncated, step_info = env.step(action)
 
             states[step] = obs
             actions[step] = action
+            raw_us[step] = raw_u
             log_probs[step] = log_prob
             rewards[step] = reward
             values[step] = value
@@ -387,8 +404,10 @@ def main():
                 agent.set_ent_coef(current_ent)
 
         # 4. Cập nhật mạng Actor-Critic
-        train_info = agent.update(states, actions, log_probs, advantages, returns, values)
+        train_info = agent.update(states, actions, log_probs, advantages, returns, values, b_raw_us=raw_us)
         update_idx += 1
+        if train_info.get("skipped_actor_updates", 0) > 0:
+            print(f"  ⚠️ [NaN GUARD] Step {global_step}: bỏ qua {train_info['skipped_actor_updates']} minibatch actor có loss không hữu hạn")
 
         # 5. Đánh giá định kỳ (Evaluation)
         if update_idx % args.eval_freq == 0 or global_step >= target_total_steps:

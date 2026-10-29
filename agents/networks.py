@@ -1,6 +1,7 @@
 from typing import Tuple, Optional
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.distributions.normal import Normal
 import numpy as np
 
@@ -65,31 +66,37 @@ class ActorCritic(nn.Module):
         """Dự đoán giá trị trạng thái V(s)"""
         return self.critic(x)
 
-    def get_action_and_value(self, x, action=None, deterministic=False):
+    def get_action_and_value(self, x, action=None, deterministic=False, raw_u=None, return_raw=False):
         """
         Lấy mẫu hành động qua Squashed Gaussian (Tanh Normal) với hiệu chỉnh Jacobian log-determinant.
-        Hành động sinh ra luôn nằm nghiêm ngặt trong [-0.999, 0.999], triệt tiêu lỗi Action Boundary Mismatch.
+        - Rollout: sample u ~ N(mu, sigma), action = tanh(u); trả thêm u khi return_raw=True để lưu vào buffer.
+        - Update: truyền raw_u đã lưu -> log_prob tính đúng tại điểm đã sample (khớp tuyệt đối, mật độ thật).
+        - Tương thích ngược (demo/eval cũ): truyền action -> u = atanh(clamp(action, +-ACTION_BOUND)).
+        Không tính log_prob tại điểm kẹp atanh(0.999) cho hành động bão hòa: mật độ ở đuôi phân phối đó
+        thay đổi cực nhanh theo mean -> ratio PPO nổ tới NaN (F13).
         """
         action_mean = self.actor_mean(x)
         # Kẹp logstd trong [LOGSTD_MIN, LOGSTD_MAX] = [-2.3, 0.0] để bảo toàn khám phá mà chống nổ phương sai
         action_logstd = torch.clamp(self.actor_logstd.expand_as(action_mean), min=self.LOGSTD_MIN, max=self.LOGSTD_MAX)
         action_std = torch.exp(action_logstd)
         probs = Normal(action_mean, action_std)
-        
-        if action is None:
-            if deterministic:
-                action = torch.tanh(action_mean)
-            else:
-                action = torch.tanh(probs.rsample())
-                
-        # Dùng chung cho cả rollout và update: log_prob khớp tuyệt đối kể cả khi hành động bão hòa (Khử triệt để lỗi F2)
-        action = torch.clamp(action, -self.ACTION_BOUND, self.ACTION_BOUND)
-        u = torch.atanh(action)
-                
-        # Hiệu chỉnh Jacobian log-determinant ổn định số học (chống bùng nổ -inf / NaN khi PPO importance sampling)
-        jacobian = torch.clamp(1.0 - action.pow(2), min=1e-4)
-        log_prob = (probs.log_prob(u) - torch.log(jacobian)).sum(1)
+
+        if raw_u is not None:
+            u = raw_u
+        elif action is not None:
+            u = torch.atanh(torch.clamp(action, -self.ACTION_BOUND, self.ACTION_BOUND))
+        elif deterministic:
+            u = action_mean
+        else:
+            u = probs.rsample()
+        action = torch.tanh(u)
+
+        # Jacobian log|d tanh(u)/du| = log(1 - tanh(u)^2) = 2 * (log2 - u - softplus(-2u)), ổn định số học với mọi u
+        log_det_jacobian = 2.0 * (np.log(2.0) - u - F.softplus(-2.0 * u))
+        log_prob = (probs.log_prob(u) - log_det_jacobian).sum(1)
         entropy = probs.entropy().sum(1)
         value = self.critic(x)
-        
+
+        if return_raw:
+            return action, log_prob, entropy, value, u
         return action, log_prob, entropy, value

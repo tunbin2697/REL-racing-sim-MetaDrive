@@ -81,16 +81,20 @@ class PPOAgent:
         """Thuộc tính tương thích cho mạng ActorCritic"""
         return self.ac
 
-    def select_action(self, state, deterministic: bool = False):
+    def select_action(self, state, deterministic: bool = False, return_raw: bool = False):
         """
         Chọn hành động từ trạng thái hiện tại.
-        Trả về: action (numpy array), log_prob, value
+        Trả về: action (numpy array), log_prob, value (+ raw_u trước tanh khi return_raw=True, để lưu vào buffer)
         """
         with torch.no_grad():
             state_tensor = torch.as_tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
-            action, log_prob, _, value = self.ac.get_action_and_value(state_tensor, deterministic=deterministic)
+            action, log_prob, _, value, raw_u = self.ac.get_action_and_value(
+                state_tensor, deterministic=deterministic, return_raw=True
+            )
             action_np = action.cpu().numpy()[0]
             action_clipped = np.clip(action_np, -1.0, 1.0)
+            if return_raw:
+                return action_clipped, log_prob.cpu().item(), value.cpu().item(), raw_u.cpu().numpy()[0]
             return action_clipped, log_prob.cpu().item(), value.cpu().item()
 
     def evaluate_states(self, states, actions):
@@ -122,10 +126,11 @@ class PPOAgent:
         returns = advantages + np.array(values, dtype=np.float32)
         return advantages, returns
 
-    def update(self, b_states, b_actions, b_log_probs, b_advantages, b_returns, b_values):
+    def update(self, b_states, b_actions, b_log_probs, b_advantages, b_returns, b_values, b_raw_us=None):
         """
         Huấn luyện PPO qua nhiều epoch trên các mini-batch ngẫu nhiên.
         Cập nhật đồng thời Actor Loss, Critic Value Loss, và Entropy Bonus.
+        b_raw_us: u trước tanh đã sample lúc rollout; khi có thì log_prob được tính lại đúng tại điểm đó (F13).
         """
         # Chuyển đổi dữ liệu sang Tensor PyTorch
         if not isinstance(b_states, torch.Tensor):
@@ -137,6 +142,8 @@ class PPOAgent:
             b_values_tensor = torch.as_tensor(b_values, dtype=torch.float32, device=self.device)
         else:
             b_values_tensor = b_values
+        if b_raw_us is not None:
+            b_raw_us = torch.as_tensor(b_raw_us, dtype=torch.float32, device=self.device)
             
         # Chuẩn hóa Advantages (Zero-mean, Unit-variance) theo chuẩn PPO
         adv_mean = b_advantages.mean()
@@ -150,18 +157,25 @@ class PPOAgent:
         total_v_loss = 0.0
         total_entropy = 0.0
         num_updates = 0
-        
+        skipped_actor_updates = 0
+
         for epoch in range(self.update_epochs):
             np.random.shuffle(indices)
             for start in range(0, batch_size, self.minibatch_size):
                 end = start + self.minibatch_size
                 mb_idx = indices[start:end]
                 
-                _, new_log_prob, entropy, new_value = self.ac.get_action_and_value(
-                    b_states[mb_idx], b_actions[mb_idx]
-                )
-                
-                log_ratio = new_log_prob - b_log_probs[mb_idx]
+                if b_raw_us is not None:
+                    _, new_log_prob, entropy, new_value = self.ac.get_action_and_value(
+                        b_states[mb_idx], raw_u=b_raw_us[mb_idx]
+                    )
+                else:
+                    _, new_log_prob, entropy, new_value = self.ac.get_action_and_value(
+                        b_states[mb_idx], b_actions[mb_idx]
+                    )
+
+                # Lưới an toàn: kẹp log_ratio để exp() không tràn số (ratio <= e^20) khi có mẫu bất thường
+                log_ratio = torch.clamp(new_log_prob - b_log_probs[mb_idx], -20.0, 20.0)
                 ratio = torch.exp(log_ratio)
                 
                 # 1. PPO Policy Loss (Clipped Objective)
@@ -173,11 +187,14 @@ class PPOAgent:
                 entropy_loss = entropy.mean()
                 actor_loss = pg_loss - self.ent_coef * entropy_loss
                 
-                # Cập nhật riêng mạng Actor
+                # Cập nhật riêng mạng Actor (bỏ qua minibatch nếu loss không hữu hạn để không ghi NaN vào trọng số)
                 self.actor_optimizer.zero_grad()
-                actor_loss.backward()
-                nn.utils.clip_grad_norm_(self.actor_params, self.max_grad_norm)
-                self.actor_optimizer.step()
+                if torch.isfinite(actor_loss):
+                    actor_loss.backward()
+                    nn.utils.clip_grad_norm_(self.actor_params, self.max_grad_norm)
+                    self.actor_optimizer.step()
+                else:
+                    skipped_actor_updates += 1
                 
                 # Phép chiếu logstd (In-place projection) chống đóng băng khám phá
                 if self.enable_logstd_projection:
@@ -199,7 +216,7 @@ class PPOAgent:
                 nn.utils.clip_grad_norm_(self.critic_params, self.max_grad_norm)
                 self.critic_optimizer.step()
                 
-                total_pg_loss += pg_loss.item()
+                total_pg_loss += pg_loss.item() if torch.isfinite(pg_loss) else 0.0
                 total_v_loss += v_loss.item()
                 total_entropy += entropy_loss.item()
                 num_updates += 1
@@ -215,6 +232,7 @@ class PPOAgent:
             "value_loss": total_v_loss / max(1, num_updates),
             "entropy": total_entropy / max(1, num_updates),
             "explained_var": explained_var,
+            "skipped_actor_updates": skipped_actor_updates,
         }
 
     def save(self, filepath: str):
