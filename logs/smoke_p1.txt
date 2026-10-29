@@ -1,0 +1,39 @@
+======================================================================
+>> SMOKE TEST PHASE 1 (WI-04): KIEM TRA TOAN DIEN BAN VA PPO & REWARD
+======================================================================
+
+[TEST 1] Kiem tra hang so ActorCritic & Bias khoi tao...
+  - LOGSTD_MIN: -2.3 | LOGSTD_MAX: 0.0 | ACTION_BOUND: 0.999
+  - Brake Bias actor_out.bias[2]: -1.6000
+  - tanh(bias_brake) = -0.9217 -> pedal_idle = 0.0392 (< deadband 0.05: NHA PHANH 100%)
+  => TEST 1: PASS! (Bias chan phanh hoan hao)
+
+[TEST 1B] Kiem tra khop log_prob F2 giua Rollout va Update khi hanh dong bao hoa...
+  - Max |Delta log_prob|: 0.00000000 (ky vong < 1e-4)
+  - Mean |Delta log_prob|: 0.00000000
+  - So luong mau lech log_prob > 1e-4: 0/200 (ky vong: 0)
+  => TEST 1B: PASS! (Loi F2 da duoc triet tieu hoan toan 100%, log_prob khop tuyet doi)
+
+[TEST 2] Kiem tra Bang Bonus Ve Dich Ham Mu (WI-02)...
+  - Lap 146.0s -> time_bonus = 15.6 (ky vong ~15.6) | Tong macro = 65.6
+  - Lap 120.0s -> time_bonus = 44.1 (ky vong ~44.1) | Tong macro = 94.1
+  - Lap 111.0s -> time_bonus = 63.2 (ky vong ~63.2) | Tong macro = 113.2
+  - Lap 100.0s -> time_bonus = 98.1 (ky vong ~98.1) | Tong macro = 148.1
+  => TEST 2: PASS! (Ham thuong can dich chuan xac)
+
+[TEST 3] Kiem tra Moi truong MetaRacingEnv & r_time...
+  - Obs shape: (35,) (ky vong (35,))
+  - step_info['r_time']: -0.01 (ky vong -0.01)
+  => TEST 3: PASS! (Moi truong tra obs 35D va r_time = -0.01 chuan)
+
+[TEST 4] Kiem tra PPOAgent Rollout + GAE + Update...
+  - PPO Update: Policy Loss = -0.0183 | Value Loss = 3.4098 | Entropy = 1.8597
+
+[TEST 4B] Kiem tra Co che Projection kep bien khi logstd bi troi ra ngoai bien...
+  - actor_logstd truoc khi update (bi ep troi ra ngoai): [ 0.5  0.5 -3. ]
+  - actor_logstd sau update (duoc chieu kep bien): [ 0.         0.        -2.2963974]
+  => TEST 4B: PASS! (Projection hoat dong chuan xac: [0.5, 0.5, -3.0] duoc chieu va nam chat trong [-2.3, 0.0])
+
+======================================================================
+>> TOAN BO SMOKE TEST PHASE 1 (WI-04) DAT 100% SUCCESS!
+======================================================================

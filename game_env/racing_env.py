@@ -98,6 +98,8 @@ class MetaRacingEnv(gym.Env):
         max_speed_km_h: float = 120.0,
         vehicle: Optional[BaseRaceVehicle] = None,
         max_laps: int = 2,
+        time_penalty: float = 0.0,
+        finish_bonus: str = "exp",
         **kwargs,
     ):
         super().__init__()
@@ -113,6 +115,8 @@ class MetaRacingEnv(gym.Env):
         self.start_seed = start_seed
         self.num_scenarios = num_scenarios
         self.dt = 0.10
+        self.time_penalty = float(config.get("time_penalty", time_penalty)) if isinstance(config, dict) and "time_penalty" in config else float(time_penalty)
+        self.finish_bonus = str(config.get("finish_bonus", finish_bonus)) if isinstance(config, dict) and "finish_bonus" in config else str(finish_bonus)
         self.max_speed_km_h = float(self.car.cfg.max_speed_km_h)
         if "map_config" in kwargs and isinstance(kwargs["map_config"], str):
             map_type = kwargs["map_config"]
@@ -621,8 +625,11 @@ class MetaRacingEnv(gym.Env):
         # d. Phạt đứng yên / quay mòng mòng tại chỗ (< 10 km/h)
         r_idle = -0.15 if speed_km_h < 10.0 else 0.0
         
+        # e. Phạt áp lực thời gian (Time Penalty)
+        r_time = -self.time_penalty
+        
         # Hàm thưởng vi mô thuần túy Markov:
-        micro_reward = r_progress + r_steer_smooth + r_idle
+        micro_reward = r_progress + r_steer_smooth + r_idle + r_time
         macro_reward = 0.0
         
         self.last_action = np.array(action, dtype=np.float32)
@@ -664,10 +671,15 @@ class MetaRacingEnv(gym.Env):
             self.last_crash_history = []
             lap_time = float((self.current_step - self.lap_start_step) * self.dt)
             
-            # Thưởng cán đích cơ bản (50đ) + Thưởng mốc thời gian lũy thừa bậc 3 (Cubic Time Bonus)
+            # Thưởng cán đích cơ bản (50đ) + Thưởng mốc thời gian (Exponential hoặc Cubic)
             r_finish = 50.0
-            eta = float(np.clip((180.0 - lap_time) / 90.0, 0.0, 1.0))
-            time_bonus = 100.0 * float(eta ** 3)
+            if self.finish_bonus == "exp":
+                # Dạng hàm mũ: bonus = min(A * exp((T0 - lap_time) / tau), R_max)
+                # Với map nhỏ: T0 = 180.0, tau = 25.0, A = 4.0, R_max = 150.0
+                time_bonus = min(150.0, 4.0 * float(np.exp((180.0 - lap_time) / 25.0)))
+            else:
+                eta = float(np.clip((180.0 - lap_time) / 90.0, 0.0, 1.0))
+                time_bonus = 100.0 * float(eta ** 3)
             macro_reward = r_finish + time_bonus
             
             if lap_time < self.best_lap_time:
@@ -703,6 +715,7 @@ class MetaRacingEnv(gym.Env):
         info["r_steer_smooth"] = float(r_steer_smooth)
         info["r_center"] = 0.0
         info["r_idle"] = float(r_idle)
+        info["r_time"] = float(r_time)
         info["throttle"] = float(throttle)
         info["brake"] = float(brake)
         info["net_pedal"] = float(net_pedal)

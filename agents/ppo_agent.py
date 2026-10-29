@@ -27,6 +27,7 @@ class PPOAgent:
         update_epochs: int = 10,
         minibatch_size: int = 64,
         device: Optional[str] = None,
+        enable_logstd_projection: bool = True,
     ):
         if device is None:
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -43,6 +44,7 @@ class PPOAgent:
         self.max_grad_norm = max_grad_norm
         self.update_epochs = update_epochs
         self.minibatch_size = minibatch_size
+        self.enable_logstd_projection = enable_logstd_projection
         
         self.ac = ActorCritic(state_dim, action_dim).to(self.device)
         self.actor_params = list(self.ac.actor_mean.parameters()) + [self.ac.actor_logstd]
@@ -98,8 +100,9 @@ class PPOAgent:
     def compute_gae(self, rewards, values, dones, next_value):
         """
         Tính toán Generalized Advantage Estimation (GAE) và Returns:
-            delta_t = r_t + gamma * V(s_{t+1}) * (1 - done) - V(s_t)
-            A_t = delta_t + gamma * lambda * (1 - done) * A_{t+1}
+        delta_t = r_t + gamma * V(s_{t+1}) * (1 - done_t) - V(s_t)
+        A_t = delta_t + gamma * lambda * (1 - done_t) * A_{t+1}
+        Returns_t = A_t + V(s_t)
         """
         num_steps = len(rewards)
         advantages = np.zeros(num_steps, dtype=np.float32)
@@ -108,37 +111,39 @@ class PPOAgent:
         for t in reversed(range(num_steps)):
             if t == num_steps - 1:
                 next_non_terminal = 1.0 - float(dones[t])
-                next_val = next_value
+                next_val = float(next_value)
             else:
                 next_non_terminal = 1.0 - float(dones[t])
-                next_val = values[t + 1]
+                next_val = float(values[t + 1])
                 
-            delta = rewards[t] + self.gamma * next_val * next_non_terminal - values[t]
-            last_gae_lam = delta + self.gamma * self.gae_lambda * next_non_terminal * last_gae_lam
-            advantages[t] = last_gae_lam
+            delta = float(rewards[t]) + self.gamma * next_val * next_non_terminal - float(values[t])
+            advantages[t] = last_gae_lam = delta + self.gamma * self.gae_lambda * next_non_terminal * last_gae_lam
             
-        returns = advantages + values
+        returns = advantages + np.array(values, dtype=np.float32)
         return advantages, returns
 
-    def update(self, b_states, b_actions, b_log_probs, b_advantages, b_returns, b_values=None):
+    def update(self, b_states, b_actions, b_log_probs, b_advantages, b_returns, b_values):
         """
-        Cập nhật trọng số mạng bằng thuật toán PPO Decoupled Minibatch SGD
-        Tách biệt hoàn toàn luồng tối ưu của Actor và Critic để bảo vệ policy.
+        Huấn luyện PPO qua nhiều epoch trên các mini-batch ngẫu nhiên.
+        Cập nhật đồng thời Actor Loss, Critic Value Loss, và Entropy Bonus.
         """
-        b_states = torch.as_tensor(b_states, dtype=torch.float32, device=self.device)
-        b_actions = torch.as_tensor(b_actions, dtype=torch.float32, device=self.device)
-        b_log_probs = torch.as_tensor(b_log_probs, dtype=torch.float32, device=self.device)
-        b_advantages = torch.as_tensor(b_advantages, dtype=torch.float32, device=self.device)
-        b_returns = torch.as_tensor(b_returns, dtype=torch.float32, device=self.device)
-        if b_values is not None:
+        # Chuyển đổi dữ liệu sang Tensor PyTorch
+        if not isinstance(b_states, torch.Tensor):
+            b_states = torch.as_tensor(b_states, dtype=torch.float32, device=self.device)
+            b_actions = torch.as_tensor(b_actions, dtype=torch.float32, device=self.device)
+            b_log_probs = torch.as_tensor(b_log_probs, dtype=torch.float32, device=self.device)
+            b_advantages = torch.as_tensor(b_advantages, dtype=torch.float32, device=self.device)
+            b_returns = torch.as_tensor(b_returns, dtype=torch.float32, device=self.device)
             b_values_tensor = torch.as_tensor(b_values, dtype=torch.float32, device=self.device)
         else:
-            b_values_tensor = b_returns
+            b_values_tensor = b_values
+            
+        # Chuẩn hóa Advantages (Zero-mean, Unit-variance) theo chuẩn PPO
+        adv_mean = b_advantages.mean()
+        adv_std = b_advantages.std()
+        b_advantages = (b_advantages - adv_mean) / (adv_std + 1e-8)
         
-        # Chuẩn hoá Advantages theo từng batch (Advantage Normalization)
-        b_advantages = (b_advantages - b_advantages.mean()) / (b_advantages.std() + 1e-8)
-        
-        batch_size = b_states.size(0)
+        batch_size = b_states.shape[0]
         indices = np.arange(batch_size)
         
         total_pg_loss = 0.0
@@ -173,6 +178,11 @@ class PPOAgent:
                 actor_loss.backward()
                 nn.utils.clip_grad_norm_(self.actor_params, self.max_grad_norm)
                 self.actor_optimizer.step()
+                
+                # Phép chiếu logstd (In-place projection) chống đóng băng khám phá
+                if self.enable_logstd_projection:
+                    with torch.no_grad():
+                        self.ac.actor_logstd.clamp_(self.ac.LOGSTD_MIN, self.ac.LOGSTD_MAX)
                 
                 # 3. PPO Clipped Value Loss (Ổn định Critic, chống spike khi va chạm)
                 v_pred = new_value.view(-1)
@@ -251,4 +261,8 @@ class PPOAgent:
                 self.critic_optimizer.load_state_dict(checkpoint["critic_optimizer_state_dict"])
             except Exception:
                 pass
+                
+        if self.enable_logstd_projection:
+            with torch.no_grad():
+                self.ac.actor_logstd.clamp_(self.ac.LOGSTD_MIN, self.ac.LOGSTD_MAX)
         self.ac.eval()

@@ -56,7 +56,10 @@ def parse_args():
     parser.add_argument("--ent-coef", type=float, default=0.010, help="Hệ số thưởng Entropy ban đầu (0.010)")
     parser.add_argument("--eval-freq", type=int, default=5, help="Tần suất đánh giá và xuất log định kỳ (mỗi 5 update = 10,240 steps)")
     parser.add_argument("--eval-episodes", type=int, default=3, help="Số episode đánh giá (mặc định 3 episodes)")
-    parser.add_argument("--map", type=str, default="silverstone", help="Bản đồ đua ('silverstone' hoặc 'racing')")
+    parser.add_argument("--map", type=str, default="silverstone", help="Bản đồ đua ('silverstone', 'silverstone_half', hoặc 'racing')")
+    parser.add_argument("--time-penalty", type=float, default=0.01, help="Linear time pressure penalty per step (mặc định 0.01)")
+    parser.add_argument("--finish-bonus", type=str, default="exp", choices=["exp", "cubic"], help="Loại hàm thưởng cán đích: 'exp' (hàm mũ dốc) hoặc 'cubic' (lũy thừa bậc 3)")
+    parser.add_argument("--no-logstd-projection", action="store_true", default=False, help="Tắt phép chiếu logstd.clamp_() trong PPO (dành cho ablation study)")
     parser.add_argument("--warmup-model", type=str, default=None, help="File checkpoint warmup")
     parser.add_argument("--resume", type=str, default=None, help="Đường dẫn checkpoint để tiếp tục huấn luyện")
     parser.add_argument("--reset-logstd", type=float, default=None, help="Reset độ lệch chuẩn khám phá actor_logstd khi resume")
@@ -111,6 +114,12 @@ def log_tensorboard_metrics(writer: SummaryWriter, eval_res: Dict[str, Any], glo
     if agent is not None:
         writer.add_scalar("Hyperparameters/Learning_Rate", agent.get_lr(), global_step)
         writer.add_scalar("Hyperparameters/Entropy_Coef", agent.get_ent_coef(), global_step)
+        with torch.no_grad():
+            sigmas = torch.exp(agent.ac.actor_logstd).detach().cpu().numpy()[0]
+            writer.add_scalar("Exploration/Sigma_Steer", float(sigmas[0]), global_step)
+            writer.add_scalar("Exploration/Sigma_Throttle", float(sigmas[1]), global_step)
+            if len(sigmas) >= 3:
+                writer.add_scalar("Exploration/Sigma_Brake", float(sigmas[2]), global_step)
 
     if train_info is not None:
         writer.add_scalar("Loss/Policy_Loss", train_info["policy_loss"], global_step)
@@ -154,13 +163,16 @@ def main():
     print("=" * 70)
 
     # Khởi tạo môi trường mô phỏng
+    map_config_val = "silverstone" if args.map in ["silverstone", "silverstone_half"] else args.map
     env = MetaRacingEnv(
         use_render=False,
         traffic_density=0.0,
-        map_config=args.map,
+        map_config=map_config_val,
         start_seed=args.seed,
         vehicle=race_car,
         max_laps=args.max_laps,
+        time_penalty=args.time_penalty,
+        finish_bonus=args.finish_bonus,
     )
 
     obs_shape = env.observation_space.shape
@@ -177,6 +189,7 @@ def main():
         clip_coef=args.clip_coef,
         ent_coef=args.ent_coef,
         minibatch_size=args.batch_size,
+        enable_logstd_projection=not args.no_logstd_projection,
     )
 
     # Khởi tạo Bộ đánh giá OOP dùng chung (DRY)
@@ -191,6 +204,12 @@ def main():
     best_eval_speed = 0.0
     total_finishes = 0
 
+    import subprocess
+    try:
+        git_commit = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"]).decode("ascii").strip()
+    except Exception:
+        git_commit = "unknown"
+
     metrics: Dict[str, Any] = {
         "steps": [],
         "eval_return": [],
@@ -203,6 +222,9 @@ def main():
         "policy_loss": [],
         "value_loss": [],
         "entropy": [],
+        "sigma_steer": [],
+        "sigma_throttle": [],
+        "sigma_brake": [],
         "racing_line_mae_m": [],
         "apex_accuracy_pct": [],
         "corner_delta_v_kmh": [],
@@ -210,12 +232,15 @@ def main():
         "lap_efficiency_pct": [],
         "total_finishes": 0,
         "resume_marks": [],
+        "git_commit": git_commit,
+        "args": vars(args),
     }
 
     # Xử lý Resume checkpoint hoặc Nạp Warmup
     if args.resume and os.path.exists(args.resume):
         print(f">> RESUME: Nạp trọng số từ checkpoint: {args.resume}")
         agent.load(args.resume)
+        agent.set_lr(args.lr)
 
         if args.reset_logstd is not None:
             agent.ac.actor_logstd.data.fill_(float(args.reset_logstd))
@@ -379,6 +404,14 @@ def main():
             metrics["policy_loss"].append(train_info["policy_loss"])
             metrics["value_loss"].append(train_info["value_loss"])
             metrics["entropy"].append(train_info["entropy"])
+            with torch.no_grad():
+                sigmas = torch.exp(agent.ac.actor_logstd).detach().cpu().numpy()[0]
+                s_steer = float(sigmas[0])
+                s_thr = float(sigmas[1])
+                s_brk = float(sigmas[2]) if len(sigmas) >= 3 else 0.0
+            metrics.setdefault("sigma_steer", []).append(s_steer)
+            metrics.setdefault("sigma_throttle", []).append(s_thr)
+            metrics.setdefault("sigma_brake", []).append(s_brk)
             metrics["total_finishes"] = total_finishes
             metrics.setdefault("racing_line_mae_m", []).append(eval_res["racing_line_mae_m"])
             metrics.setdefault("apex_accuracy_pct", []).append(eval_res["apex_accuracy_pct"])
