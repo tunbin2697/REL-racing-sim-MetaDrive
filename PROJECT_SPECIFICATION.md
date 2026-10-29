@@ -113,9 +113,10 @@ Toàn bộ các nút thắt trên nhánh `main` cũ đã được nhóm nghiên 
 1. **Tích hợp Sa bàn Đua F1 Silverstone Closed-Loop ($3,417.8\text{m}$)**:
    * Tái hiện 18 góc cua kinh điển của đường đua Silverstone, khép góc hình học hoàn hảo qua bộ giải lặp `solve_silverstone_layout.py`.
    * Giải quyết dứt điểm lỗi đứt đoạn 98%, thiết lập vạch đích Start/Finish chính xác trên đoạn thẳng Hamilton Straight.
-2. **Không Gian Quan Sát 40 Chiều (Obs 40D) - Zero Data Leakage**:
-   * $16$ chiều Ego/IMU: Vận tốc ($v_x, v_y$), vận tốc góc yaw $\dot{\psi}$, góc trượt thân xe $\beta$, gia tốc trọng trường $a_x, a_y$ (phản ánh vòng tròn ma sát Kamm), độ nghiêng roll/pitch, hành động bước trước và cờ lấn lề.
-   * $24$ chiều Lookahead Horizon Preview: 6 waypoint tim đường tại các cự ly $[10, 25, 45, 70, 105, 150]\text{m}$. Tầm nhìn 150m giúp xe tự tin phanh sớm từ tốc độ $> 110\text{ km/h}$.
+2. **Không Gian Quan Sát 35 Chiều (Obs 35D) - Zero Data Leakage**:
+   * $10$ chiều Ego Kinematics: Vận tốc chuẩn hóa, vận tốc dọc/ngang thân xe ($v_x, v_y$), vận tốc góc yaw $\dot{\psi}$, góc lái hiện tại & bước trước, chân ga/phanh bước trước, cos/sin góc lệch tiếp tuyến tim đường ($\cos\Delta\theta, \sin\Delta\theta$), độ lệch tim đường $d_{\text{lat}}$.
+   * $5$ chiều Track Limits & Tiến trình: Khoảng cách tới mép cỏ trái/phải (`dist_left`, `dist_right`), cờ lấn lề Runoff, tiến trình vòng đua ($s / L$), độ cong tức thời dưới bánh xe ($\kappa_{\text{track}}$).
+   * $20$ chiều Lookahead Horizon Preview: 5 waypoint tim đường tại các cự ly $[10, 20, 35, 50, 70]\text{m}$. Tầm nhìn $70\text{m}$ cung cấp tín hiệu hình học khúc cua gấp sắc nét, không bị nhiễu hay gập khúc khi qua các góc cua chữ U (The Loop).
 3. **Không Gian Hành Động 3 Chiều Độc Lập & Bộ Trộn Chân Ga/Phanh $C^1$**:
    * Phân tách riêng biệt Chân Ga (`throttle`) và Chân Phanh (`brake`), kết hợp bộ trộn Drive-by-Wire liên tục $C^1$ và Slew Rate Limiter, triệt tiêu 100% bẫy bão hòa chân ga và rung giật bàn đạp.
 4. **Kháng Rung Lắc Tay Lái (Anti-Chatter) Qua Slew Rate Limiter & Phạt Vi Sai Lái**:

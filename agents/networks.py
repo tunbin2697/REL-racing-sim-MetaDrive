@@ -54,7 +54,7 @@ class ActorCritic(nn.Module):
     def actor_forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """Trả về (u_mean, action_logstd)"""
         u_mean = self.actor_mean(x)
-        action_logstd = torch.clamp(self.actor_logstd.expand_as(u_mean), min=-2.3, max=0.0)
+        action_logstd = torch.clamp(self.actor_logstd.expand_as(u_mean), min=-2.3, max=0.5)
         return u_mean, action_logstd
 
     def get_value(self, x: torch.Tensor) -> torch.Tensor:
@@ -68,7 +68,7 @@ class ActorCritic(nn.Module):
         """
         action_mean = self.actor_mean(x)
         # Kẹp logstd trong [-2.3, 0.0] (tương ứng sigma trong [0.10, 1.00]) để bảo toàn khám phá mà chống nổ phương sai
-        action_logstd = torch.clamp(self.actor_logstd.expand_as(action_mean), min=-2.3, max=0.0)
+        action_logstd = torch.clamp(self.actor_logstd.expand_as(action_mean), min=-2.3, max=0.5)
         action_std = torch.exp(action_logstd)
         probs = Normal(action_mean, action_std)
         

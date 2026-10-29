@@ -63,16 +63,13 @@ def parse_args():
     parser.add_argument("--steps-to-run", type=int, default=None, help="Số bước muốn chạy thêm khi resume")
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
     parser.add_argument("--vehicle", type=str, default="gt3", choices=["gt3", "sedan"], help="Loại xe đua ('gt3' hoặc 'sedan' đối chứng)")
-    parser.add_argument("--max-laps", type=int, default=1, help="Số vòng đua tối đa mỗi episode (mặc định 1 lap: Clean Single Lap)")
+    parser.add_argument("--max-laps", type=int, default=2, help="Số vòng đua tối đa mỗi episode (mặc định 2 laps: Lap 1 Standing + Lap 2 Flying)")
     
-    # Cờ điều khiển lịch trình suy giảm tham số (Schedules) - Mặc định KHÔNG decay, giữ cố định LR
-    parser.add_argument("--lr-decay", action="store_true", default=False, help="Bật cờ này để tự động giảm dần Learning Rate tuyến tính từ --lr về --min-lr")
-    parser.add_argument("--no-lr-decay", action="store_false", dest="lr_decay", help="Tắt cơ chế giảm Learning Rate (giữ cố định mặc định)")
-    parser.add_argument("--min-lr", type=float, default=5e-5, help="Learning rate sàn khi dùng LR decay (mặc định 5e-5)")
-    
-    parser.add_argument("--ent-decay", action="store_true", default=False, help="Tự động giảm dần Entropy Coefficient tuyến tính từ --ent-coef về --min-ent-coef")
-    parser.add_argument("--no-ent-decay", action="store_false", dest="ent_decay", help="Tắt cơ chế giảm Entropy Coefficient (giữ cố định)")
-    parser.add_argument("--min-ent-coef", type=float, default=0.001, help="Hệ số Entropy sàn khi dùng decay (mặc định 0.001)")
+    # Cờ điều khiển lịch trình suy giảm tham số (Schedules) - Mặc định TẮT (giữ nguyên LR và Entropy cố định)
+    parser.add_argument("--lr-decay", action="store_true", default=False, help="Bật giảm dần Learning Rate tuyến tính từ --lr về --min-lr (mặc định: TẮT)")
+    parser.add_argument("--min-lr", type=float, default=5e-5, help="Learning rate sàn khi dùng --lr-decay (mặc định 5e-5)")
+    parser.add_argument("--ent-decay", action="store_true", default=False, help="Bật giảm dần Entropy Coefficient tuyến tính từ --ent-coef về --min-ent-coef (mặc định: TẮT)")
+    parser.add_argument("--min-ent-coef", type=float, default=0.001, help="Hệ số Entropy sàn khi dùng --ent-decay (mặc định 0.001)")
 
     parser.add_argument("--milestone-freq", type=int, default=500000, help="Khoảng bước lưu milestone snapshot (mặc định 500k steps)")
     parser.add_argument("--save-dir", type=str, default="models", help="Thư mục lưu weights")
@@ -168,7 +165,7 @@ def main():
 
     obs_shape = env.observation_space.shape
     act_shape = env.action_space.shape
-    obs_dim = int(obs_shape[0]) if obs_shape is not None else 40
+    obs_dim = int(obs_shape[0]) if obs_shape is not None else 35
     act_dim = int(act_shape[0]) if act_shape is not None else 3
 
     agent = PPOAgent(

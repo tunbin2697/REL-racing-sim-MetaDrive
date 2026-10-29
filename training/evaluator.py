@@ -64,9 +64,8 @@ class RacingEvaluator:
         for ep in range(num_episodes):
             num_scenarios = max(1, getattr(self.env, "num_scenarios", 1))
             target_seed = self.env.start_seed + (ep % num_scenarios)
-            # Luân phiên đánh giá: Vòng chẵn đánh giá Standing Start, Vòng lẻ đánh giá Flying Launch
-            mode = "standing" if (ep % 2 == 0) else "flying"
-            obs, info = self.env.reset(seed=target_seed, options={"force_start": True, "start_mode": mode})
+            # 100% đánh giá từ xuất phát đứng (Lap 1: Standing Start -> Lap 2: Flying Lap tự nhiên)
+            obs, info = self.env.reset(seed=target_seed, options={"force_start": True, "start_mode": "standing"})
             
             ep_return = 0.0
             ep_len = 0
@@ -94,10 +93,10 @@ class RacingEvaluator:
 
                 if step_info.get("lap_completed", False):
                     comp_lap_t = float(step_info.get("completed_lap_time", step_info.get("lap_time", 0.0)))
-                    is_flying = bool(step_info.get("is_flying_start", getattr(self.env, "is_flying_start", False)))
-                    if not is_flying and ep_lap1_time is None:
+                    completed_lap_num = int(step_info.get("completed_lap_number", 1))
+                    if completed_lap_num == 1 and ep_lap1_time is None:
                         ep_lap1_time = comp_lap_t
-                    elif is_flying and ep_lap2_time is None:
+                    elif completed_lap_num >= 2 and ep_lap2_time is None:
                         ep_lap2_time = comp_lap_t
                     if ep_best_lap is None or comp_lap_t < ep_best_lap:
                         ep_best_lap = comp_lap_t
@@ -108,7 +107,7 @@ class RacingEvaluator:
                         or step_info.get("crash_sidewalk", False)
                         or step_info.get("crash_vehicle", False)
                         or step_info.get("crash_object", False)
-                        or (step_info.get("termination_reason") == "crash_or_track_limit")
+                        or (step_info.get("termination_reason") in ["crash_or_track_limit", "stalled"])
                     )
                     is_arrived = bool(step_info.get("arrive_dest", False))
 
