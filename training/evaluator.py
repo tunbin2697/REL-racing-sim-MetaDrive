@@ -57,9 +57,10 @@ class RacingEvaluator:
         eval_lap_efficiency: List[float] = []
         theoretical_best_lap_time: float = float(getattr(self.env, "theoretical_best_lap_time", 116.99))
 
+        time_scale = float(getattr(getattr(self.env, "preset", None), "time_scale", 1.0))
         circuit_len = float(getattr(self.env, "circuit_length", 3417.8))
         max_laps = max(1, int(getattr(self.env, "max_laps", 1)))
-        max_eval_steps = max_eval_steps_per_lap * max_laps
+        max_eval_steps = int(max_eval_steps_per_lap * time_scale * max_laps)
 
         for ep in range(num_episodes):
             num_scenarios = max(1, getattr(self.env, "num_scenarios", 1))

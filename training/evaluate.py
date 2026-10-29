@@ -23,10 +23,13 @@ from agents.ppo_agent import PPOAgent
 from training.evaluator import RacingEvaluator
 
 def parse_args():
+    default_model = "models/p1_main/best_agent.pt" if os.path.exists("models/p1_main/best_agent.pt") else "models/best_agent.pt"
     parser = argparse.ArgumentParser(description="Evaluate Trained RL Agent")
-    parser.add_argument("--model", type=str, default="models/best_agent.pt", help="File weights cần đánh giá")
-    parser.add_argument("--episodes", type=int, default=10, help="Số vòng đua thử nghiệm")
-    parser.add_argument("--vehicle", type=str, default="gt3", choices=["gt3", "sedan"], help="Loại xe đánh giá ('gt3' hoặc 'sedan')")
+    parser.add_argument("--model", type=str, default=default_model, help="File weights cần đánh giá")
+    parser.add_argument("--episodes", type=int, default=10, help="Số episode thử nghiệm")
+    parser.add_argument("--laps", type=int, default=2, help="Số vòng đua mỗi episode (mặc định 2: Lap 1 Standing + Lap 2 Flying)")
+    parser.add_argument("--vehicle", type=str, default="gt3", choices=["gt3", "gt3_real", "sedan"], help="Loại xe đánh giá ('gt3', 'gt3_real', hoặc 'sedan')")
+    parser.add_argument("--map", type=str, default="silverstone", help="Bản đồ đua ('silverstone', 'silverstone_half', hoặc 'silverstone_full')")
     parser.add_argument("--out", type=str, default="logs/evaluation_results.json", help="File lưu kết quả")
     return parser.parse_args()
 
@@ -38,17 +41,25 @@ def main():
     print("📊 BẮT ĐẦU ĐÁNH GIÁ CHỈ SỐ HỌC THUẬT (ACADEMIC BENCHMARK EVALUATION)")
     print("=" * 70)
     print(f"  - Model file: {args.model}")
+    print(f"  - Map layout: {args.map}")
     print(f"  - Vehicle Spec: {race_car.cfg.name}")
-    print(f"  - Số vòng đua thử nghiệm: {args.episodes}")
+    print(f"  - Số episode: {args.episodes} (Laps mỗi episode: {args.laps})")
     print("=" * 70)
 
-    env = MetaRacingEnv(use_render=False, num_scenarios=args.episodes, start_seed=100, vehicle=race_car)
+    env = MetaRacingEnv(
+        map_type=args.map,
+        use_render=False,
+        num_scenarios=args.episodes,
+        start_seed=100,
+        vehicle=race_car,
+        max_laps=args.laps,
+    )
     obs_shape = getattr(env.observation_space, "shape", None)
     act_shape = getattr(env.action_space, "shape", None)
-    obs_dim = int(obs_shape[0]) if obs_shape is not None else 40
+    obs_dim = int(obs_shape[0]) if obs_shape is not None else 35
     act_dim = int(act_shape[0]) if act_shape is not None else 3
 
-    agent = PPOAgent(state_dim=obs_dim, action_dim=act_dim)
+    agent = PPOAgent(state_dim=obs_dim, action_dim=act_dim, logstd_max=env.preset.logstd_max)
     if os.path.exists(args.model):
         agent.load(args.model)
         print(f">> Nạp thành công weights từ {args.model} (State Dim: {obs_dim})")

@@ -161,12 +161,7 @@ Nhánh này còn cho thấy một hiện tượng ngược lại: σ cả 3 chi�
 
 ## F10. Các khẳng định vật lý trong tài liệu specs cần sửa
 
-1. **Góc lái 26° để ôm cua R = 25m** [Suy luận]: góc Ackermann chỉ cần atan(2.75/25) ≈ 6.3°. Mức 20° đã dư.
-2. **`max_steer_rate` có đơn vị chuẩn hóa, không phải rad/bước** [Đã kiểm chứng từ code]:
-   - 0.18 × 20° = 3.6°/bước.
-   - 0.20 × 26° = 5.2°/bước, tức nhanh hơn khoảng 44%.
-3. **Khối lượng xe** [Giả thuyết, cần kiểm chứng]: MetaDrive có thể chỉ đặt mass lúc tạo chassis. Nếu vậy, `config["mass"]` gán sau đó không có tác dụng.
-4. **Lập luận Froude vòng tròn** [Suy luận]: 116.5 × 0.694 = 80.8s, sau đó 80.8 × 1.44 = 116.5s. Kết quả "khớp chuẩn" đến từ chính phép tính, không phải bằng chứng. Thêm vào đó, xe không được scale, nên phép đồng dạng không chặt chẽ. $T^*$ phải lấy từ `RacingBenchmarkEngine`.
+Đã chuyển sang `knowledge/vehicle_and_engine_physics.md` §8.1 (Froude) và §9 (bảng sửa khẳng định cũ).
 
 ---
 
@@ -318,6 +313,12 @@ Hệ quả kèm theo khi chuyển sang 1:1:
 
 ---
 
+## F16. Ma sát cầu trước chưa bao giờ được áp; xe chổng đuôi khi phanh mạnh
+
+**[Đã kiểm chứng 30/10]** Cầu trước luôn có μ = 0.9 do `attach_agent` ghi ma sát qua list bánh lỗi thời (cả bản 111s và Phase 1); phanh > ~1.7 G làm xe chổng đuôi. Toàn bộ phân tích, số đo và cách xử lý: `knowledge/vehicle_and_engine_physics.md` §2.1, §4, §5.
+
+---
+
 ## Tổng hợp insight Phase 1 → quyết định Phase 2
 
 | # | Insight | Áp dụng cho Phase 2 |
@@ -333,7 +334,7 @@ Hệ quả kèm theo khi chuyển sang 1:1:
 | I9 | Sau resume lần 2 (ent 0.001), σ lái về sàn 0.10 và **eval crash ở đúng một chỗ (46%, khoảng mét 1306, khúc cua rộng) suốt 8 lần eval liên tiếp**; train không còn về đích. Value loss rất thấp (0.05–0.2) vì critic đã dự đoán đúng rằng sẽ crash ở đó, nên không còn tín hiệu khám phá. Ở một nhánh cũ, dùng decay lr/ent thì giai đoạn sau cũng gần như không cải thiện | Không decay; ent 0.01 cố định cộng với trần σ theo từng chiều; giảm entropy bằng fine-tune theo đoạn (D22) |
 | I10 | Quan sát demo: P1 không vượt quá khoảng 100 km/h, vào cua nhẹ và phanh nhẹ hơn bản 111s, có 1–2 chỗ giật lái gây drift. **Độ mượt tay lái thấp hơn của P1 là ảo giác thống kê**, do agent không tấn công cua chứ không phải lái khéo hơn | Khi báo cáo, so độ mượt tay lái phải chuẩn hóa theo tốc độ hoặc theo cua |
 | I11 | Phạt lắc tay lái `−0.1·Δ²` lớn nhất chỉ khoảng −0.003/bước (do giới hạn tốc độ xoay 0.18), so với tiến độ khoảng 0.15/bước, nên giật lái gần như miễn phí (cả ở bản 111s). Reward tiến độ tính theo hình chiếu lên tim đường thưởng nhẹ cho việc ở phía trong cua ($v\cdot R/(R-lat)$) | Ghi là giới hạn; chưa sửa vì chưa có bằng chứng giật lái gây crash |
-| I12 | **Bản 111s nhanh hơn ghost** (eval 111.4s so với T* 112.6s), và vẫn chạy hết vòng trong env hiện tại với luật 4 bánh (115.1s, xuất phát đứng) | Trong báo cáo gọi ghost là **"tham chiếu giải tích"**, không gọi là cận trên. Lý do bị vượt: các bậc $a_{lat}$ khớp tay thận trọng và giới hạn lệch ngang ±4.05m. Cần đo thêm vòng flying của bản 111s trong env hiện tại |
+| I12 | **Bản 111s nhanh hơn ghost** (eval 111.4s so với T* 112.6s), và vẫn chạy hết vòng trong env hiện tại với luật 4 bánh (115.1s, xuất phát đứng) | Trong báo cáo gọi ghost là **"tham chiếu giải tích"**, không gọi là cận trên. Lý do bị vượt: các bậc $a_{lat}$ khớp tay thận trọng và giới hạn lệch ngang ±4.05m. Cần đo thêm vòng flying của bản 111s trong env hiện tại. Phân tích sai số mô hình đầy đủ: `knowledge/vehicle_and_engine_physics.md` §7 |
 
 ---
 

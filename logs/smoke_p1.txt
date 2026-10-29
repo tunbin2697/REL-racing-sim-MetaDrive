@@ -27,22 +27,22 @@
   => TEST 3: PASS! (Moi truong tra obs 35D va r_time = -0.01 chuan)
 
 [TEST 4] Kiem tra PPOAgent Rollout + GAE + Update...
-  - PPO Update: Policy Loss = -0.0348 | Value Loss = 2.9298 | Entropy = 1.8538
+  - PPO Update: Policy Loss = -0.0206 | Value Loss = 0.0692 | Entropy = 1.8530
 
 [TEST 4B] Kiem tra Co che Projection kep bien khi logstd bi troi ra ngoai bien...
   - actor_logstd truoc khi update (bi ep troi ra ngoai): [ 0.5  0.5 -3. ]
-  - actor_logstd sau update (duoc chieu kep bien): [-1.8799463e-03 -2.6420420e-03 -2.2988038e+00]
+  - actor_logstd sau update (duoc chieu kep bien): [-0.00408615 -0.00299047 -2.2998996 ]
   => TEST 4B: PASS! (Projection hoat dong chuan xac: [0.5, 0.5, -3.0] duoc chieu va nam chat trong [-2.3, 0.0])
 
 [TEST 4C] Kiem tra F13: PPO update on dinh khi hanh dong bao hoa sau (mean phanh = -5, sigma = 0.1)...
   - Ty le mau phanh bao hoa |a| >= 0.999: 1.00
-  - Max |policy loss| qua 5 lan update: 0.1117 (ky vong < 10) | minibatch bi bo qua: 0
+  - Max |policy loss| qua 5 lan update: 0.1104 (ky vong < 10) | minibatch bi bo qua: 0
   - Tham so mang huu han: True
   => TEST 4C: PASS! (log_prob tinh tai u da sample, ratio khong no)
 
 [TEST 4D] Doi chung co che F13: dich mean phanh +1 sigma ve phia bien bao hoa...
-  - Max ratio duong MOI (log_prob tai u da sample): 10.03 (ky vong < 20)
-  - Max ratio duong CU  (log_prob tai atanh(0.999)): 1.079e+05 (ky vong > 1e3, tai hien loi)
+  - Max ratio duong MOI (log_prob tai u da sample): 10.30 (ky vong < 20)
+  - Max ratio duong CU  (log_prob tai atanh(0.999)): 1.090e+05 (ky vong > 1e3, tai hien loi)
   => TEST 4D: PASS! (Duong cu no ratio, duong moi on dinh -> xac nhan dung nguyen nhan va dung ban sua)
 
 ======================================================================

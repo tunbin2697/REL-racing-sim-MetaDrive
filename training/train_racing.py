@@ -56,7 +56,7 @@ def parse_args():
     parser.add_argument("--ent-coef", type=float, default=0.010, help="Hệ số thưởng Entropy ban đầu (0.010)")
     parser.add_argument("--eval-freq", type=int, default=5, help="Tần suất đánh giá và xuất log định kỳ (mỗi 5 update = 10,240 steps)")
     parser.add_argument("--eval-episodes", type=int, default=3, help="Số episode đánh giá (mặc định 3 episodes)")
-    parser.add_argument("--map", type=str, default="silverstone", help="Bản đồ đua ('silverstone', 'silverstone_half', hoặc 'racing')")
+    parser.add_argument("--map", type=str, default="silverstone", help="Bản đồ đua ('silverstone', 'silverstone_half', hoặc 'silverstone_full')")
     parser.add_argument("--time-penalty", type=float, default=0.01, help="Linear time pressure penalty per step (mặc định 0.01)")
     parser.add_argument("--finish-bonus", type=str, default="exp", choices=["exp", "cubic"], help="Loại hàm thưởng cán đích: 'exp' (hàm mũ dốc) hoặc 'cubic' (lũy thừa bậc 3)")
     parser.add_argument("--no-logstd-projection", action="store_true", default=False, help="Tắt phép chiếu logstd.clamp_() trong PPO (dành cho ablation study)")
@@ -65,7 +65,7 @@ def parse_args():
     parser.add_argument("--reset-logstd", type=float, default=None, help="Reset độ lệch chuẩn khám phá actor_logstd khi resume")
     parser.add_argument("--steps-to-run", type=int, default=None, help="Số bước muốn chạy thêm khi resume")
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
-    parser.add_argument("--vehicle", type=str, default="gt3", choices=["gt3", "sedan"], help="Loại xe đua ('gt3' hoặc 'sedan' đối chứng)")
+    parser.add_argument("--vehicle", type=str, default="gt3", choices=["gt3", "gt3_real", "sedan"], help="Loại xe đua ('gt3', 'gt3_real' cho map full, hoặc 'sedan' đối chứng)")
     parser.add_argument("--max-laps", type=int, default=2, help="Số vòng đua tối đa mỗi episode (mặc định 2 laps: Lap 1 Standing + Lap 2 Flying)")
     
     # Cờ điều khiển lịch trình suy giảm tham số (Schedules) - Mặc định TẮT (giữ nguyên LR và Entropy cố định)
@@ -190,6 +190,7 @@ def main():
         ent_coef=args.ent_coef,
         minibatch_size=args.batch_size,
         enable_logstd_projection=not args.no_logstd_projection,
+        logstd_max=env.preset.logstd_max,
     )
 
     # Khởi tạo Bộ đánh giá OOP dùng chung (DRY)

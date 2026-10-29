@@ -1,0 +1,113 @@
+[38;20m[INFO] Environment: SingleRacingMetaDrive[0m
+[38;20m[INFO] MetaDrive version: 0.4.3[0m
+[38;20m[INFO] Sensors: [lidar: Lidar(), side_detector: SideDetector(), lane_line_detector: LaneLineDetector()][0m
+[38;20m[INFO] Render Mode: none[0m
+[38;20m[INFO] Horizon (Max steps per agent): 6000[0m
+[38;20m[INFO] Assets version: 0.4.3[0m
+[38;20m[INFO] Known Pipes: wglGraphicsPipe[0m
+[38;20m[INFO] Start Scenario Index: 42, Num Scenarios : 1[0m
+[38;20m[INFO] Environment: SingleRacingMetaDrive[0m
+[38;20m[INFO] MetaDrive version: 0.4.3[0m
+[38;20m[INFO] Sensors: [lidar: Lidar(), side_detector: SideDetector(), lane_line_detector: LaneLineDetector()][0m
+[38;20m[INFO] Render Mode: none[0m
+[38;20m[INFO] Horizon (Max steps per agent): 8700[0m
+[38;20m[INFO] Assets version: 0.4.3[0m
+[38;20m[INFO] Known Pipes: wglGraphicsPipe[0m
+[38;20m[INFO] Start Scenario Index: 42, Num Scenarios : 1[0m
+[38;20m[INFO] Environment: SingleRacingMetaDrive[0m
+[38;20m[INFO] MetaDrive version: 0.4.3[0m
+[38;20m[INFO] Sensors: [lidar: Lidar(), side_detector: SideDetector(), lane_line_detector: LaneLineDetector()][0m
+[38;20m[INFO] Render Mode: none[0m
+[38;20m[INFO] Horizon (Max steps per agent): 8700[0m
+[38;20m[INFO] Assets version: 0.4.3[0m
+[38;20m[INFO] Known Pipes: wglGraphicsPipe[0m
+[38;20m[INFO] Start Scenario Index: 42, Num Scenarios : 1[0m
+[38;20m[INFO] Environment: SingleRacingMetaDrive[0m
+[38;20m[INFO] MetaDrive version: 0.4.3[0m
+[38;20m[INFO] Sensors: [lidar: Lidar(), side_detector: SideDetector(), lane_line_detector: LaneLineDetector()][0m
+[38;20m[INFO] Render Mode: none[0m
+[38;20m[INFO] Horizon (Max steps per agent): 8700[0m
+[38;20m[INFO] Assets version: 0.4.3[0m
+[38;20m[INFO] Known Pipes: wglGraphicsPipe[0m
+[38;20m[INFO] Start Scenario Index: 42, Num Scenarios : 1[0m
+[38;20m[INFO] Environment: SingleRacingMetaDrive[0m
+[38;20m[INFO] MetaDrive version: 0.4.3[0m
+[38;20m[INFO] Sensors: [lidar: Lidar(), side_detector: SideDetector(), lane_line_detector: LaneLineDetector()][0m
+[38;20m[INFO] Render Mode: none[0m
+[38;20m[INFO] Horizon (Max steps per agent): 8700[0m
+[38;20m[INFO] Assets version: 0.4.3[0m
+[38;20m[INFO] Known Pipes: wglGraphicsPipe[0m
+[38;20m[INFO] Start Scenario Index: 42, Num Scenarios : 1[0m
+[38;20m[INFO] Environment: SingleRacingMetaDrive[0m
+[38;20m[INFO] MetaDrive version: 0.4.3[0m
+[38;20m[INFO] Sensors: [lidar: Lidar(), side_detector: SideDetector(), lane_line_detector: LaneLineDetector()][0m
+[38;20m[INFO] Render Mode: none[0m
+[38;20m[INFO] Horizon (Max steps per agent): 8700[0m
+[38;20m[INFO] Assets version: 0.4.3[0m
+[38;20m[INFO] Known Pipes: wglGraphicsPipe[0m
+[38;20m[INFO] Start Scenario Index: 42, Num Scenarios : 1[0m
+
+>>> GT3RaceCar (map half, tham chiếu Phase 1) | map=silverstone_half
+    applied: {'cfg_mass': 1100.0, 'bullet_mass': 1100.0, 'cfg_friction': 1.35, 'bullet_friction_slip_FL_FR_RL_RR': [0.9, 0.9, 1.35, 1.35], 'engine_force_per_wheel': 850.0, 'brake_force_per_wheel': 650.0, 'max_speed_km_h': 120.0, 'max_steering_deg': 20.0}
+    accel: {'t_0_100_s': 9.0, 't_0_200_s': None, 't_0_250_s': None, 'dist_0_250_m': None, 'top_speed_kmh': 121.1, 'ax_mean_by_band_ms2': {'0-50': 3.091, '50-100': 3.091, '100-150': 0.149}}
+    brake: {'entry_kmh': 100.1, 'stop_dist_m': 21.4, 'stop_time_s': 1.7, 'decel_from_dist_g': 1.839}
+    lateral: {'speed_kmh': 40.0, 'peak_ay_g': 0.883, 'steer_at_peak': 0.544, 'v_at_peak_kmh': 39.5, 'beta_at_peak_deg': 5.37, 'spun': False, 'radius_at_peak_m': 13.9}
+    lateral: {'speed_kmh': 70.0, 'peak_ay_g': 0.898, 'steer_at_peak': 0.204, 'v_at_peak_kmh': 69.7, 'beta_at_peak_deg': 1.55, 'spun': False, 'radius_at_peak_m': 42.5}
+    lateral: {'speed_kmh': 100.0, 'peak_ay_g': 0.902, 'steer_at_peak': 0.116, 'v_at_peak_kmh': 99.7, 'beta_at_peak_deg': 0.66, 'spun': False, 'radius_at_peak_m': 86.7}
+    stability: {'speed_reached_kmh': 121.1, 'max_dz_m': 0.0044, 'max_roll_deg': 0.874, 'max_pitch_deg': 0.538}
+
+>>> GT3RealCar baseline | map=silverstone_full
+    applied: {'cfg_mass': 1100.0, 'bullet_mass': 1100.0, 'cfg_friction': 1.8, 'bullet_friction_slip_FL_FR_RL_RR': [1.55, 1.55, 1.8, 1.8], 'engine_force_per_wheel': 2400.0, 'brake_force_per_wheel': 160.0, 'max_speed_km_h': 260.0, 'max_steering_deg': 22.0}
+    accel: {'t_0_100_s': 3.2, 't_0_200_s': 6.4, 't_0_250_s': 8.0, 'dist_0_250_m': 277.1, 'top_speed_kmh': 263.1, 'ax_mean_by_band_ms2': {'0-50': 8.717, '50-100': 8.727, '100-150': 8.727, '150-200': 8.727, '200-250': 8.728}}
+    brake: {'entry_kmh': 100.5, 'stop_dist_m': 24.4, 'stop_time_s': 1.7, 'decel_from_dist_g': 1.626}
+    brake: {'entry_kmh': 201.0, 'stop_dist_m': 96.1, 'stop_time_s': 3.4, 'decel_from_dist_g': 1.653}
+    brake: {'entry_kmh': 251.3, 'stop_dist_m': 149.7, 'stop_time_s': 4.2, 'decel_from_dist_g': 1.659}
+    lateral: {'speed_kmh': 60.0, 'peak_ay_g': 1.526, 'steer_at_peak': 0.36, 'v_at_peak_kmh': 59.2, 'beta_at_peak_deg': 2.24, 'spun': False, 'radius_at_peak_m': 18.1}
+    lateral: {'speed_kmh': 100.0, 'peak_ay_g': 1.56, 'steer_at_peak': 0.144, 'v_at_peak_kmh': 99.5, 'beta_at_peak_deg': 0.16, 'spun': False, 'radius_at_peak_m': 49.9}
+    lateral: {'speed_kmh': 150.0, 'peak_ay_g': 1.586, 'steer_at_peak': 0.072, 'v_at_peak_kmh': 149.7, 'beta_at_peak_deg': -0.29, 'spun': False, 'radius_at_peak_m': 111.1}
+    lateral: {'speed_kmh': 200.0, 'peak_ay_g': 1.599, 'steer_at_peak': 0.048, 'v_at_peak_kmh': 199.7, 'beta_at_peak_deg': -0.42, 'spun': False, 'radius_at_peak_m': 196.3}
+    stability: {'speed_reached_kmh': 263.0, 'max_dz_m': 0.0138, 'max_roll_deg': 2.637, 'max_pitch_deg': 0.754}
+
+>>> GT3RealCar friction 1.35 | map=silverstone_full
+    applied: {'cfg_mass': 1100.0, 'bullet_mass': 1100.0, 'cfg_friction': 1.35, 'bullet_friction_slip_FL_FR_RL_RR': [1.55, 1.55, 1.35, 1.35], 'engine_force_per_wheel': 2400.0, 'brake_force_per_wheel': 160.0, 'max_speed_km_h': 260.0, 'max_steering_deg': 22.0}
+    accel: {'t_0_100_s': 3.2, 't_0_200_s': 6.4, 't_0_250_s': 8.0, 'dist_0_250_m': 276.9, 'top_speed_kmh': 263.1, 'ax_mean_by_band_ms2': {'0-50': 8.703, '50-100': 8.727, '100-150': 8.727, '150-200': 8.727, '200-250': 8.728}}
+    brake: {'entry_kmh': 100.4, 'stop_dist_m': 24.8, 'stop_time_s': 1.7, 'decel_from_dist_g': 1.601}
+    brake: {'entry_kmh': 200.9, 'stop_dist_m': 97.7, 'stop_time_s': 3.5, 'decel_from_dist_g': 1.625}
+    brake: {'entry_kmh': 251.2, 'stop_dist_m': 164.9, 'stop_time_s': 5.0, 'decel_from_dist_g': 1.505}
+    lateral: {'speed_kmh': 60.0, 'peak_ay_g': 1.997, 'steer_at_peak': 0.36, 'v_at_peak_kmh': 53.0, 'beta_at_peak_deg': -14.46, 'spun': True, 'radius_at_peak_m': 11.1}
+    lateral: {'speed_kmh': 100.0, 'peak_ay_g': 2.722, 'steer_at_peak': 0.16, 'v_at_peak_kmh': 93.7, 'beta_at_peak_deg': -16.42, 'spun': True, 'radius_at_peak_m': 25.4}
+    lateral: {'speed_kmh': 150.0, 'peak_ay_g': 3.542, 'steer_at_peak': 0.096, 'v_at_peak_kmh': 144.2, 'beta_at_peak_deg': -16.42, 'spun': True, 'radius_at_peak_m': 46.2}
+    lateral: {'speed_kmh': 200.0, 'peak_ay_g': 4.298, 'steer_at_peak': 0.072, 'v_at_peak_kmh': 194.6, 'beta_at_peak_deg': -15.8, 'spun': True, 'radius_at_peak_m': 69.3}
+    stability: {'speed_reached_kmh': 262.3, 'max_dz_m': 0.0196, 'max_roll_deg': 2.727, 'max_pitch_deg': 0.811}
+
+>>> GT3RealCar friction 1.95 | map=silverstone_full
+    applied: {'cfg_mass': 1100.0, 'bullet_mass': 1100.0, 'cfg_friction': 1.95, 'bullet_friction_slip_FL_FR_RL_RR': [1.55, 1.55, 1.95, 1.95], 'engine_force_per_wheel': 2400.0, 'brake_force_per_wheel': 160.0, 'max_speed_km_h': 260.0, 'max_steering_deg': 22.0}
+    accel: {'t_0_100_s': 3.2, 't_0_200_s': 6.4, 't_0_250_s': 8.0, 'dist_0_250_m': 277.1, 'top_speed_kmh': 263.1, 'ax_mean_by_band_ms2': {'0-50': 8.718, '50-100': 8.727, '100-150': 8.727, '150-200': 8.727, '200-250': 8.728}}
+    brake: {'entry_kmh': 100.5, 'stop_dist_m': 24.3, 'stop_time_s': 1.7, 'decel_from_dist_g': 1.633}
+    brake: {'entry_kmh': 201.0, 'stop_dist_m': 95.7, 'stop_time_s': 3.4, 'decel_from_dist_g': 1.661}
+    brake: {'entry_kmh': 251.3, 'stop_dist_m': 148.9, 'stop_time_s': 4.2, 'decel_from_dist_g': 1.667}
+    lateral: {'speed_kmh': 60.0, 'peak_ay_g': 1.527, 'steer_at_peak': 0.364, 'v_at_peak_kmh': 59.3, 'beta_at_peak_deg': 2.36, 'spun': False, 'radius_at_peak_m': 18.1}
+    lateral: {'speed_kmh': 100.0, 'peak_ay_g': 1.561, 'steer_at_peak': 0.148, 'v_at_peak_kmh': 99.5, 'beta_at_peak_deg': 0.22, 'spun': False, 'radius_at_peak_m': 49.9}
+    lateral: {'speed_kmh': 150.0, 'peak_ay_g': 1.589, 'steer_at_peak': 0.076, 'v_at_peak_kmh': 149.7, 'beta_at_peak_deg': -0.28, 'spun': False, 'radius_at_peak_m': 110.9}
+    lateral: {'speed_kmh': 200.0, 'peak_ay_g': 1.598, 'steer_at_peak': 0.048, 'v_at_peak_kmh': 199.8, 'beta_at_peak_deg': -0.35, 'spun': False, 'radius_at_peak_m': 196.4}
+    stability: {'speed_reached_kmh': 263.1, 'max_dz_m': 0.0137, 'max_roll_deg': 2.715, 'max_pitch_deg': 0.755}
+
+>>> GT3RealCar brake x0.5 | map=silverstone_full
+    applied: {'cfg_mass': 1100.0, 'bullet_mass': 1100.0, 'cfg_friction': 1.8, 'bullet_friction_slip_FL_FR_RL_RR': [1.55, 1.55, 1.8, 1.8], 'engine_force_per_wheel': 2400.0, 'brake_force_per_wheel': 80.0, 'max_speed_km_h': 260.0, 'max_steering_deg': 22.0}
+    accel: {'t_0_100_s': 3.2, 't_0_200_s': 6.4, 't_0_250_s': 8.0, 'dist_0_250_m': 277.1, 'top_speed_kmh': 263.1, 'ax_mean_by_band_ms2': {'0-50': 8.717, '50-100': 8.727, '100-150': 8.727, '150-200': 8.727, '200-250': 8.728}}
+    brake: {'entry_kmh': 100.5, 'stop_dist_m': 32.6, 'stop_time_s': 2.3, 'decel_from_dist_g': 1.217}
+    brake: {'entry_kmh': 201.0, 'stop_dist_m': 128.0, 'stop_time_s': 4.5, 'decel_from_dist_g': 1.241}
+    brake: {'entry_kmh': 251.3, 'stop_dist_m': 199.3, 'stop_time_s': 5.6, 'decel_from_dist_g': 1.246}
+    lateral: {'speed_kmh': 100.0, 'peak_ay_g': 1.56, 'steer_at_peak': 0.144, 'v_at_peak_kmh': 99.5, 'beta_at_peak_deg': 0.16, 'spun': False, 'radius_at_peak_m': 49.9}
+    stability: {'speed_reached_kmh': 263.0, 'max_dz_m': 0.0138, 'max_roll_deg': 2.637, 'max_pitch_deg': 0.754}
+
+>>> GT3RealCar engine 2000 | map=silverstone_full
+    applied: {'cfg_mass': 1100.0, 'bullet_mass': 1100.0, 'cfg_friction': 1.8, 'bullet_friction_slip_FL_FR_RL_RR': [1.55, 1.55, 1.8, 1.8], 'engine_force_per_wheel': 2000.0, 'brake_force_per_wheel': 160.0, 'max_speed_km_h': 260.0, 'max_steering_deg': 22.0}
+    accel: {'t_0_100_s': 3.9, 't_0_200_s': 7.7, 't_0_250_s': 9.6, 'dist_0_250_m': 333.0, 'top_speed_kmh': 262.6, 'ax_mean_by_band_ms2': {'0-50': 7.273, '50-100': 7.273, '100-150': 7.273, '150-200': 7.273, '200-250': 7.273}}
+    brake: {'entry_kmh': 102.1, 'stop_dist_m': 25.2, 'stop_time_s': 1.7, 'decel_from_dist_g': 1.63}
+    brake: {'entry_kmh': 201.6, 'stop_dist_m': 96.6, 'stop_time_s': 3.4, 'decel_from_dist_g': 1.654}
+    brake: {'entry_kmh': 251.4, 'stop_dist_m': 149.7, 'stop_time_s': 4.2, 'decel_from_dist_g': 1.66}
+    lateral: {'speed_kmh': 100.0, 'peak_ay_g': 1.56, 'steer_at_peak': 0.144, 'v_at_peak_kmh': 99.4, 'beta_at_peak_deg': 0.16, 'spun': False, 'radius_at_peak_m': 49.8}
+    stability: {'speed_reached_kmh': 262.6, 'max_dz_m': 0.0127, 'max_roll_deg': 2.635, 'max_pitch_deg': 0.664}
+
+>> Đã lưu số đo thô: logs/calibration/calibration_results.json

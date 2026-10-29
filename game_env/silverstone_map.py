@@ -4,7 +4,8 @@ Thiết kế chính xác theo sa bàn Silverstone F1 Circuit từ dữ liệu đ
 - 18 góc cua kinh điển (Abbey, Farm, Village, The Loop, Aintree, Brooklands, Luffield, Woodcote,
   Copse, Maggots, Becketts, Chapel, Stowe, Vale, Club).
 - Vòng lặp khép kín hoàn hảo (Closed-Loop Topology, sai số khép góc < 0.0001m).
-- 2 làn đường thể thao rộng 9.0m (mỗi làn 4.5m).
+- 2 làn đường thể thao rộng 9.0m (mỗi làn 4.5m) cho map nhỏ, hoặc 3 làn rộng 14.4m (mỗi làn 4.8m) cho map full 1:1.
+- Hỗ trợ tham số length_scale (1.0 cho map nhỏ, 2.075 cho map 1:1 đầy đủ).
 - Không rào chắn bê tông sát mép (PGLineType.CONTINUOUS), tuân thủ 100% Section 2.2 & 2.3 của PROJECT_SPECIFICATION.md.
 """
 
@@ -34,6 +35,7 @@ class SilverstoneMap(PGMap):
         config = self.config if self.config is not None else {}
         LANE_NUM = config.get("lane_num", 2)
         LANE_WIDTH = config.get("lane_width", 4.5)
+        LENGTH_SCALE = float(config.get("length_scale", 1.0))
 
         # Nạp dữ liệu cấu hình các block đã giải tối ưu
         json_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "scripts", "silverstone_blocks.json")
@@ -42,7 +44,7 @@ class SilverstoneMap(PGMap):
         blocks_data = data["blocks"]
 
         # Block 0: Hamilton Straight (Start / Finish Grid)
-        first_len = float(blocks_data[0]["len"])
+        first_len = float(blocks_data[0]["len"]) * LENGTH_SCALE
         last_block = FirstPGBlock(
             self.road_network,
             lane_width=LANE_WIDTH,
@@ -70,7 +72,7 @@ class SilverstoneMap(PGMap):
                     center_line_type=PGLineType.BROKEN,
                 )
                 block.construct_from_config(
-                    {Parameter.length: float(b["len"])},
+                    {Parameter.length: float(b["len"]) * LENGTH_SCALE},
                     parent_node_path,
                     physics_world,
                 )
@@ -86,8 +88,8 @@ class SilverstoneMap(PGMap):
                 )
                 block.construct_from_config(
                     {
-                        Parameter.length: float(b["len"]),
-                        Parameter.radius: float(b["r"]),
+                        Parameter.length: float(b["len"]) * LENGTH_SCALE,
+                        Parameter.radius: float(b["r"]) * LENGTH_SCALE,
                         Parameter.angle: float(b["ang"]),
                         Parameter.dir: int(b["dir"]),
                     },

@@ -33,7 +33,7 @@
 | D11 | Model chính khi bảo vệ | 111s |
 | D12 | Hướng Phase 2 | Map 1:1 + GT3 thật |
 | D13 | Cách chọn map | `--map {silverstone, silverstone_half, silverstone_full}`, trong đó `silverstone` = `silverstone_half`. Mọi hằng số phụ thuộc map nằm trong `game_env/track_presets.py` |
-| D14 | Thưởng đích map lớn | $T_0 = 172$s, $\tau = 24$s, $A = 4$, $R_{max} = 150$ (WI-L3) |
+| D14 | Thưởng đích map lớn | **v2 (30/10): $T_0 = 186$s, $\tau = 26$s**, $A = 4$, $R_{max} = 150$. Quy tắc cũ 172/24 bỏ vì giả định lap time tỉ lệ $v_{max}$, trong khi tốc độ vào cua bị chặn bởi trần bám. Quy tắc mới chỉ dùng tim đường + trần bám đo được + $v_{max}$ (không dùng profile); chi tiết ở `knowledge/vehicle_and_engine_physics.md` §8.3 (lần áp đầu ra 219/30 do dùng trần bám sai của bug F16) |
 | D15 | Reward tiến độ map lớn | 0.0241/m (WI-L3) |
 | D16 | PID | Không làm |
 | D17 | Ablation | Tạm hoãn |
@@ -42,6 +42,9 @@
 | D23 | Chuẩn hóa obs ở map lớn | Mọi hằng chuẩn hóa obs đọc từ preset. Nguyên tắc: **giữ khoảng giá trị số của mỗi chiều giống map nhỏ** (cùng tư duy đồng dạng đã dùng cho `progress_coef`, T0/τ), để không chiều nào bị clip ở 250 km/h hay ở mốc lookahead 200m. Chi tiết ở WI-10 |
 | D24 | Reward lúc hồi sinh (P2-multi) | **Giữ phạt crash phụ thuộc tốc độ** $-10-20(v/v_{max})^2$, y như bản một xe, cộng thêm việc bị lùi về sau. Người dùng chốt |
 | D25 | Xếp hạng cho thưởng vượt | Dùng tiến độ cộng dồn `lap × L + s`. Xe vừa hồi sinh được miễn khỏi danh sách "bị vượt" trong 150 bước. Chi tiết ở WI-L5 |
+| D27 | Thông số `GT3RealCar` (R3) | mass 1100 (Bullet cố định), engine 2400, **ma sát trước/sau 1.55/1.80** (μ bằng nhau thì xoay khi trail-braking), **phanh 160 N** (≥ 200 N chổng đuôi), trần 260. Bám 1.53–1.60 G, phanh 1.65 G. Lookahead giữ nguyên (R4). Xem `knowledge/vehicle_and_engine_physics.md`, F16 |
+| D28 | Envelope benchmark map full | a_lat 13.8 (90% của 1.56 G), a_brake 15.5, a_engine 8.70 m/s², elip Kamm chặt; lưu trong `VehicleConfig`, chỉ cho benchmark/ghost. $T^*_{full}$ = **124.03s** (profile v23). Map half giữ v22 = 112.59s (đã kiểm tra hồi quy) |
+| D29 | Bug ma sát cầu trước (F16) | `attach_agent` đọc bánh từ `system.getWheel`. `GT3RaceCar` đặt tường minh `front_wheel_friction = 0.90` để giữ vật lý Phase 1 / 111s (đã kiểm chứng 115.10s, ghost 119.5s) |
 | D26 | Kiểm tra dim khi load | Mọi chỗ load checkpoint đều so `in_dim` của lớp đầu với `obs_dim` của env; lệch thì báo lỗi rõ ràng, không để lỗi shape của torch |
 | D20 | Số episode eval của P2 | 5 (`--eval-episodes 5`), theo I7 |
 | D21 | Không đưa `r_center` trở lại | Người dùng chốt: trong đua nhiều xe, `r_center` kéo mọi xe về tim đường nên các xe xếp hàng một, mâu thuẫn với việc vượt nhau |
@@ -151,8 +154,8 @@ Nguồn: `game_env/benchmark.py` (commit `0180988`), T* = 112.6s, `profile_versi
 | 00–04 | Bảo toàn bằng chứng, vá PPO, reward, train script, smoke test | ✅ Xong (commit `e0738e8`, F13 fix `958c11f`) |
 | 05 | P1-main | ⏹ Đã dừng ở 2,662,400 step (kẹt 46%) |
 | P1C | Đóng Phase 1: eval, drive trace, biểu đồ | ⏳ Làm được ngay |
-| 10–13 | Map preset, `GT3RealCar`, obs/reward theo preset, benchmark hai map + ghost, D19 | ⏳ D2, agent code làm → trợ lý review |
-| 14 | P2-single | ⏳ Đêm 2 |
+| 10–13 | Map preset, `GT3RealCar`, obs/reward theo preset, benchmark hai map + ghost, D19 | ✅ Xong. R8 đạt: ghost map full 128.6s / flying 124.9s (T* 124.03s) |
+| 14 | P2-single | ▶ Sẵn sàng bấm (smoke 4096 step đã chạy thông) |
 | 15 | Port multicar | ⏳ D3, agent code làm → trợ lý review |
 | 16 | P2-multi | ⏳ Đêm 3 |
 | 17 | Báo cáo | Làm liên tục |
@@ -225,7 +228,7 @@ Nguồn: `game_env/benchmark.py` (commit `0180988`), T* = 112.6s, `profile_versi
   - chạy vòng tròn R = 30 / 80 / 130m: $a_y$ cực đại;
   - quét các tham số `max_engine_force`, `max_brake_force`, `wheel_friction`.
 - [ ] Thêm class `GT3RealCar` vào `vehicle.py` và lựa chọn `--vehicle gt3_real`.
-- **Output**: `knowledge/gt3_calibration.md` (bảng tham số → số đo, kèm số đo của xe hiện tại để đối chiếu).
+- **Output**: `knowledge/vehicle_and_engine_physics.md` (bảng tham số → số đo, kèm số đo của xe hiện tại để đối chiếu).
 - **Quyết định**: R3, R4.
 - **Lý luận**:
   - Mục tiêu tốc độ: 253–265 km/h trên Hangar Straight.

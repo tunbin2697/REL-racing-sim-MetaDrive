@@ -32,13 +32,14 @@ from agents.ppo_agent import PPOAgent
 from agents.optimal_agent import OptimalRacingAgent
 
 def parse_args():
+    default_model = "models/p1_main/best_agent.pt" if os.path.exists("models/p1_main/best_agent.pt") else "models/best_agent.pt"
     parser = argparse.ArgumentParser(description="Cinematic AI Spectator & Ghost Car Racing in MetaDrive 3D")
-    parser.add_argument("--model", type=str, default="models/best_agent.pt", help="Đường dẫn weights của PPO AI")
+    parser.add_argument("--model", type=str, default=default_model, help="Đường dẫn weights của PPO AI")
     parser.add_argument("--agent", type=str, default="ppo", choices=["ppo", "optimal"], help="Loại tác tử lái chính: 'ppo' (mạng neural PPO) hoặc 'optimal' (tác tử giải tích tối ưu lý thuyết)")
     parser.add_argument("--ghost", action="store_true", help="Bật xe bóng ma đối chứng (Ghost Car) điều khiển bởi OptimalRacingAgent")
     parser.add_argument("--manual", action="store_true", help="Chế độ tự lái bằng bàn phím (W-A-S-D) để so tài trực tiếp với Ghost Car")
-    parser.add_argument("--vehicle", type=str, default="gt3", choices=["gt3", "sedan"], help="Loại xe biểu diễn ('gt3' hoặc 'sedan')")
-    parser.add_argument("--map", type=str, default="silverstone", help="Bản đồ đua ('silverstone' hoặc 'racing')")
+    parser.add_argument("--vehicle", type=str, default="gt3", choices=["gt3", "gt3_real", "sedan"], help="Loại xe biểu diễn ('gt3', 'gt3_real', hoặc 'sedan')")
+    parser.add_argument("--map", type=str, default="silverstone", help="Bản đồ đua ('silverstone', 'silverstone_half', hoặc 'silverstone_full')")
     parser.add_argument("--traffic", type=float, default=0.0, help="Mật độ chướng ngại vật/xe khác (0.0 - 0.2)")
     parser.add_argument("--seed", type=int, default=42, help="Seed tạo bản đồ")
     parser.add_argument("--laps", type=int, default=2, help="Số vòng đua liên tục mỗi lượt chạy (mặc định 2: Lap 1 Standing Start + Lap 2 Flying Lap)")
@@ -87,7 +88,8 @@ def main():
     if not args.manual:
         if args.agent == "optimal":
             print(">> Khởi tạo Theoretical Optimal Benchmark Agent (Convex QP + Lipp & Boyd)...")
-            opt_agent = OptimalRacingAgent()
+            env.reset()
+            opt_agent = OptimalRacingAgent.from_benchmark(env.get_benchmark_engine(), vehicle_cfg=race_car.cfg, v_norm=float(env.preset.v_norm))
         else:
             obs_shape = env.observation_space.shape
             state_dim = int(obs_shape[0]) if obs_shape is not None else 40
@@ -156,7 +158,8 @@ def main():
                 action, _, _ = opt_agent.select_action(obs, vehicle=env.car)
             elif ppo_agent is not None:
                 is_deterministic = not args.stochastic
-                action, _, _ = ppo_agent.select_action(obs, deterministic=is_deterministic)
+                res_act = ppo_agent.select_action(obs, deterministic=is_deterministic)
+                action = res_act[0]
             else:
                 action = np.array([0.0, 0.0, -1.0], dtype=np.float32)
 

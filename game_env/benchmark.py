@@ -31,6 +31,7 @@ class RacingBenchmarkEngine:
         track_s: np.ndarray,
         vehicle_cfg: Optional[VehicleConfig] = None,
         track_width: float = 9.0,
+        preset_name: Optional[str] = None,
         force_recompute: bool = False,
     ):
         self.track_xy = np.array(track_xy, dtype=np.float32)
@@ -40,20 +41,34 @@ class RacingBenchmarkEngine:
         self.num_points = len(track_xy)
         self.circuit_length = float(track_s[-1]) if len(track_s) > 0 else 2838.7
         self.track_width = float(track_width)
+        self.preset_name = preset_name
+        self.scale = float(self.circuit_length / 2851.8) if self.circuit_length > 3000.0 else 1.0
         
         self.cfg = vehicle_cfg if vehicle_cfg is not None else GT3RaceCar().cfg
         self.mu = float(self.cfg.wheel_friction)
+        # v22: hệ số khớp tay legacy (map nhỏ, T* = 112.6s). v23: envelope đo trên Bullet (WI-11)
+        self.profile_version = 23.0 if getattr(self.cfg, "envelope_a_lat", None) is not None else 22.0
+        self.envelope = np.array([float(getattr(self.cfg, k, None) or 0.0) for k in ("envelope_a_lat", "envelope_a_brake", "envelope_a_engine")])
         self.g = 9.81
         self.v_max_m_s = float(self.cfg.max_speed_km_h / 3.6)
         
-        # Giới hạn bề rộng cho phép theo chuẩn FIA 4-Wheel Track Limits trên mặt đường nhựa 4.50m:
-        # Nửa chiều rộng thân xe bằng 0.925m (ngưỡng 4 bánh rời mặt đường tại 4.50 + 0.925 = 5.425m).
-        # Đặt biên độ lệch tâm tối đa của Racing Line tại +-4.05m (2 bánh ngoài đè qua vạch trắng rìa đường ~0.48m
-        # tại 4.975m, còn dư 0.45m đệm an toàn trước ngưỡng 4 bánh 5.425m) chuẩn phong cách F1/GT3.
-        self.max_lat_bound = min(4.05, max(1.0, 0.5 * self.track_width - 0.45))
+        # Đặt biên độ lệch tâm tối đa của Racing Line (chuẩn Out-In-Out sát mép nhựa, trừ 0.45m đệm an toàn)
+        if self.circuit_length > 4000.0 or (self.preset_name and "full" in self.preset_name):
+            self.max_lat_bound = min(6.75, max(1.0, 0.5 * self.track_width - 0.45))
+        else:
+            self.max_lat_bound = min(4.05, max(1.0, 0.5 * self.track_width - 0.45))
         
-        # Đường dẫn lưu cache để nạp tức thì trong 1 mili-giây
-        cache_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "scripts", "silverstone_optimal_profile.npz")
+        # Đường dẫn lưu cache phân tách theo sa bàn và loại xe (WI-L4)
+        if self.preset_name is not None:
+            map_tag = self.preset_name
+        else:
+            map_tag = "silverstone_full" if self.circuit_length > 4000.0 else "silverstone_half"
+        veh_tag = getattr(self.cfg, "name", "gt3").lower()
+        if map_tag == "silverstone_half" and ("real" not in veh_tag):
+            cache_file = "silverstone_optimal_profile.npz"
+        else:
+            cache_file = f"{map_tag}_{veh_tag}_optimal_profile.npz"
+        cache_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "scripts", cache_file)
         loaded_from_cache = False
         if not force_recompute and os.path.exists(cache_path):
             try:
@@ -62,7 +77,8 @@ class RacingBenchmarkEngine:
                     data["optimal_line_xy"].shape[0] == self.num_points
                     and abs(float(data["mu"]) - self.mu) < 1e-3
                     and np.linalg.norm(data["optimal_line_xy"][0] - self.track_xy[0]) < 4.5
-                    and float(data.get("profile_version", 0)) == 22.0
+                    and float(data.get("profile_version", 0)) == self.profile_version
+                    and np.allclose(data["envelope"] if "envelope" in data.files else np.zeros(3), self.envelope)
                 ):
                     self.optimal_line_xy = data["optimal_line_xy"]
                     self.optimal_line_kappa = data["optimal_line_kappa"]
@@ -96,7 +112,8 @@ class RacingBenchmarkEngine:
                     optimal_speed_kmh=self.optimal_speed_kmh,
                     theoretical_best_lap_time=self.theoretical_best_lap_time,
                     mu=self.mu,
-                    profile_version=22.0,
+                    profile_version=self.profile_version,
+                    envelope=self.envelope,
                 )
             except Exception:
                 pass
@@ -148,9 +165,9 @@ class RacingBenchmarkEngine:
         D2_Nx = D2.dot(sp.diags(nx_sub))
         D2_Ny = D2.dot(sp.diags(ny_sub))
 
-        # Hệ số sqrt(w_center) = 5e-5 nhỏ hơn trị riêng (pi/L)^2 ~ 1e-4 của các đoạn thẳng 300-450m,
-        # giúp Racing Line dạt kịch biên +-4.05m ở đầu/cuối mọi đoạn thẳng thay vì bị kéo về tim đường.
-        w_center_sqrt = 5e-5
+        # Hệ số sqrt(w_center) = 5e-5 / (scale^2) nhỏ hơn trị riêng (pi/L)^2 của các đoạn thẳng,
+        # giúp Racing Line dạt kịch biên ở đầu/cuối mọi đoạn thẳng thay vì bị kéo về tim đường.
+        w_center_sqrt = 5e-5 / (self.scale ** 2)
         I = sp.eye(N_sub)
 
         A_qp = sp.vstack([D2_Nx, D2_Ny, w_center_sqrt * I])
@@ -172,13 +189,13 @@ class RacingBenchmarkEngine:
         except Exception:
             alpha_sub = np.zeros(N_sub, dtype=np.float64)
 
-        # Nội suy bằng Periodic CubicSpline C2 và làm mịn nhẹ (sigma=1.8m) để giữ nguyên đỉnh Out-In-Out sát Track Limit
+        # Nội suy bằng Periodic CubicSpline C2 và làm mịn nhẹ theo scale để giữ nguyên đỉnh Out-In-Out
         idx_ext = np.append(idx_sub, N).astype(np.float64)
         alpha_ext = np.append(alpha_sub, alpha_sub[0])
         cs = CubicSpline(idx_ext, alpha_ext, bc_type="periodic")
         alpha_full_raw = cs(np.arange(N, dtype=np.float64))
         alpha_smooth = np.asarray(
-            gaussian_filter1d(alpha_full_raw, sigma=1.8, mode="wrap"),
+            gaussian_filter1d(alpha_full_raw, sigma=1.8 * self.scale, mode="wrap"),
             dtype=np.float64,
         )
         alpha_full = np.clip(
@@ -199,7 +216,7 @@ class RacingBenchmarkEngine:
         ddy = np.gradient(dy)
         raw_kappa = (dx * ddy - dy * ddx) / np.maximum(1e-5, (dx ** 2 + dy ** 2) ** 1.5)
         opt_kappa = np.asarray(
-            gaussian_filter1d(raw_kappa.astype(np.float64), sigma=2.5, mode="wrap"),
+            gaussian_filter1d(raw_kappa.astype(np.float64), sigma=2.5 * self.scale, mode="wrap"),
             dtype=np.float32,
         )
 
@@ -210,8 +227,8 @@ class RacingBenchmarkEngine:
         Thuật toán Lipp & Boyd 3-Pass Time-Optimal Velocity Profile Đơn điệu Từng Pha (Monotonic Corner Phases):
         1. Pass 1: Tính vận tốc giới hạn ngang v_crit(s) trực tiếp từ độ cong trơn C2 opt_kappa(s)
            (không làm bẹt đáy cua) để xe lập tức mở ga thoát cua ngay khi qua đỉnh Apex.
-        2. Pass 2 (Backward Braking): Tích phân lùi với gia tốc phanh thực tế a_brake = 6.20 m/s^2.
-        3. Pass 3 (Forward Acceleration): Tích phân tiến với gia tốc kéo thực tế a_engine = 3.40 m/s^2.
+        2. Pass 2 (Backward Braking): Tích phân lùi với gia tốc phanh hiệu chỉnh.
+        3. Pass 3 (Forward Acceleration): Tích phân tiến với gia tốc kéo hiệu chỉnh.
         """
         N = self.num_points
         if N < 5:
@@ -220,23 +237,26 @@ class RacingBenchmarkEngine:
         diff_s = np.linalg.norm(np.diff(self.optimal_line_xy, axis=0), axis=1)
         ds_opt = np.concatenate([diff_s, [diff_s[0]]]).astype(np.float32)
 
-        a_engine = 3.40  # Gia tốc kéo cực đại thực tế của xe GT3 trên Bullet (m/s^2)
-        a_brake = 6.20   # Gia tốc phanh hiệu dụng an toàn trên Bullet (m/s^2)
+        # Gia tốc kéo/phanh: envelope đo trên Bullet nếu xe có (WI-11), ngược lại dùng hệ số legacy v22
+        envelope_lat = getattr(self.cfg, "envelope_a_lat", None)
+        a_engine = float(getattr(self.cfg, "envelope_a_engine", None) or 3.40)
+        a_brake = float(getattr(self.cfg, "envelope_a_brake", None) or 6.20)
 
+        scale = self.scale
         dk_profile = np.zeros(N, dtype=np.float32)
         k_env = np.zeros(N, dtype=np.float32)
         k_abs_arr = np.abs(self.optimal_line_kappa)
-        win_chicane = 12
+        win_chicane = int(round(12 * scale))
+        idx_back = int(round(-4 * scale))
+        idx_ahead = int(round(23 * scale))
         for i in range(N):
             dk_profile[i] = abs(float(self.optimal_line_kappa[(i + 2) % N] - self.optimal_line_kappa[(i - 2) % N])) / (4.0 * max(0.5, ds_opt[i]))
-            # Bao hình độ cong bất đối xứng "Slow In, Fast Out" (quét trước +22m vào cua, chỉ giữ -4m sau đỉnh cua):
-            # Giúp xe hoàn tất phanh trước điểm Turn-in (chống văng understeer ở Copse/Maggots/Stowe)
-            # nhưng vẫn bung hết ga tăng tốc ngay lập tức khi vừa qua đỉnh Apex!
-            local_indices = (i + np.arange(-4, 23)) % N
+            # Bao hình độ cong bất đối xứng "Slow In, Fast Out" (quét trước vào cua, chỉ giữ sau đỉnh cua):
+            local_indices = (i + np.arange(idx_back, idx_ahead)) % N
             chicane_indices = (i + np.arange(-win_chicane, win_chicane + 1)) % N
             k_chicane_win = self.optimal_line_kappa[chicane_indices]
-            is_inflection = bool(np.min(k_chicane_win) < -0.004 and np.max(k_chicane_win) > 0.004)
-            slew_k = (17.5 * float(dk_profile[i])) if is_inflection else 0.0
+            is_inflection = bool(np.min(k_chicane_win) < (-0.004 / scale) and np.max(k_chicane_win) > (0.004 / scale))
+            slew_k = (17.5 * scale * float(dk_profile[i])) if is_inflection else 0.0
             k_env[i] = max(
                 float(k_abs_arr[i]),
                 0.88 * float(np.max(k_abs_arr[local_indices])),
@@ -244,14 +264,23 @@ class RacingBenchmarkEngine:
             )
 
         def get_a_lat_limit(k_val: float, dk_val: float) -> float:
-            if k_val > 0.0170 or dk_val > 0.00055:
-                return 8.85   # Đỉnh cua gắt & Chicane đổi hướng (Village / Loop / Luffield / Becketts / Vale): ~0.90G
-            elif k_val > 0.0090 or dk_val > 0.00035:
-                return 9.10   # Cua trung bình-nhanh 90° & S-bend entry (Brooklands / Maggots / Stowe / Club): ~0.93G
-            elif k_val > 0.0065:
-                return 10.20  # Cua nhanh (Abbey / Copse / Woodcote): ~1.04G
+            if envelope_lat is not None:
+                return float(envelope_lat)  # Trần bám ngang đo được, không phụ thuộc loại cua
+            if k_val > (0.0170 / scale) or dk_val > (0.00055 / (scale ** 2)):
+                return 8.85   # Đỉnh cua gắt & Chicane đổi hướng
+            elif k_val > (0.0090 / scale) or dk_val > (0.00035 / (scale ** 2)):
+                return 9.10   # Cua trung bình-nhanh 90°
+            elif k_val > (0.0065 / scale):
+                return 10.20  # Cua nhanh
             else:
                 return 11.80  # Đoạn cong thoai thoải tốc độ cao (Aintree / Hangar kink): ~1.20G
+
+        def kamm_ratio(a_lat_curr: float, a_lat_lim: float) -> float:
+            # Phần bám dọc còn lại theo elip Kamm. Envelope đo được: elip chặt (sàn 0.05), vì phanh/ga khi đã dùng
+            # hết bám ngang làm xe xoay. Legacy v22: giữ sàn 0.15 và trần 0.92 như cũ.
+            if envelope_lat is not None:
+                return float(np.sqrt(max(0.05, 1.0 - min(0.9975, (a_lat_curr / a_lat_lim) ** 2))))
+            return float(np.sqrt(max(0.15, 1.0 - min(0.92, (a_lat_curr / a_lat_lim) ** 2))))
 
         # Pass 1: Vận tốc tới hạn góc cua từ độ cong C2 opt_kappa
         v_prof = np.full(N, self.v_max_m_s, dtype=np.float32)
@@ -272,7 +301,7 @@ class RacingBenchmarkEngine:
                 dk_curr = float(dk_profile[i])
                 a_lat_lim = get_a_lat_limit(k_curr, dk_curr)
                 a_lat_curr = (v_prof[i] ** 2) * k_curr
-                avail_ratio = np.sqrt(max(0.15, 1.0 - min(0.92, (a_lat_curr / a_lat_lim) ** 2)))
+                avail_ratio = kamm_ratio(a_lat_curr, a_lat_lim)
                 v_brk = np.sqrt(v_prof[nxt] ** 2 + 2.0 * (a_brake * avail_ratio) * d_s)
                 v_prof[i] = min(v_prof[i], v_brk)
 
@@ -285,7 +314,7 @@ class RacingBenchmarkEngine:
                 dk_curr = float(dk_profile[i])
                 a_lat_lim = get_a_lat_limit(k_curr, dk_curr)
                 a_lat_curr = (v_prof[i] ** 2) * k_curr
-                avail_ratio = np.sqrt(max(0.15, 1.0 - min(0.92, (a_lat_curr / a_lat_lim) ** 2)))
+                avail_ratio = kamm_ratio(a_lat_curr, a_lat_lim)
                 v_acc = np.sqrt(v_prof[i] ** 2 + 2.0 * (a_engine * avail_ratio) * d_s)
                 v_prof[nxt] = min(v_prof[nxt], v_acc)
 
@@ -308,7 +337,7 @@ class RacingBenchmarkEngine:
         k_abs = np.abs(self.optimal_line_kappa)
         
         for i in range(2, N - 2):
-            if k_abs[i] > 0.010:
+            if k_abs[i] > (0.010 / self.scale):
                 if k_abs[i] >= k_abs[i - 1] and k_abs[i] >= k_abs[i + 1]:
                     raw_candidates.append({
                         "idx": i,
@@ -323,7 +352,7 @@ class RacingBenchmarkEngine:
 
         raw_candidates.sort(key=lambda x: x["kappa"], reverse=True)
         selected_apexes = []
-        min_separation_m = 45.0
+        min_separation_m = 45.0 * self.scale
 
         for cand in raw_candidates:
             too_close = False

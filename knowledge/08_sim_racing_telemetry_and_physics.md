@@ -6,6 +6,8 @@
 
 ## 1. Bản Chất Mô Hình Vật Lý Xe Đua Trong MetaDrive Simulator
 
+> **Cập nhật 30/10/2026**: một số khẳng định ở mục này đã được đo lại và sửa (lực kéo 4 bánh, phanh bão hòa, chổng đuôi, bug ma sát cầu trước). Xem `knowledge/vehicle_and_engine_physics.md` §1 và §9.
+
 MetaDrive sử dụng engine vật lý **Panda3D Bullet Physics (`BulletVehicle`)**, mô phỏng động lực học thân xe cứng kết hợp hệ thống treo tia quét (Raycast Suspension) 4 bánh độc lập.
 
 ```
