@@ -1,0 +1,32 @@
+{
+  "num_episodes": 2,
+  "mean_return": 6.043459531532056,
+  "std_return": 22.262332982950007,
+  "mean_length": 329.0,
+  "mean_time": 32.9,
+  "mean_completion": 19.918224569094523,
+  "mean_completion_rate": 19.918224569094523,
+  "success_rate": 0.0,
+  "crash_rate": 0.5,
+  "crash_locations": [
+    "173m"
+  ],
+  "mean_speed": 84.81044476060475,
+  "mean_speed_kmh": 84.81044476060475,
+  "max_speed_kmh": 120.19776306152345,
+  "mean_lap1_time": 0.0,
+  "mean_lap2_time": 0.0,
+  "best_lap_time": 0.0,
+  "mean_progress_reward": 28.40142364501948,
+  "mean_steer_smooth_reward": -0.2906005834963983,
+  "mean_idle_penalty": -9.674999999999997,
+  "mean_macro_reward": -12.39236352999114,
+  "racing_line_mae_m": 2.8771493434906006,
+  "racing_line_rmse_m": 3.4017099142074585,
+  "apex_accuracy_pct": 9.375,
+  "corner_delta_v_kmh": 1.095907211303711,
+  "friction_utilization_pct": 51.60824016288474,
+  "lap_efficiency_pct": 120.0,
+  "theoretical_best_lap_time": 112.59455871582031,
+  "max_speed_cap": 120.0
+}

@@ -263,6 +263,80 @@ Hệ quả kèm theo khi chuyển sang 1:1:
 
 ---
 
+## F14. σ ga/phanh kẹt trần dù đã có projection (entropy trên Gaussian trước tanh)
+
+### Hiện tượng [Đã kiểm chứng: `logs/p1_main`, checkpoint]
+- **Lần 1**: σ_throttle chạm 1.0 ở khoảng 370k step và nằm ở đó tới 1.37M; σ_brake ở 1.0 trong đoạn 330k–700k.
+- **Lần 2**: sau khi resume F13 (1.39M), σ_brake tăng đều từ 0.22 lên 1.0 ở khoảng 1.8M và kẹt ở đó. Checkpoint lúc ấy có logstd = [−1.57, **0, 0**].
+- Tỉ lệ eval sạch (crash 0%, completion ≥ 98%) giảm dần:
+
+| Đoạn step | Tỉ lệ eval sạch |
+| :--- | :--- |
+| 1.40–1.69M | 48% |
+| 1.69–2.00M | 30% |
+| 2.00–2.20M | **0%** |
+
+- Apex accuracy giảm từ khoảng 75% xuống khoảng 45%.
+
+### Cơ chế [Suy luận]
+- Entropy của Gaussian trước tanh là $\sum \log\sigma + c$. Bonus `ent_coef` đẩy σ đi lên với một lực **không đổi**, ở mọi state.
+- **Ở vùng bão hòa**: đạp hết ga trên đoạn thẳng có $\mu_u \gg 0$, không phanh có $\mu_u \ll 0$. Lúc đó nhiễu trong $u$ hầu như không làm đổi hành động (tanh phẳng), nên policy gradient **không phạt** σ. Entropy thắng, σ lên trần.
+- **Ở vùng phanh** (mean gần ngưỡng deadband): σ = 1 khiến phanh trong rollout gần như ngẫu nhiên. Agent không học được điểm phanh, nên crash ngày càng nhiều.
+- Khác với F1: lần này gradient vẫn còn sống (có projection), chỉ là entropy thắng. Lỗi gần giống F1 nhưng nhẹ hơn.
+
+### Can thiệp và kết quả [Đã kiểm chứng]
+- **Resume lần 2** tại 2.31M từ `best_agent` (khoảng 1.86M): `--ent-coef 0.001`, đồng thời reset logstd ga/phanh về −1.0 (σ 0.37), giữ nguyên σ lái.
+- **σ ga/phanh**: giảm dần 0.36 → 0.27, tức policy gradient điều khiển được σ trở lại.
+- **σ lái**: **sập về sàn 0.10 trong khoảng 150k step**. Đây là tác dụng phụ của ent 0.001.
+- **Best lap sạch**: 130.5s → **125.6s** (ở khoảng 2.45M). Tỉ lệ eval sạch phục hồi lên 27% trong đoạn 2.40–2.51M.
+
+### Bài học
+- `ent_coef` = 0.01 cố định làm σ ga/phanh kẹt trần.
+- `ent_coef` = 0.001 cố định làm σ lái sập về sàn.
+- Hai chiều hành động cần **chế độ khám phá khác nhau**, nên Phase 2 dùng `LOGSTD_MAX` theo từng chiều, cộng với entropy decay (D19).
+
+---
+
+## F15. Thói quen lái: chậm vì thả trôi, không phải vì lạng lách
+
+**[Đã kiểm chứng: 1 vòng deterministic, xuất phát đứng, map nhỏ]** Script tham chiếu: `scratch/drive_trace_reference.py`.
+
+| Checkpoint | Lap | TB / max km/h | Full ga | Thả trôi | Có phanh | Đảo lái /100 bước |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| P1 khoảng 1.55M | 137.2s | 73.8 / 94.6 | 12% | 59% | 17% | 30.8 |
+| P1 best khoảng 1.86M | 133.9s | 75.9 / 102.1 | 19% | 50% | 15% | 34.1 |
+| P1 best khoảng 2.45M | 130.1s | 78.1 / 102.4 | 22% | 48% | 16% | 36.1 |
+| P1 2500k | crash ở 21.7s | 60.3 / 100.1 | 56% | 24% | 10% | 35.5 |
+| **111s best** | **115.1s** | **88.4 / 121.1** | **73%** | **1%** | **32%** | **38.9** |
+
+- **Lạng lách không phải nguyên nhân**: agent 111s còn đảo lái nhiều hơn. *Lưu ý (I10)*: chỉ số đảo lái thấp hơn của P1 một phần là do P1 chạy chậm và không tấn công cua, nên không được diễn giải thành "P1 lái mượt hơn".
+- Agent P1 **giảm tốc bằng nhả ga thay vì phanh**, và chưa bao giờ lên được trần 120 km/h. Theo thời gian nó đạp ga nhiều dần lên (12% → 22% → 56%), nhưng phanh vẫn ít (10–17%, so với 32% ở 111s). Vì vậy khi bạo ga hơn thì nó crash ở cua đầu, đúng kiểu crash "khoảng 5% vòng" thấy trong eval.
+- **Giả thuyết (chưa chứng minh)**:
+  1. 1.37M step đầu học với estimator bị lỗi F13 cho đúng hành động đạp hết ga.
+  2. F14 khiến phanh trong rollout là nhiễu.
+  3. Bias −1.6 làm agent ít khám phá phanh.
+
+---
+
+## Tổng hợp insight Phase 1 → quyết định Phase 2
+
+| # | Insight | Áp dụng cho Phase 2 |
+| :-- | :--- | :--- |
+| I1 | F1: projection có hiệu quả. Lần đầu có vòng sạch ở khoảng 1.35M, trong khi run cũ chạy 3.38M không có vòng sạch nào | Giữ |
+| I2 | F13: log_prob tính tại $u$ đã sample | Giữ; smoke test bắt buộc có TEST 4D |
+| I3 | F14: σ ga/phanh kẹt trần khi ent = 0.01 | D19: `LOGSTD_MAX` theo từng chiều |
+| I4 | ent = 0.001 làm σ lái sập về sàn trong khoảng 150k | D19: entropy decay, không dùng 0.001 ngay từ đầu |
+| I5 | Lap time bị giới hạn bởi cách dùng ga/phanh | `scripts/drive_trace.py` là công cụ theo dõi chuẩn |
+| I6 | Phanh ít được khám phá | Theo dõi % phanh của P2; nếu thấp kéo dài thì xem lại bias |
+| I7 | Eval 3 episode gần như giống hệt nhau, kết quả nhảy giữa 0% và 100% | P2 dùng `--eval-episodes 5` |
+| I8 | P1 cần khoảng 2.5M step để xuống khoảng 126s; map 1:1 tốn khoảng ×1.44 số bước mỗi vòng | 6M cho P2-single là vừa đủ, không dư |
+| I9 | Sau resume lần 2 (ent 0.001), σ lái về sàn 0.10 và **eval crash ở đúng một chỗ (46%, khoảng mét 1306, khúc cua rộng) suốt 8 lần eval liên tiếp**; train không còn về đích. Value loss rất thấp (0.05–0.2) vì critic đã dự đoán đúng rằng sẽ crash ở đó, nên không còn tín hiệu khám phá. Ở một nhánh cũ, dùng decay lr/ent thì giai đoạn sau cũng gần như không cải thiện | Không decay; ent 0.01 cố định cộng với trần σ theo từng chiều; giảm entropy bằng fine-tune theo đoạn (D22) |
+| I10 | Quan sát demo: P1 không vượt quá khoảng 100 km/h, vào cua nhẹ và phanh nhẹ hơn bản 111s, có 1–2 chỗ giật lái gây drift. **Độ mượt tay lái thấp hơn của P1 là ảo giác thống kê**, do agent không tấn công cua chứ không phải lái khéo hơn | Khi báo cáo, so độ mượt tay lái phải chuẩn hóa theo tốc độ hoặc theo cua |
+| I11 | Phạt lắc tay lái `−0.1·Δ²` lớn nhất chỉ khoảng −0.003/bước (do giới hạn tốc độ xoay 0.18), so với tiến độ khoảng 0.15/bước, nên giật lái gần như miễn phí (cả ở bản 111s). Reward tiến độ tính theo hình chiếu lên tim đường thưởng nhẹ cho việc ở phía trong cua ($v\cdot R/(R-lat)$) | Ghi là giới hạn; chưa sửa vì chưa có bằng chứng giật lái gây crash |
+| I12 | **Bản 111s nhanh hơn ghost** (eval 111.4s so với T* 112.6s), và vẫn chạy hết vòng trong env hiện tại với luật 4 bánh (115.1s, xuất phát đứng) | Trong báo cáo gọi ghost là **"tham chiếu giải tích"**, không gọi là cận trên. Lý do bị vượt: các bậc $a_{lat}$ khớp tay thận trọng và giới hạn lệch ngang ±4.05m. Cần đo thêm vòng flying của bản 111s trong env hiện tại |
+
+---
+
 ## Ma trận ablation đề xuất
 
 Cùng seed, mỗi run 500k step. Nếu đủ thời gian, chạy 2–3 seed. Metric theo dõi:
