@@ -2,7 +2,7 @@
 MultiCarRacingEnv: Đua 6 xe trên Silverstone mở rộng (3 làn x 4.5m = 13.5m)
 - Xe 0 là agent MetaDrive (camera bám theo, dùng cho người chơi tay cầm), xe 1..N-1 spawn thêm vào engine.
 - Va chạm vật lý Bullet thật giữa các xe (khác GhostCar xuyên thấu); va chạm chỉ bị phạt nhẹ, không loại xe.
-- Lưới xuất phát so le 2 hàng kiểu F1 phía sau vạch xuất phát x = 60m.
+- Lưới xuất phát phía sau vạch x = 60m: mặc định xếp ngang hàng (mỗi làn 1 xe, hàng cách 10m), tùy chọn so le kiểu F1.
 - Mỗi xe giữ trạng thái riêng (RacerState) và dùng lại đúng quan sát 40D / luật 4 bánh FIA / hàm thưởng của MetaRacingEnv.
 - Quan sát 40D + K đối thủ gần nhất (dx, dy, dvx, dvy trong hệ trục xe + cờ có xe) -> 40 + 5K chiều. Zero Data Leakage:
   chỉ chứa trạng thái vật lý quan sát được, không có racing line tối ưu.

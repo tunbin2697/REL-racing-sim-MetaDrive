@@ -6,7 +6,10 @@
 > [!IMPORTANT]
 > **TÀI LIỆU ĐẶC TẢ YÊU CẦU ĐỀ TÀI CHÍNH THỨC:**  
 > Xem chi tiết toàn bộ quy định học thuật, luật đua 4 bánh, cấm data leak và tiêu chuẩn benchmark tại:  
-> 📄 **[`PROJECT_SPECIFICATION.md`](file:///c:/Users/tunbi/Project/school/REL%20Assignment/PROJECT_SPECIFICATION.md)**
+> 📄 **[`PROJECT_SPECIFICATION.md`](PROJECT_SPECIFICATION.md)**
+
+> [!NOTE]
+> **Đã hoàn thành phần mở rộng:** đua **6 xe** (người chơi tay cầm Xbox vs 5 AI PPO self-play) trên Silverstone mở rộng 13.5m (3 làn) — xem [Chế độ 8](#-chế-độ-8-đua-6-xe-người-chơi-tay-cầm-vs-5-ai-ppo-self-play) và [Kết quả](#-6-kết-quả-huấn-luyện-thực-nghiệm--đối-chiếu-benchmark).
 
 ---
 
@@ -34,8 +37,8 @@ Mục tiêu cốt lõi: Huấn luyện một Agent có khả năng **tự học 
    * Xây dựng một mốc thời gian cơ sở độc lập (tính tay lý thuyết, tính toán bán tự động hoặc nguồn đối chiếu hợp lý / make sense).
    * **Dữ liệu đối chiếu được giữ kín, không leak vào quá trình train**. Outcome kỳ vọng là Agent tự học đạt thời gian lap time **tiệm cận, hợp lý (make sense) và có nguồn đối chiếu rõ ràng**.
 7. **Định hướng mở rộng (Bonus Extensions - Khuyến khích nếu agent chính đạt kết quả tốt và còn thời gian trước ngày báo cáo)**:
-   * Huấn luyện đua đối kháng đa tác tử ($\ge 2$ Agents).
-   * Chế độ người chơi bàn phím đua trực tiếp với AI thời gian thực (`play_vs_ai.py`).
+   * ✅ Huấn luyện đua đối kháng đa tác tử ($\ge 2$ Agents): 6 xe PPO self-play (`training/train_multicar.py`).
+   * ✅ Chế độ người chơi đua trực tiếp với AI thời gian thực: bàn phím (`play_vs_ai.py`) và tay cầm Xbox (`race_multicar.py`, `spectate_ai.py --gamepad`).
    * Tổng quát hóa trên các đường đua F1 danh tiếng như Monza, Silverstone, Spa-Francorchamps.
 
 ---
@@ -43,7 +46,7 @@ Mục tiêu cốt lõi: Huấn luyện một Agent có khả năng **tự học 
 ## 📂 2. Cấu Trúc Thư Mục Dự Án
 
 ```text
-REL Assignment/
+REL-racing-sim-MetaDrive/
 ├── PROJECT_SPECIFICATION.md   # 📄 ĐẶC TẢ YÊU CẦU ĐỒ ÁN MÔN HỌC (Quy tắc, Luật đua, Benchmark)
 ├── README.md                  # Hướng dẫn chi tiết, cài đặt và thực thi hệ thống
 │
@@ -55,35 +58,46 @@ REL Assignment/
 │
 ├── game_env/
 │   ├── __init__.py
-│   ├── racing_env.py          # Wrapper MetaRacingEnv (Obs 40D, frenet s, track limits 4 bánh, Pure Motorsport)
+│   ├── racing_env.py          # Wrapper MetaRacingEnv (Obs 40D, frenet s, track limits 4 bánh, số làn tùy chỉnh, time penalty)
+│   ├── multicar_env.py        # MultiCarRacingEnv: đua 6 xe, 3 làn 13.5m, va chạm vật lý thật, obs 65D, bảng xếp hạng
+│   ├── gamepad.py             # Driver tay cầm Xbox (pygame SDL GameController, chạy được trên Windows)
 │   ├── vehicle.py             # Thực thể Động lực học GT3RaceCar & CivilianSedan (OOP Vehicle Architecture)
 │   ├── benchmark.py           # Engine Phân tích Cận trên (Convex QP Min Curvature + Lipp & Boyd 3-Pass)
 │   ├── ghost_car.py           # Thực thể Xe Bóng Ma Đối Chứng 3D (Ghost Car Entity)
 │   ├── multiagent_env.py      # Môi trường đua đối đầu 2 xe (Người vs AI / Ghost)
+│   ├── silverstone_map.py     # Dựng bản đồ Silverstone F1 từ các block MetaDrive
+│   ├── camera.py / visualizer.py # Camera theo dõi, HUD, racing line 3D
 │   └── telemetry.py           # Hệ thống ghi nhận Telemetry (v, acc_lat, acc_long, Delta Time)
 │
 ├── training/
-│   ├── train_racing.py        # Pipeline huấn luyện PPO chính + Telemetry + In-Training Benchmark
+│   ├── train_racing.py        # Pipeline huấn luyện PPO 1 xe + Telemetry + In-Training Benchmark
+│   ├── train_multicar.py      # Pipeline PPO self-play 6 xe (chung tham số, warm start từ model 1 xe)
 │   ├── evaluate.py            # Benchmark đánh giá học thuật độc lập đa kịch bản
 │   └── evaluator.py           # Module RacingEvaluator OOP đánh giá đa episode và trích xuất chỉ số benchmark
 │
 ├── demo/
-│   ├── play_vs_ai.py          # SCRIPT ĐINH: Người bấm phím W-A-S-D trực tiếp so tài với AI hoặc Optimal Ghost Car
-│   └── spectate_ai.py         # Chế độ Cinematic theo dõi AI / Optimal Agent tự lái & Ghost Car thời gian thực
+│   ├── play_vs_ai.py          # Người bấm phím W-A-S-D trực tiếp so tài với AI hoặc Optimal Ghost Car
+│   ├── spectate_ai.py         # Chế độ Cinematic theo dõi AI / Optimal Agent tự lái & Ghost Car (hỗ trợ tay cầm)
+│   └── race_multicar.py       # Đua 6 xe: người chơi tay cầm Xbox vs 5 AI PPO (hoặc xem 6 AI đua)
 │
 ├── scripts/
+│   ├── evaluate_checkpoints.py      # So sánh hàng loạt checkpoint (stochastic + deterministic) -> JSON
+│   ├── benchmark_optimal_agent.py   # Benchmark tác tử đối chứng tối ưu
 │   ├── plot_learning_curves.py      # Xuất 4 biểu đồ học thuật hội tụ (Return, Completion %, Losses, Speed/Crash)
 │   ├── plot_telemetry_diagnostic.py # Dashboard Telemetry 6 Panel chuyên sâu + Theoretical Benchmark Overlay
 │   ├── plot_silverstone_preview.py  # Trực quan hóa sơ đồ 18 góc cua Silverstone F1
 │   └── solve_silverstone_layout.py  # Tối ưu hóa khép góc hình học Closed-Loop Topology
 │
 ├── models/
-│   └── best_agent.pt          # Trọng số PPO đạt thành tích kỷ lục (100% clean lap, lap time ~111s)
+│   ├── best_agent.pt          # Model PPO đua 1 xe cuối cùng (40D, flying lap ~142s)
+│   ├── multicar_best.pt       # Model PPO self-play đua 6 xe cuối cùng (65D)
+│   └── legacy_*/              # Checkpoint các phiên bản cũ (35D, 40D)
 │
-├── plots/
-│   └── silverstone_circuit_preview.png # Sơ đồ bố cục đường đua Silverstone F1
+├── plots/                     # Learning curves, telemetry dashboard, sơ đồ Silverstone
 │
 ├── logs/
+│   ├── run_v*/                # Metrics các lượt train 1 xe (training_metrics.json, checkpoint_eval.json)
+│   ├── multicar_v1..v3/       # Metrics 3 lượt train đua 6 xe
 │   ├── training_metrics.json    # Dữ liệu telemetry chi tiết qua các lần đánh giá định kỳ
 │   └── evaluation_results.json  # Dữ liệu đánh giá benchmark học thuật chuẩn mực
 │
@@ -96,11 +110,17 @@ REL Assignment/
 
 ## ⚙️ 3. Hướng Dẫn Cài Đặt (Installation)
 
-### Bước 1: Khởi tạo môi trường Conda (Python 3.10)
-```bash
-conda create -n rel_racing python=3.10 -y
-conda activate rel_racing
-```
+### Bước 1: Khởi tạo môi trường Python 3.10
+* **Dùng uv (cách đang dùng trong repo, tạo thư mục `.venv/` — đã được `.gitignore` bỏ qua):**
+  ```bash
+  uv venv --python 3.10 .venv
+  .venv\Scripts\activate          # Windows  (Linux/Mac: source .venv/bin/activate)
+  ```
+* **Hoặc dùng Conda:**
+  ```bash
+  conda create -n rel_racing python=3.10 -y
+  conda activate rel_racing
+  ```
 
 ### Bước 2: Cài đặt PyTorch
 * **Máy có GPU NVIDIA (Khuyến nghị CUDA 12.1 / 12.4):**
@@ -119,9 +139,11 @@ pip install -r requirements.txt
 
 ### Bước 4: Kiểm tra cài đặt đồ họa 3D
 ```bash
-python scripts/test_metadrive_install.py
+python demo/spectate_ai.py --model models/best_agent.pt
 ```
-*(Nếu cửa sổ 3D mở ra và bạn lái được xe bằng `W-A-S-D`, hệ thống đã sẵn sàng 100%)*.
+*(Nếu cửa sổ 3D mở ra và xe AI chạy trên Silverstone, hệ thống đã sẵn sàng)*.
+
+> Tay cầm Xbox dùng `pygame` (đã có trong `requirements.txt`), cắm tay cầm trước khi chạy demo.
 
 ---
 
@@ -163,6 +185,9 @@ python demo/spectate_ai.py --agent optimal
 
 # 4. Tự lái xe bằng bàn phím (W-A-S-D) trên đường đua Silverstone so tài cùng Xe Bóng Ma:
 python demo/spectate_ai.py --manual --ghost
+
+# 5. Tự lái bằng tay cầm Xbox (Joystick trái = lái, RT = ga, LT = phanh):
+python demo/spectate_ai.py --gamepad --ghost --steer-gamma 1.5
 ```
 * **Điều khiển camera & quan sát 360° tự do**:
   * **Lia chuột (Mouse Look)**: Xoay tự do 360° quanh xe (không bị giới hạn góc, không bị tự động reset về giữa).
@@ -234,6 +259,49 @@ python scripts/plot_telemetry_diagnostic.py --model models/best_agent.pt --save-
 python training/evaluate.py --model models/best_agent.pt --episodes 10
 ```
 
+So sánh hàng loạt checkpoint của một lượt train (cả chính sách ngẫu nhiên và tất định), xuất ra JSON:
+```bash
+python scripts/evaluate_checkpoints.py --models "models/run_v8b/agent_step_*k.pt" --out logs/run_v8b/checkpoint_eval.json
+```
+
+---
+
+### 🏁 Chế Độ 8: Đua 6 Xe (Người Chơi Tay Cầm vs 5 AI PPO Self-Play)
+Đường Silverstone mở rộng lên **13.5m (3 làn × 4.5m)**, 6 xe có **va chạm vật lý Bullet thật**. Chạm xe chỉ bị phạt nhẹ, không bị loại; xe vẫn bị loại khi cả 4 bánh rời mặt nhựa hoặc lật xe.
+```bash
+# Người chơi (xe xanh lá, P1) dùng tay cầm Xbox đua với 5 AI:
+python demo/race_multicar.py
+
+# Xem 6 xe AI tự đua với nhau (không cần tay cầm):
+python demo/race_multicar.py --spectate
+
+# Tùy chọn: số vòng, kiểu xếp lưới xuất phát, model khác
+python demo/race_multicar.py --laps 2 --grid staggered --model models/multicar_best.pt
+```
+* **Tay cầm**: Joystick trái = lái, `RT` = ga, `LT` = phanh (`--steer-gamma 1.5` để lái mềm hơn quanh tâm).
+* **Lưới xuất phát** (`--grid`): `abreast` (mặc định) mỗi hàng 3 xe ngang hàng, mỗi làn 1 xe, hàng cách nhau 10m; `staggered` so le kiểu F1.
+* **Camera**:
+  * `1`–`6`: theo xe tương ứng; `0`: theo xe dẫn đầu.
+  * `N` / `Tab`: xe kế tiếp; `M`: xe trước đó (dùng phím chữ khi bộ gõ tiếng Việt chặn phím số).
+  * Khi xe đang theo bị loại, camera tự chuyển sang xe dẫn đầu.
+* **HUD**: bảng xếp hạng trực tiếp P1–P6, khoảng cách tới xe dẫn đầu, tốc độ, số lần va chạm, danh sách xe bị loại.
+
+---
+
+### 🤝 Chế Độ 9: Huấn Luyện Đua 6 Xe (Multi-Agent PPO Self-Play)
+Cả 6 xe dùng **chung một mạng PPO** (parameter sharing), mỗi xe đóng góp mẫu riêng. Khởi tạo từ model đua 1 xe (40D → 65D, phần trọng số cho đầu vào đối thủ khởi tạo bằng 0).
+```bash
+# Train mới, warm start từ model 1 xe:
+python training/train_multicar.py --init-model models/best_agent.pt --total-samples 1500000 \
+    --collision-penalty 4 --grid abreast --save-dir models/multicar --log-dir logs/multicar
+
+# Train tiếp từ checkpoint đa tác tử:
+python training/train_multicar.py --resume models/multicar_best.pt --total-samples 1000000 \
+    --collision-penalty 4 --save-dir models/multicar_next --log-dir logs/multicar_next
+```
+* Lưu snapshot `agent_{N}k.pt` mỗi `--milestone-freq` mẫu (mặc định 250k), cùng `best_agent.pt` / `last_agent.pt`.
+* ⚠️ Eval khi train chỉ dùng 1 cuộc đua nên nhiễu: nên chọn model cuối bằng cách đánh giá nhiều cuộc đua trên các snapshot thay vì tin vào `best_agent.pt`.
+
 ---
 
 ## 📐 5. Khung Lý Thuyết Môn Học Tăng Cường (REL Formulation)
@@ -281,7 +349,15 @@ $$R_t = r_{\text{progress}} + r_{\text{steer\_smooth}} + r_{\text{idle}} + R_{\t
   * Phạt va chạm / 4 bánh ra ngoài: $R_{\text{crash}} = -10.0 - 20.0 \cdot (v/120)^2$.
   * Thưởng về đích: $R_{\text{finish}} = +100.0 + \max(0, (130.0 - T_{\text{lap}}) \times 1.5)$.
 
-### 5. Thuật Toán PPO Continuous & Critic Loss Mở Rộng
+* **Áp lực thời gian** (bản train cuối): $r_{\text{time}} = -0.01$ mỗi bước 0.1s, tổng phạt tỉ lệ thuận với lap time.
+
+### 5. Mở Rộng Đa Tác Tử (6 xe, $\mathcal{S} \in \mathbb{R}^{65}$)
+* **Quan sát**: 40D gốc + 5 đối thủ gần nhất trong bán kính 60m × 5 đặc trưng $[\Delta x, \Delta y, \Delta v_x, \Delta v_y, \mathbb{I}_{\text{có xe}}]$ trong hệ trục của xe. Chỉ chứa trạng thái vật lý quan sát được, không có racing line (Zero Data Leakage).
+* **Hàm thưởng**: giữ nguyên hàm thưởng 1 xe và thêm phạt va chạm theo sự kiện:
+  $$r_{\text{contact}} = \begin{cases} -c & \text{bắt đầu chạm xe khác} \\ -0.1\,c & \text{mỗi bước vẫn còn dính nhau} \end{cases}$$
+  với $c$ = `--collision-penalty` (bản cuối dùng $c = 4$).
+
+### 6. Thuật Toán PPO Continuous & Critic Loss Mở Rộng
 * **Clipped Surrogate Policy Loss**:
   $$L^{\text{CLIP}}(\theta) = -\hat{\mathbb{E}}_t \left[ \min\left( \rho_t(\theta)\hat{A}_t, \text{clip}(\rho_t(\theta), 1-\epsilon, 1+\epsilon)\hat{A}_t \right) \right]$$
 * **Unclipped Critic MSE Loss**:
@@ -291,7 +367,42 @@ $$R_t = r_{\text{progress}} + r_{\text{steer\_smooth}} + r_{\text{idle}} + R_{\t
 
 ## 🏁 6. Kết Quả Huấn Luyện Thực Nghiệm & Đối Chiếu Benchmark
 
-| Chỉ Số Đánh Giá | Baseline Cũ (LiDAR 259D + Single Pedal) | AI Agent PPO (`best_agent.pt`) | Tác Tử Đối Chứng Tối Ưu (`OptimalRacingAgent`) | Giới Hạn Cận Trên Vật Lý Lý Thuyết |
+### 6.1. Đua 1 xe — model cuối `models/best_agent.pt`
+Checkpoint `clean_123k_141s` của lượt `run_v8b` (time penalty 0.01, đánh giá 6 episode tất định, `logs/run_v8b/checkpoint_eval.json`):
+
+| Chỉ số | Giá trị |
+| :--- | :---: |
+| Tỷ lệ hoàn thành vòng sạch | 5/6 (83%) |
+| Lap nhanh nhất | 139.5 s |
+| Flying lap trung bình (vòng 2) | 142.4 s |
+
+### 6.2. Đua 6 xe — model cuối `models/multicar_best.pt`
+Quá trình train (tổng ~6.8M mẫu, cộng dồn mọi xe):
+
+| Lượt | Mẫu | Lưới xuất phát | Phạt va chạm | Khởi tạo từ |
+| :--- | :---: | :---: | :---: | :--- |
+| `multicar_v1` | ~4.4M | so le | 2 | model 1 xe (40D → 65D) |
+| `multicar_v2` | 1M | ngang hàng | 4 | `multicar_v1/best_agent` |
+| `multicar_v3` | ~1.41M | ngang hàng | 4 | `multicar_v2/agent_1000k` |
+
+Đánh giá cuối: mỗi model chạy 6 cuộc đua (36 lượt xe), lưới ngang hàng, AI lái ngẫu nhiên (stochastic):
+
+| Model | Về đích | Văng | Kẹt / dừng | Chạm mỗi cuộc đua | Quãng đường | Lap TB |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| v1 best | 14/36 | 19 | 3 | 128 | 48.0% | 151.2 s |
+| v2 1000k | 15/36 | 16 | 5 | 71 | 61.4% | 153.2 s |
+| v3 1000k | 10/36 | 23 | 3 | 65 | 55.7% | 147.5 s |
+| v3 best (1.1M) | 20/36 | 14 | 2 | 72 | 74.7% | 153.9 s |
+| **v3 1250k → `multicar_best.pt`** | **28/36** | **8** | **0** | 43 | **84.8%** | 154.7 s |
+| v3 last (~1.41M) | 22/36 | 14 | 0 | 29 | 71.6% | 145.4 s |
+
+* Đổi sang **lưới ngang hàng + tăng phạt va chạm** giúp giảm va chạm ~3 lần và tăng gấp đôi số xe về đích so với v1.
+* **Hạn chế**: AI đua trong nhóm thận trọng hơn, chậm hơn ~12s/vòng so với model 1 xe; kết quả giữa các snapshot dao động mạnh nên cần đánh giá nhiều cuộc đua để chọn model. Demo dùng chính sách tất định nên từng cuộc đua có thể khác bảng trên.
+
+### 6.3. Đối chiếu benchmark (phiên bản trước)
+Bảng dưới đây là kết quả của phiên bản PPO trước (hàm thưởng không có time penalty), giữ lại để tham khảo cùng tác tử đối chứng và cận trên lý thuyết:
+
+| Chỉ Số Đánh Giá | Baseline Cũ (LiDAR 259D + Single Pedal) | AI Agent PPO (phiên bản trước) | Tác Tử Đối Chứng Tối Ưu (`OptimalRacingAgent`) | Giới Hạn Cận Trên Vật Lý Lý Thuyết |
 | :--- | :---: | :---: | :---: | :---: |
 | **Vận tốc cao nhất ($V_{\max}$)** | $42.1\text{ km/h}$ | **$118.4\text{ km/h}$** | **$120.0\text{ km/h}$** | $120.0\text{ km/h}$ (Trần GT3) |
 | **Vận tốc trung bình ($V_{\text{avg}}$)** | $33.5\text{ km/h}$ | **$108.2\text{ km/h}$** | **$102.1\text{ km/h}$** | $103.5\text{ km/h}$ |
@@ -305,4 +416,4 @@ $$R_t = r_{\text{progress}} + r_{\text{steer\_smooth}} + r_{\text{idle}} + R_{\t
 ## 👥 7. Thông Tin Đồ Án
 * **Môn học:** Học Tăng Cường (Reinforcement Learning - REL)
 * **Mã nguồn:** Lưu trữ và quản lý phiên bản trên GitHub.
-* **Tài liệu tham khảo chuyên sâu:** Xem thư mục [`knowledge/`](file:///c:/Users/tunbi/Project/school/REL%20Assignment/knowledge) để xem chi tiết các chứng minh toán học và phân tích động lực học xe đua.
+* **Tài liệu tham khảo chuyên sâu:** Xem thư mục [`knowledge/`](knowledge/) để xem chi tiết các chứng minh toán học và phân tích động lực học xe đua.
