@@ -430,6 +430,85 @@ Khi demo map full, minimap đủ cả vòng nhưng mặt đường 3D chỉ hi�
 
 ---
 
+## F21. P2-line (R14): sạch sớm hơn v2 nhưng chậm dần; fine-tune r_racingline 200k
+
+### P2-line so với P2-single v2 [Đã kiểm chứng từ log, eval 2 episode mỗi lần]
+| Cửa sổ | P2-line: về đích / sạch 2/2 / lap nhanh nhất | v2: về đích / sạch 2/2 / lap nhanh nhất |
+| :-- | :-- | :-- |
+| 0–0.25M | 2/13 · 0 · 160.2s | 0/13 · 0 · – |
+| 0.5–0.75M | 4/12 · 0 · 142.2s | 1/12 · 0 · 146.3s |
+| 0.75–1.0M | 8/12 · 0 · 138.6s | 3/12 · 0 · 140.4s |
+| 1.0–1.3M | 10/15 · 1 · 146.6s | 11/15 · 0 · 140.4s |
+
+- Eval sạch đầu tiên: **1.147M** (154.0s), so với 2.15M ở v2. Best sạch **153.7s @1.74M** (`models/p2_line/best_agent.pt`). Dừng ở 2.66M.
+- Sau 2.0M: sạch thường xuyên hơn nhưng lap 173–181s, tốc độ TB 144 → 115–120 km/h, lệch v\* 50 → 65 km/h, σ pedal 0.33 → 0.14. **[Suy luận]** Phạt off-track ∝ v² lớn hơn nhiều so với phạt thời gian 0.01/bước, nên khi σ co lại policy hội tụ về kiểu chạy chậm, an toàn.
+- Lệch v\* giảm nhanh ở đầu run (120 → 46 km/h trong 0.14M), lệch line chững ở 3.6–4.5 m: agent dùng v\* làm gợi ý điểm phanh, không bám profile.
+
+### Fine-tune r_racingline (D36) [Đã kiểm chứng, run tạm, đã xóa artifact]
+Từ `p2_line/best_agent.pt` (1.74M), 200k step, `--line-reward-lat 0.03 --line-reward-v 0.02`. Đối chứng: đoạn 1.74–1.94M của run gốc (cùng checkpoint, không r_line).
+
+| | Đối chứng | Fine-tune r_line |
+| :-- | :-- | :-- |
+| Eval về đích | 0/9 | 10/20 |
+| Sạch 1/2 · 2/2 | 0 · 0 | 3 · 0 |
+| Lap trung vị / min | 158.1 / 151.2s | 159.3 / 153.6s |
+| Lệch line | 4.38 m | 3.19 m (nửa sau) |
+| Lệch v\* | 59 km/h | 60 km/h |
+
+- Thành phần lệch line có tác dụng (bám sát hơn ~1.2 m, về đích đều hơn).
+- **Lỗi thiết kế**: thành phần tốc độ `min(1, (Δv/10 m/s)²)` bão hòa vì agent chậm hơn v\* ~17 m/s, nên phạt luôn ở trần −0.02 và không có gradient. Nếu làm lại: `min(4, (Δv/20 m/s)²)` hoặc dạng tuyến tính.
+- 3/3 vòng deterministic vẫn có ra ngoài đường (chủ yếu văng ra ngoài ở cụm s≈515–560 m). Kết luận: **không đủ tốt để đổi hướng**, D36 tạm gác.
+
+---
+
+## F22. Agent có cắt cua qua phần ngoài đường không (chế độ offtrack penalty)
+
+**[Đã kiểm chứng 31/10, 3 vòng deterministic mỗi model, script `cut_check.py` trong scratch]** Với mỗi lần cả 4 bánh rời mặt nhựa: phía trong/ngoài cua, cung tim đường bị bỏ qua so với quãng xe đi thật, thời gian lợi ước tính.
+
+| Model | Số lần ra ngoài | Phía trong cua | Lợi lớn nhất 1 lần | Tổng lợi / 3 vòng |
+| :-- | :-- | :-- | :-- | :-- |
+| v2 best (2.56M) | 5 | 4 | +0.49s (R≈74 m, ra quá mép 6.9 m, bỏ 11.7 m) | +0.55s |
+| v2 3.32M | 14 | 9 (cụm s≈470–830 m) | +0.42s | −1.34s |
+| Line best (1.74M) | 2 | 0 | – | −0.51s |
+| Line last (2.66M) | 6 | 0 | – | −1.85s |
+
+- Nhánh pure có thói quen cắt phía trong cua, nhưng chỉ 1–12 m mỗi lần; **không** có kiểu băng thẳng qua cua chữ U (bị chặn bởi giới hạn 25 m / 50 bước).
+- Theo reward thì cắt cua đang lỗ (ví dụ s=706: phạt off-track ≈ −6.6, mất tiến độ ≈ −2.1, lợi về đích ≈ +0.4, bớt phạt thời gian ≈ +0.3). **[Suy luận]** Đây là lỗi lái thiếu chính xác (vào apex quá sát), không phải khai thác reward.
+- Nhánh line không cắt cua lần nào, chỉ văng ra ngoài.
+- Hạn chế: phần ngoài mặt nhựa của MetaDrive chưa chắc có ma sát thấp hơn, nên cắt cua chỉ bị phạt qua reward, không bị phạt vật lý.
+
+---
+
+## F23. Vì sao bản 111s trông mượt; vì sao ràng buộc vật lý không sửa được bang-bang
+
+### Phong cách lái 111s so với P2 [Đã kiểm chứng 31/10, cùng script với F20, 1 vòng deterministic]
+| | 111s (map half, GT3RaceCar) | P2 v2 best (map full, GT3RealCar) | Ghost half |
+| :-- | :-- | :-- | :-- |
+| Lap / tốc độ TB | 115.1s / 88 km/h | 143.4s / 144 km/h | 119.5s / 84 km/h |
+| a_lat p95 | 0.99 G | 1.65 G (vượt trần bám 1.56) | 0.88 G |
+| Pedal đổi ga↔phanh /100 bước | **4.7** | 20.3 | 0.2 |
+| Lái đổi chiều /100 bước; \|Δlái\| | 60; 0.074 | 74; 0.121 | 16; 0.007 |
+| β p95 / max | 3.5° / 18° | 8.9° / 53° | 2.0° / 3.8° |
+
+- 111s **vẫn đảo lái 60 lần/100 bước**. Nó trông mượt chủ yếu vì chạy chậm, xa giới hạn bám (nhiễu gia tốc ngang ∝ v²·δ), xe understeer do F16, và map nhỏ. Pedal ổn định (4.7) là điểm 111s hơn thật; nguyên nhân chưa kiểm chứng (F14).
+- So với log train: 111s có eval sạch đầu tiên ở 0.73M và 72 eval sạch trong 4M; P1-main (cùng map, đổi 6 biến cùng lúc, F9) sạch đầu tiên ở 1.35M, best 130s.
+
+### Ràng buộc vật lý không sửa được bang-bang [Theo người dùng; commit đã xác nhận tồn tại, chưa đo lại]
+Đã thử: lọc EMA tay lái (`c1904fa`), `ExtendedVehiclePhysics` ở `a79aee7` (cản chà lốp khi đánh lái, góc lái tối đa giảm còn 50% và tốc độ xoay còn 75% ở tốc độ cao, quán tính ga/phanh bậc 1), slew rate 0.18. Kết quả theo người dùng: agent vẫn bang-bang; chỉ phạt `r_steer` trong reward có tác dụng.
+
+**[Suy luận]** Cơ chế:
+- Giới hạn tốc độ xoay hay góc lái chỉ thu hẹp không gian action; agent vẫn đánh kịch biên mới (111s: |Δlái| 0.074 dưới trần 0.18 mà vẫn đảo chiều 60/100).
+- Bộ lọc: obs chứa action bước trước nên agent học cách bù ngược bộ lọc.
+- Lap time gần như không phụ thuộc độ mượt, nên mục tiêu phẳng theo hướng "mượt". Chỉ khi đưa độ mượt vào reward thì mục tiêu mới đổi.
+- Phù hợp với Seyde et al. 2021 (bang-bang tự xuất hiện trong RL liên tục) và CAPS (Mysore et al. 2021, phạt chênh lệch action để có điều khiển mượt). Xem `knowledge/related_work_racing_rl.md` §5.
+
+### Phân biệt bang-bang hợp lý và chattering
+- Bang-bang ở quy mô vài giây (full ga trên đoạn thẳng, phanh mạnh ở vùng phanh) là nghiệm tối ưu thường gặp của bài toán thời gian ngắn nhất và giống tay đua thật. Ghost: 0.5 lần đổi /100 bước.
+- Chattering mỗi 0.2s (P2: 20 lần đổi pedal, 74 lần đảo lái /100 bước) là thứ cần bỏ.
+- Phạt Δ² phân biệt được hai loại nhờ độ lớn: với `--pedal-smooth-coef 0.05`, phanh kiểu tay đua (~20 lần đổi hết cỡ mỗi vòng) mất ~−4/vòng so với ~140 điểm tiến độ; chattering ~290 lần/vòng mất hàng chục điểm. Phạt bình phương còn làm nhả phanh dần rẻ hơn nhả đột ngột (gần kiểu trail braking).
+
+---
+
 ## Tổng hợp insight Phase 1 → quyết định Phase 2
 
 | # | Insight | Áp dụng cho Phase 2 |
@@ -449,6 +528,11 @@ Khi demo map full, minimap đủ cả vòng nhưng mặt đường 3D chỉ hi�
 | I13 | F17: P2-single σ pedal kẹt trần −0.7 suốt run; pedal deterministic giật chu kỳ 2 bước; xe tự giới hạn ~150 km/h trên đoạn thẳng có v* 260; crash ở tốc độ **thấp hơn** v* | Chạy tiếp tới 6M; sau đó fine-tune bằng spawn học từ lỗi (D32, WI-23). Pedal 1 trục và bỏ kết thúc episode để vào hướng phát triển |
 | I14 | Sim không tất định: cùng seed, cùng policy deterministic vẫn crash ở các vị trí khác nhau | Eval cuối dùng 20 episode, báo cáo tỉ lệ vòng sạch và độ lệch chuẩn lap time (D33) |
 | I15 | GT Sophy và Fuchs đều là RL thuần, chỉ dùng hình học đường, không dùng racing line; cả hai không kết thúc episode khi ra ngoài đường và dùng pedal 1 trục | Nhánh PPO thuần là cách làm chuẩn; nhánh PPO + line là biến thể có prior (D30, D31). Xem `knowledge/related_work_racing_rl.md` |
+| I16 | P2-line sạch sớm hơn v2 khoảng 1M step nhưng chậm dần về 175s sau 2M (F21) | Racing line trong obs giúp an toàn, không giúp nhanh; không dùng cho demo (D38) |
+| I17 | r_racingline: thành phần lệch line có tác dụng, thành phần tốc độ bão hòa nên vô hiệu (F21) | D36 tạm gác; công thức sửa ghi ở F21 |
+| I18 | Nhánh pure cắt phía trong cua 1–12 m mỗi lần, lỗ về reward; không có shortcut lớn (F22) | `r_center` (D38) dự kiến giảm thói quen này |
+| I19 | Ràng buộc vật lý (EMA, extended physics, slew rate) không bỏ được bang-bang; chỉ phạt trong reward có tác dụng (F23) | Dùng phạt Δlái² mạnh hơn và phạt Δpedal² kiểu CAPS (D38) |
+| I20 | Giả thuyết early apex: reward tiến độ kết hợp γ 0.99 (tầm nhìn ~10s) làm giảm giá trị lợi ích thoát cua trên đoạn thẳng phía sau [Suy luận, chưa đo] | Hướng phát triển: đo apex sớm/muộn so với ghost; γ 0.995–0.997 hoặc shaping thế năng chuẩn `coef·(γ·s' − s)` |
 
 ---
 

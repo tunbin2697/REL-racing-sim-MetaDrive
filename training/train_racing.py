@@ -72,6 +72,9 @@ def parse_args():
     parser.add_argument("--spawn-mode", type=str, default="grid", choices=["grid", "mistake"], help="Chế độ điểm xuất phát: 'grid' (đứng tại vạch đích) hoặc 'mistake' (học từ lỗi kiểu GT Sophy theo D32)")
     parser.add_argument("--action-mode", type=str, default="split", choices=["split", "combined"], help="Action: 'split' [lái, ga, phanh] (cũ) hoặc 'combined' [lái, pedal] gộp ga/phanh 1 trục như GT Sophy/Fuchs (D35)")
     parser.add_argument("--offtrack-mode", type=str, default="terminate", choices=["terminate", "penalty"], help="Ra ngoài đường: 'terminate' kết thúc episode (cũ) hoặc 'penalty' phạt theo v^2 và chạy tiếp như GT Sophy/Fuchs (D35)")
+    parser.add_argument("--center-coef", type=float, default=0.0, help="Phạt lệch tim đường kiểu bản 111s: -c*(lat/half_width)^2 mỗi bước (mặc định 0.0 = tắt; P2-center dùng 0.03)")
+    parser.add_argument("--line-reward-lat", type=float, default=0.0, help="D36 (chỉ obs-mode line): phạt lệch racing line -c*(lệch/lat_norm)^2 mỗi bước (mặc định 0 = tắt; thử 0.03)")
+    parser.add_argument("--line-reward-v", type=float, default=0.0, help="D36 (chỉ obs-mode line): phạt lệch v* -c*min(1,(lệch/10 m/s)^2) mỗi bước (mặc định 0 = tắt; thử 0.02)")
     
     # Cờ điều khiển lịch trình suy giảm tham số (Schedules) - Mặc định TẮT (giữ nguyên LR và Entropy cố định)
     parser.add_argument("--lr-decay", action="store_true", default=False, help="Bật giảm dần Learning Rate tuyến tính từ --lr về --min-lr (mặc định: TẮT)")
@@ -185,6 +188,9 @@ def main():
         obs_mode=args.obs_mode,
         action_mode=args.action_mode,
         offtrack_mode=args.offtrack_mode,
+        center_coef=args.center_coef,
+        line_lat_coef=args.line_reward_lat,
+        line_v_coef=args.line_reward_v,
     )
 
     obs_shape = env.observation_space.shape
@@ -389,6 +395,10 @@ def main():
         "spawn_mode": args.spawn_mode,
         "action_mode": args.action_mode,
         "offtrack_mode": args.offtrack_mode,
+        "center_coef": args.center_coef,
+        "line_reward_lat": args.line_reward_lat,
+        "line_reward_v": args.line_reward_v,
+        "privileged_reward": bool(args.line_reward_lat > 0 or args.line_reward_v > 0),
         "git_commit": git_commit,
     }
     curriculum: Optional[SpawnCurriculum] = None

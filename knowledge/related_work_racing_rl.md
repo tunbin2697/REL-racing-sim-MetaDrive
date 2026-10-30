@@ -117,3 +117,34 @@
 - Không gọi là "data leakage". Trong ML, data leakage là khi thông tin của tập đánh giá lọt vào lúc train. Ở đây là **thông tin đặc quyền / prior từ tối ưu hóa**, đưa vào có chủ ý và khai báo rõ.
 - Không viết "đội F1 làm như vậy". Đội F1 tối ưu lap time bằng lap-time simulation (tối ưu điều khiển) và simulator có người lái. Các giải xe tự lái thật chủ yếu tính racing line offline rồi dùng MPC bám theo. Hai bài RL nổi tiếng nhất ở trên đều **không** dùng racing line. Nếu muốn dẫn nhánh "RL + racing line" thì đó là một hướng nghiên cứu riêng (ví dụ trajectory-aided learning cho F1TENTH, cần kiểm tra trích dẫn trước khi dùng).
 - Line MAE và Apex Accuracy của nhánh line **không độc lập**, vì agent được nhìn chính racing line đó. So 3 nhánh bằng lap time, completion, crash rate, tỉ lệ vòng sạch.
+
+---
+
+## 5. Paper bổ sung: điều khiển mượt, bang-bang, racing line trong reward (31/10/2026)
+
+### 5.1 Hai bài GT Sophy, Fuchs có lái mượt không, và họ chứng minh điều gì
+- **GT Sophy có bang-bang/giật và tự thừa nhận** [đọc trực tiếp PDF]: mục "Fifth, action frequency" ghi Sophy điều khiển 10 Hz, *"much less frequent than human actions"*; Extended Data Fig. 2b–c đặt tín hiệu lái và ga/phanh của Sophy cạnh Igor Fraga ở cua 20 Sarthe, mô tả tay đua có *"much smoother actions"*, *"smooth, 60-Hz signals"*. Họ không sửa, vì không phải mục tiêu.
+- **Thứ hai bài chứng minh là lap time siêu người**, mốc so là phân phối lap time của người (và với Sophy, thắng đua trực tiếp có chơi đẹp). **Không bài nào so với nghiệm tối ưu toán học**, và không bài nào có chỉ số độ mượt hay "lái đẹp".
+- Thành phần của GT Sophy liên quan tới đua gọn: **phạt trượt lốp** (lốp trượt khác hướng bánh) và phạt ra ngoài đường ∝ v². Dự án chưa dùng phạt trượt lốp; đây là ứng viên nếu demo còn drift.
+- Hệ quả cho dự án: mục tiêu "đua đẹp, giống tay đua" của P2 (D37) là mục tiêu **riêng**, cần chỉ số đo được (F20/F23: số lần đổi pedal, đảo lái, β p95) và có cơ sở từ các bài dưới.
+
+### 5.2 Seyde et al., NeurIPS 2021: "Is Bang-Bang Control All You Need? Solving Continuous Control with Bernoulli Policies"
+- [arXiv 2111.02552](https://arxiv.org/abs/2111.02552) · [NeurIPS](https://papers.neurips.cc/paper_files/paper/2021/file/e46be61f0050f9cc3a98d5d2192cb0eb-Paper.pdf). Mới kiểm qua abstract và trang hội nghị, chưa đọc toàn văn.
+- Thay Gaussian bằng Bernoulli chỉ chọn hai cực mỗi chiều action (bang-bang) mà vẫn đạt kết quả hàng đầu trên nhiều benchmark điều khiển liên tục. Họ liên hệ với bài toán thời gian ngắn nhất, nơi bang-bang thường là nghiệm tối ưu, và lưu ý rằng trên phần cứng thật, chi phí năng lượng và bảo trì khiến bang-bang không chấp nhận được.
+- Dùng trong báo cáo: bang-bang là hiện tượng chung của RL điều khiển liên tục, không phải lỗi riêng của dự án; và nó có cơ sở tối ưu (Pontryagin) ở quy mô vài giây, khác với chattering (F23).
+
+### 5.3 Mysore, Mabsout, Mancuso, Saenko, ICRA 2021: "Regularizing Action Policies for Smooth Control with Reinforcement Learning" (CAPS)
+- [arXiv 2012.06644](https://arxiv.org/abs/2012.06644) · [trang dự án](https://ai.bu.edu/caps/index.html) · DOI 10.1109/ICRA48506.2021.9561138. Mới kiểm qua abstract và trang dự án.
+- Thêm hai số hạng điều chuẩn: **mượt theo thời gian** (action liên tiếp gần nhau) và **mượt theo không gian** (state gần nhau cho action gần nhau). Trên quadrotor thật: tín hiệu mượt hơn nhiều và tiết kiệm năng lượng đáng kể (số % cụ thể cần đọc lại bài trước khi trích).
+- Dùng trong báo cáo: cơ sở cho phạt Δlái² và Δpedal² (D38), với lý do giảm hao mòn cơ cấu chấp hành, đúng như người dùng nêu. Phạt của dự án là bản đơn giản của số hạng thời gian, đặt trong reward thay vì trong loss.
+
+### 5.4 Evans, Engelbrecht, Jordaan, IEEE RA-L 2023: "High-speed Autonomous Racing using Trajectory-aided Deep Reinforcement Learning" (TAL)
+- [arXiv 2306.07003](https://arxiv.org/abs/2306.07003). Mới kiểm qua abstract; **chưa xác nhận công thức reward cụ thể**.
+- Đưa racing line tối ưu vào công thức học của DRL (TD3, F1TENTH sim, 4 map), agent chỉ nhận LiDAR. Kết quả: tỉ lệ hoàn thành vòng ở tốc độ cao cao hơn rõ so với baseline; agent học được profile tốc độ khả thi và bám gần racing line.
+- Dùng trong báo cáo: chứng minh "RL + racing line" là một hướng nghiên cứu có thật, không chỉ GT Sophy/Fuchs (RL thuần). Liên hệ với nhánh P2-line và thử nghiệm r_racingline (D36, F21).
+
+### 5.5 Thực tế ngoài học thuật (để viết đúng, tránh nói quá)
+- Đội F1: tối ưu lap time bằng lap-time simulation (tối ưu điều khiển) và simulator có người lái; không có RL lái xe đua.
+- Đua xe tự lái (Indy Autonomous Challenge, A2RL, F1TENTH): thường tính racing line offline rồi bám bằng MPC/pure pursuit.
+- AI trong game đua: thường bám spline racing line cộng profile tốc độ viết sẵn.
+- Vậy câu đúng là: GT Sophy và Fuchs **cố ý** không dùng racing line vì câu hỏi của họ là RL tự khám phá cách đua; còn dùng racing line là thông lệ trong đua tự lái và có hướng RL riêng (TAL).

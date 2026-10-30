@@ -1,6 +1,7 @@
 # Vấn đề còn mở cần quyết định
 
-> Đi kèm `plan/plan.md` v11.2. Mỗi mục ghi rõ loại:
+> Đi kèm `plan/plan.md` v12.0. **31/10**: P2 chuyển sang mục tiêu demo (D37–D39); P9, P5, P6, R9, R10, R13, R14 đóng hoặc hết hiệu lực (ghi ngay tại mục).
+> Bản gốc đi kèm v11.2. Mỗi mục ghi rõ loại:
 > - **[Chốt ngay]**: có thể quyết định ngay bây giờ.
 > - **[Chờ kết quả]**: cần có output trước rồi mới quyết định.
 >
@@ -56,7 +57,9 @@ Phương án cắt giảm nếu trễ, theo thứ tự cắt:
 - Load checkpoint lệch dim thì báo lỗi rõ ràng (D26).
 - Chuẩn hóa obs map lớn theo nguyên tắc giữ dải giá trị (D23).
 
-### P9. Lịch máy cho D2 tối → D4 sau khi mở lại ablation (D30)
+### P9. Lịch máy cho D2 tối → D4 sau khi mở lại ablation (D30) — [HẾT HIỆU LỰC 31/10]
+> Đã đóng: ablation dừng (D37). P2-single v2 dừng ở 3.32M, P2-line dừng ở 2.66M. Lịch máy còn lại: WI-25 (P2-demo-single, máy của người dùng) và WI-26 (multicar, máy của team).
+
 Máy chỉ chạy thoải mái 1 run train mỗi lúc (khoảng 220 FPS ở map full). Các việc cần máy:
 
 | Việc | Thời lượng ước tính | Phụ thuộc |
@@ -77,13 +80,13 @@ Tổng lớn hơn quỹ máy còn lại trước buổi bảo vệ.
 - **Phương án khác**: chạy song song P2-line và P2-multi. Trước khi chọn, phải đo FPS khi chạy 2 tiến trình cùng lúc. Nếu FPS mỗi run giảm dưới ~150 thì không lợi.
 - **Mặc định nếu không chốt**: theo đề xuất của trợ lý.
 
-### P5. Pool đối thủ: tỉ lệ learner/snapshot và tần suất lưu
+### P5. Pool đối thủ: tỉ lệ learner/snapshot và tần suất lưu — [HẾT HIỆU LỰC 31/10: P2-multi trên map 1:1 chuyển sang hướng phát triển, D39]
 - **Đề xuất**: 3 learner + 3 snapshot; lưu snapshot mỗi 250k mẫu; pool tối đa 5.
 - Trước khi pool có snapshot đầu tiên, các xe snapshot dùng chính checkpoint warm-start (P2-single best).
 
 **Mặc định**: làm theo đề xuất.
 
-### P6. Số vòng của episode
+### P6. Số vòng của episode — [P2-multi: theo cấu hình sẵn có của nhánh team, D39]
 - P2-single: plan để 1 vòng vì lúc đầu agent còn chạy chậm.
 - P2-multi: chưa chốt.
   - 1 vòng: cho mẫu nhanh hơn.
@@ -102,12 +105,13 @@ Tổng lớn hơn quỹ máy còn lại trước buổi bảo vệ.
 | R4 | Mốc lookahead của map lớn | Quãng phanh đo từ 260 km/h | Chiều D2 |
 | R5 | Có chạy P2-single ở Đêm 2 không | WI-10 đến WI-13 qua smoke test, R1 khỏe, map nhỏ tính lại ra đúng 112.6s | Tối D2 |
 | R8 | Ghost trên map lớn có dùng được không | `OptimalRacingAgent` chạy hết 1 vòng | D2–D3 |
-| R9 | P2-multi warm-start từ checkpoint nào | Eval P2-single | Sáng D3 |
-| R10 | `--total-samples` của P2-multi | FPS lúc smoke test 6 xe | D3 |
-| R11 | Model nào dùng để demo | Toàn bộ eval | Sáng D4 |
+| ~~R9~~ | P2-multi warm-start từ checkpoint nào | – | ✅ D39: `multicar_best.pt` của team |
+| ~~R10~~ | `--total-samples` của P2-multi | – | ✅ D39/WI-26: khoảng 1M samples mỗi bộ hệ số |
+| R11 | Model nào dùng để demo | Demo bằng mắt + WI-27 theo tiêu chí WI-25 | Sau WI-25 / WI-26. Dự phòng: v2 best và `multicar_best.pt` |
 | R12 | P2-single có cần can thiệp giữa chừng không (σ kẹt trần 0.5 hoặc σ lái về sàn sớm; tỉ lệ phanh thấp kéo dài như I6) | σ từng chiều + drive trace ở mốc 2M | ✅ Đã kiểm tra ở 3.5M (F17): σ pedal kẹt trần, pedal giật. Người dùng chọn **chạy tiếp không đổi** tới 6M; can thiệp bằng WI-23 (spawn), không đổi trần σ |
-| R13 | Nhánh line có thật sự dùng feature line không | Sai lệch v* và lệch line trung bình giảm dần theo eval (WI-22) | D3 |
-| R14 | Spawn mistake có làm hết crash lặp lại không | Phân bố vị trí crash trước và sau WI-23 (WI-21, bin 50 m) | D3 |
+| ~~R13~~ | Nhánh line có thật sự dùng feature line không | – | ✅ Có, một phần (F21): lệch v\* giảm 120 → 46 km/h đầu run rồi chững; lệch line chững ở 3.6–4.5 m |
+| ~~R14~~ | Spawn mistake có làm hết crash lặp lại không | – | ➡ Hết hiệu lực: spawn mistake dùng từ đầu (D35), WI-23 bỏ |
+| R15 | Hệ số phạt mượt D38 có làm xe rụt rè không | WI-25 bước 1 (200k): lap, vòng sạch, chỉ số WI-27 | Ngay sau WI-24 |
 
 ---
 

@@ -113,6 +113,9 @@ class MetaRacingEnv(gym.Env):
         obs_mode: str = "pure",
         action_mode: str = "split",
         offtrack_mode: str = "terminate",
+        center_coef: float = 0.0,
+        line_lat_coef: float = 0.0,
+        line_v_coef: float = 0.0,
         **kwargs,
     ):
         super().__init__()
@@ -137,6 +140,15 @@ class MetaRacingEnv(gym.Env):
         if self.offtrack_mode not in ("terminate", "penalty"):
             raise ValueError(f"offtrack_mode không hợp lệ: '{self.offtrack_mode}'. Chỉ hỗ trợ 'terminate' hoặc 'penalty'.")
         
+        # Phạt lệch tim đường kiểu bản 111s: r_center = -center_coef * (lat / half_width)^2 (0.0 = tắt, mặc định)
+        self.center_coef = float(center_coef)
+        # D36: thưởng bám racing line (thông tin đặc quyền trong REWARD), chỉ cho phép ở obs_mode='line'
+        #   r_line = -line_lat_coef * (lệch line / lat_norm)^2 - line_v_coef * min(1, (lệch v* / 10 m/s)^2)
+        self.line_lat_coef = float(line_lat_coef)
+        self.line_v_coef = float(line_v_coef)
+        if (self.line_lat_coef > 0.0 or self.line_v_coef > 0.0) and self.obs_mode != "line":
+            raise ValueError("D36: r_line chỉ được bật ở obs_mode='line' (nhánh đặc quyền), không dùng cho nhánh pure.")
+
         self.use_render = use_render
         self.window_size = window_size
         self.max_laps = int(config.get("max_laps", max_laps)) if isinstance(config, dict) else int(max_laps)
@@ -739,8 +751,15 @@ class MetaRacingEnv(gym.Env):
         # b. Phạt rung lắc đánh lái (Steering Smoothness Regularization từ feature/clean-111s-optimal-ghost)
         r_steer_smooth = -0.10 * float(delta_steer ** 2)
 
-        # c. Bỏ phạt lệch tim đường để xe tự do mở góc cua Out-In-Out và chém Apex
-        r_center = 0.0
+        # c. Phạt lệch tim đường kiểu bản 111s (chỉ bật khi center_coef > 0); obs[9] = lat_offset / lat_norm, lat_norm = half_width
+        r_center = -self.center_coef * float(obs[9] ** 2) if self.center_coef > 0.0 else 0.0
+
+        # c2. D36: thưởng bám racing line, đọc từ 2 chiều đầu của khối line obs (obs[35] = lệch line / lat_norm, obs[36] = lệch v* / v_norm)
+        r_line = 0.0
+        if self.line_lat_coef > 0.0 or self.line_v_coef > 0.0:
+            line_lat_err = float(obs[35])
+            line_v_err_ms = float(obs[36]) * float(self.preset.v_norm)
+            r_line = -self.line_lat_coef * line_lat_err ** 2 - self.line_v_coef * min(1.0, (line_v_err_ms / 10.0) ** 2)
 
         # d. Phạt đứng yên / quay mòng mòng tại chỗ (< 10 km/h)
         r_idle = -0.15 if speed_km_h < 10.0 else 0.0
@@ -749,7 +768,7 @@ class MetaRacingEnv(gym.Env):
         r_time = -self.time_penalty
         
         # Hàm thưởng vi mô thuần túy Markov:
-        micro_reward = r_progress + r_steer_smooth + r_idle + r_time + r_offtrack
+        micro_reward = r_progress + r_steer_smooth + r_center + r_line + r_idle + r_time + r_offtrack
         macro_reward = 0.0
         
         self.last_action = np.array(action, dtype=np.float32)
@@ -842,7 +861,8 @@ class MetaRacingEnv(gym.Env):
         info["macro_reward"] = float(macro_reward)
         info["r_progress"] = float(r_progress)
         info["r_steer_smooth"] = float(r_steer_smooth)
-        info["r_center"] = 0.0
+        info["r_center"] = float(r_center)
+        info["r_line"] = float(r_line)
         info["r_idle"] = float(r_idle)
         info["r_time"] = float(r_time)
         info["throttle"] = float(throttle)
