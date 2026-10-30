@@ -162,12 +162,12 @@ Nguồn: `game_env/benchmark.py` (commit `0180988`), T* = 112.6s, `profile_versi
 | P1C | Đóng Phase 1: eval, drive trace, biểu đồ | ⏳ Làm được ngay |
 | 10–13 | Map preset, `GT3RealCar`, obs/reward theo preset, benchmark hai map + ghost, D19 | ✅ Xong. R8 đạt: ghost map full 128.6s / flying 124.9s (T* 124.03s) |
 | 12b | Sửa render map full + HUD demo | ✅ Trợ lý đã sửa (chưa commit): `map_region_size` 2048 qua config env (F18); HUD tách tốc độ main/ghost và completion vòng/lượt (F19) |
-| 14 | P2-single (= nhánh PPO thuần của D30) | ▶ Đang train, resume tại 4.04M, chạy tới 6M. Chẩn đoán giữa chừng ở F17 |
+| 14 | P2-single (= nhánh PPO thuần của D30) | ⏸ Dừng ở 4.5M (commit `11807e4`), cần resume tới 6M. Chẩn đoán giữa chừng ở F17 |
 | 15 | Port multicar | ⏳ D3, agent code làm → trợ lý review. **Ưu tiên thấp hơn WI-19 → WI-22** (P9) |
 | 16 | P2-multi | ⏳ Tùy lịch máy (P9) |
-| 19 | Obs racing line (`--obs-mode line`) + metadata checkpoint (D30, D31, D34) | ⏳ Agent code làm ngay → trợ lý review |
-| 20 | Spawn học từ lỗi (`--spawn-mode mistake`, D32) | ⏳ Agent code làm ngay → trợ lý review |
-| 21 | Eval mở rộng + sửa FPS sau resume (D33) | ⏳ Agent code làm ngay → trợ lý review |
+| 19 | Obs racing line (`--obs-mode line`) + metadata checkpoint (D30, D31, D34) | ✅ Code xong, trợ lý review 30/10: smoke qua (pure khớp bit-for-bit, dựng lại line sai số 0.0001 m, nạp nhầm dim báo lỗi rõ). Obs line tốn thêm ~6% thời gian mỗi bước |
+| 20 | Spawn học từ lỗi (`--spawn-mode mistake`, D32) | ✅ Code xong, trợ lý review 30/10: snapshot đặt đúng vị trí/hướng/tốc độ (sai số 0), segment +50 không tính finish, curriculum → reset chạy thông. Smoke train 4096 bước (`line` + `mistake`) chạy thông, metadata đúng |
+| 21 | Eval mở rộng + sửa FPS sau resume (D33) | ✅ Code xong; trợ lý sửa 2 lỗi trong `plot_eval_report.py` (`env.last_long`, `bench.s_grid` không tồn tại; sai đường dẫn npz) và thêm `evaluate.py --agent optimal` cho nhánh ghost. Đã chạy thử cả 3 biểu đồ |
 | 22 | P2-line: train nhánh PPO + line 6M | ⏳ Sau khi WI-19 qua review và smoke |
 | 23 | Fine-tune P2-single với spawn mistake (D22 + D32) | ⏳ Sau khi P2-single đạt 6M và WI-20 qua review |
 | 17 | Báo cáo | Làm liên tục |
@@ -442,7 +442,19 @@ python training/train_multicar.py --total-samples <R10> `
   1. histogram lap time sạch của 3 nhánh;
   2. cột tỉ lệ vòng sạch theo mức nhiễu và mức trễ;
   3. speed trace theo s của từng nhánh chồng lên ghost, kèm cột Δt theo sector (có thể tái dùng `scripts/drive_trace.py`).
-- [ ] **FPS sau resume**: đổi thành `fps = (global_step - step_at_start) / elapsed`, với `step_at_start` là `global_step` lúc bắt đầu vòng lặp train. Hiện tại sau resume script in ~4600 thay vì ~220.
+- [x] **FPS sau resume**: đổi thành `fps = (global_step - step_at_start) / elapsed`, với `step_at_start` là `global_step` lúc bắt đầu vòng lặp train. Hiện tại sau resume script in ~4600 thay vì ~220.
+- [x] **`evaluate.py --agent optimal`** (trợ lý thêm): đánh giá ghost qua cùng `RacingEvaluator`, để nhánh 1 có cùng metric với hai nhánh PPO. Thử 2 episode: 128.60s, sạch 100%.
+- **Bộ lệnh eval cuối** (tên file đúng theo `plot_eval_report.py`; `--laps 1` vì cả hai nhánh train với `--max-laps 1`):
+  ```powershell
+  # Nhánh 1: ghost
+  python training/evaluate.py --agent optimal --map silverstone_full --vehicle gt3_real --laps 1 --episodes 20 --save-json logs/eval/eval_optimal_clean.json
+  # Nhánh 2 và 3: lặp cho {pure: models/p2_single/<ckpt>, line: models/p2_line/<ckpt>}
+  python training/evaluate.py --model <ckpt> --map silverstone_full --vehicle gt3_real --laps 1 --episodes 20 --save-json logs/eval/eval_<b>_clean.json
+  python training/evaluate.py --model <ckpt> ... --obs-noise 0.01 --save-json logs/eval/eval_<b>_noise001.json   # tương tự 0.02 -> noise002, 0.05 -> noise005
+  python training/evaluate.py --model <ckpt> ... --action-delay 1 --save-json logs/eval/eval_<b>_delay1.json     # tương tự 2 -> delay2
+  python scripts/plot_eval_report.py --eval-dir logs/eval --out-dir plots/p2 --pure-model <ckpt pure> --line-model <ckpt line>
+  ```
+  Checkpoint P2-single trước `11807e4` không có metadata, nên phải truyền `--map`/`--vehicle` như trên. Mỗi file 20 episode mất khoảng 1–2 phút.
 - **Lý luận**: sim không tất định (cùng seed, chế độ deterministic vẫn crash ở 376 m, 1945 m, 2092 m tùy lần), nên 5 episode chỉ là một mẫu nhiễu. Độ ổn định, độ bền và speed trace là các phép đo GT Sophy/Fuchs dùng; chỉ cần eval, không cần train lại.
 
 ### WI-22 · P2-line: train nhánh PPO + line 6M

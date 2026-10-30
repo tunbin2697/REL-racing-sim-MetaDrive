@@ -22,6 +22,7 @@ from game_env.telemetry import TelemetryTracker
 from game_env.vehicle import BaseRaceVehicle, GT3RaceCar, DefaultCivilianSedan, GT3RealCar
 from game_env.benchmark import RacingBenchmarkEngine
 from game_env.track_presets import get_track_preset, TrackPreset
+from game_env.racing_line_obs import RacingLineObsEncoder
 from typing import Optional, Dict
 
 
@@ -101,6 +102,7 @@ class MetaRacingEnv(gym.Env):
         max_laps: int = 2,
         time_penalty: float = 0.0,
         finish_bonus: str = "exp",
+        obs_mode: str = "pure",
         **kwargs,
     ):
         super().__init__()
@@ -112,6 +114,9 @@ class MetaRacingEnv(gym.Env):
             map_type = kwargs["map_config"]
         self.map_type = map_type
         self.preset: TrackPreset = get_track_preset(self.map_type)
+        self.obs_mode = str(config.get("obs_mode", obs_mode)).strip().lower() if isinstance(config, dict) and "obs_mode" in config else str(obs_mode).strip().lower()
+        if self.obs_mode not in ("pure", "line"):
+            raise ValueError(f"obs_mode không hợp lệ: '{self.obs_mode}'. Chỉ hỗ trợ 'pure' hoặc 'line'.")
         
         self.use_render = use_render
         self.window_size = window_size
@@ -131,6 +136,7 @@ class MetaRacingEnv(gym.Env):
         self.best_lap_time = float("inf")
         self.total_finishes = 0
         self._benchmark_engine: Optional[RacingBenchmarkEngine] = None
+        self._line_obs_encoder: Optional[RacingLineObsEncoder] = None
         
         # Cấu hình MetaDrive engine (Tắt 240 tia LiDAR chết để tăng tốc độ mô phỏng)
         self.config = {
@@ -178,8 +184,8 @@ class MetaRacingEnv(gym.Env):
         
         self.env = SingleRacingMetaDrive(self.config)
         
-        # 40 chiều Compact Racing State (16 Ego Kinematics/IMU/Controls + 24 Centerline Lookahead)
-        self.obs_dim = 35
+        # Không gian quan sát: 35D (pure) hoặc 47D (line = 35D + 12D racing line & v*)
+        self.obs_dim = 47 if self.obs_mode == "line" else 35
         self.observation_space = spaces.Box(-np.inf, np.inf, shape=(self.obs_dim,), dtype=np.float32)
         # 3 chiều Continuous Racing Action: [steer, throttle, brake]
         # steer: [-1, 1], throttle: [-1, 1] -> [0, 1], brake: [-1, 1] -> [0, 1]
@@ -211,6 +217,8 @@ class MetaRacingEnv(gym.Env):
         self.last_crash_history = []
         self.stagnant_steps = 0
         self.is_flying_start = False
+        self.is_segment_start = False
+        self.current_start_mode = "standing"
 
     def _init_circuit_polyline(self):
         """Khởi tạo mảng tọa độ tim đường đua (Dense Centerline Polyline) để tính toán nhanh trong O(1)"""
@@ -403,7 +411,33 @@ class MetaRacingEnv(gym.Env):
             ])
             
         obs = np.array(ego_state + track_info + lookahead_features, dtype=np.float32)
+        if self.obs_mode == "line":
+            encoder = self.get_line_obs_encoder()
+            line_feats = encoder.features(
+                idx=idx,
+                ego_lat=lat_offset,
+                speed_ms=speed_m_s,
+                current_s=current_s,
+            )
+            obs = np.concatenate([obs, line_feats]).astype(np.float32)
         return obs
+
+    def get_line_obs_encoder(self) -> RacingLineObsEncoder:
+        """Khởi tạo lười (lazy init) và trả về bộ mã hóa RacingLineObsEncoder cho nhánh '--obs-mode line'"""
+        if self._line_obs_encoder is None:
+            if not self.circuit_initialized or self.num_track_points <= 1:
+                self._init_circuit_polyline()
+            bench = self.get_benchmark_engine()
+            self._line_obs_encoder = RacingLineObsEncoder(
+                benchmark_engine=bench,
+                track_xy=self.track_xy,
+                track_theta=self.track_theta,
+                track_s=self.track_s,
+                lat_norm=self.preset.lat_norm,
+                v_norm=self.preset.v_norm,
+                lookahead_m=self.preset.lookahead_m,
+            )
+        return self._line_obs_encoder
 
     def reset(self, *, seed=None, options=None):
         if seed is not None:
@@ -413,6 +447,9 @@ class MetaRacingEnv(gym.Env):
             
         if not self.circuit_initialized:
             self._init_circuit_polyline()
+
+        if self.obs_mode == "line" and self._line_obs_encoder is None:
+            self.get_line_obs_encoder()
             
         self.current_step = 0
         self.last_action = np.zeros(3, dtype=np.float32)
@@ -430,30 +467,52 @@ class MetaRacingEnv(gym.Env):
         assert vehicle is not None, "Vehicle agent was not properly spawned in MetaDrive"
         self.car.attach_agent(vehicle)
         
-        # Xác định chế độ xuất phát:
-        # Chuẩn hóa thể thức đua F1 2 vòng (Multi-lap Racing):
-        # - Vòng 1 luôn là Standing Start từ 0 km/h tại Grid Slot P1 (x = 60.0m, y = 2.25m).
-        # - Vòng 2 là Flying Lap tự nhiên khi xe cán qua vạch đích của Vòng 1 ở vận tốc thật.
-        # - Chỉ bật flying nếu caller chủ động truyền options={"start_mode": "flying"} (ví dụ test riêng).
+        # Xác định chế độ xuất phát (WI-20 / D32):
+        # - 'standing': xuất phát đứng tại Grid Slot P1 (mặc định).
+        # - 'flying': xuất phát bay 30 m/s tại Grid Slot P1 (chỉ dùng khi test riêng).
+        # - 'snapshot': đặt lại pos, heading, vel từ trạng thái trước khi mất lái của chính agent.
+        # - 'random_s': đặt xe đứng yên trên tim đường tại tọa độ Frenet s ngẫu nhiên.
         start_mode = "standing"
         if options and "start_mode" in options:
             start_mode = str(options["start_mode"]).lower()
 
+        self.current_start_mode = start_mode
         self.is_flying_start = bool(start_mode == "flying")
+        self.is_segment_start = bool(start_mode in ("snapshot", "random_s"))
 
-        # Đặt xe vào vị trí xuất phát Grid Slot P1 trên Hamilton Straight
-        vehicle.set_position([self.preset.grid_x, self.preset.center_lat])
-        if self.is_flying_start:
-            vehicle.set_velocity([30.0, 0.0])  # 30 m/s = 108 km/h đà bay (chỉ khi caller yêu cầu rõ)
+        if start_mode == "snapshot" and options is not None:
+            snap_pos = options.get("pos", [self.preset.grid_x, self.preset.center_lat])
+            snap_heading = float(options.get("heading", 0.0))
+            snap_vel = options.get("vel", [0.0, 0.0])
+            vehicle.set_position([float(snap_pos[0]), float(snap_pos[1])])
+            vehicle.set_heading_theta(snap_heading)
+            vehicle.set_velocity([float(snap_vel[0]), float(snap_vel[1])])
+        elif start_mode == "random_s" and options is not None:
+            target_s = float(options.get("s", 0.0)) % self.circuit_length
+            r_idx = int(np.searchsorted(self.track_s, target_s)) % self.num_track_points
+            r_pos = self.track_xy[r_idx]
+            r_theta = float(self.track_theta[r_idx])
+            vehicle.set_position([float(r_pos[0]), float(r_pos[1])])
+            vehicle.set_heading_theta(r_theta)
+            vehicle.set_velocity([0.0, 0.0])
         else:
-            vehicle.set_velocity([0.0, 0.0])   # Mặc định xuất phát đứng từ 0 km/h
+            # Đặt xe vào vị trí xuất phát Grid Slot P1 trên Hamilton Straight (giữ nguyên bit-by-bit hành vi gốc)
+            vehicle.set_position([self.preset.grid_x, self.preset.center_lat])
+            if self.is_flying_start:
+                vehicle.set_velocity([30.0, 0.0])  # 30 m/s = 108 km/h đà bay (chỉ khi caller yêu cầu rõ)
+            else:
+                vehicle.set_velocity([0.0, 0.0])   # Mặc định xuất phát đứng từ 0 km/h
 
         if hasattr(vehicle, "navigation") and vehicle.navigation is not None:
             vehicle.navigation.reset(vehicle)
         self.last_pos = np.array(vehicle.position[:2], dtype=np.float32)
             
-        # Lấy Frenet s ban đầu (tại grid_x, s sẽ là 0.0m)
-        _, current_s = self._get_track_s(self.car.position)
+        # Lấy Frenet s ban đầu (Lưu ý 2: với snapshot/random_s phải cập nhật ngay current_track_idx không có hint)
+        if self.is_segment_start:
+            idx_init, current_s = self._get_track_s(self.car.position, hint_idx=None)
+            self.current_track_idx = idx_init
+        else:
+            _, current_s = self._get_track_s(self.car.position)
         self.last_s = current_s
         self.telemetry.cumulative_distance = current_s
         
@@ -472,8 +531,9 @@ class MetaRacingEnv(gym.Env):
         info["delta_color"] = "gray"
         info["track_s"] = current_s
         info["mean_speed_km_h"] = 0.0
-        info["start_mode"] = "flying" if self.is_flying_start else "standing"
+        info["start_mode"] = start_mode
         info["is_flying_start"] = bool(self.is_flying_start)
+        info["is_segment_start"] = bool(self.is_segment_start)
         return obs, info
 
     def check_track_limits_and_apply_runoff(self):
@@ -676,44 +736,53 @@ class MetaRacingEnv(gym.Env):
             macro_reward = -15.0
             
         elif arrive_dest:
-            self.total_finishes += 1
             self.last_crash_history = []
-            lap_time = float((self.current_step - self.lap_start_step) * self.dt)
-            
-            # Thưởng cán đích cơ bản (50đ) + Thưởng mốc thời gian (Exponential hoặc Cubic) theo preset
-            r_finish = 50.0
-            if self.finish_bonus == "exp":
-                # Dạng hàm mũ: bonus = min(A * exp((T0 - lap_time) / tau), R_max)
-                # Đọc T0 và tau chuẩn hóa từ preset
-                time_bonus = min(150.0, 4.0 * float(np.exp((self.preset.finish_T0 - lap_time) / self.preset.finish_tau)))
-            else:
-                eta = float(np.clip((self.preset.finish_T0 - lap_time) / (0.5 * self.preset.finish_T0), 0.0, 1.0))
-                time_bonus = 100.0 * float(eta ** 3)
-            macro_reward = r_finish + time_bonus
-            
-            if lap_time < self.best_lap_time:
-                self.best_lap_time = lap_time
-                
-            info["lap_completed"] = True
-            info["completed_lap_number"] = int(self.current_lap)
-            info["completed_lap_time"] = float(lap_time)
-            info["lap_time"] = float(lap_time)
-            
-            if self.current_lap >= self.max_laps:
-                self.lap_completed = True
+            if self.is_segment_start:
+                # WI-20 (D32): Episode xuất phát giữa vòng (snapshot / random_s):
+                # Khi cán vạch đích chỉ thưởng +50 (bỏ time bonus), kết thúc với segment_completed,
+                # không đặt lap_completed, không tăng total_finishes, không cập nhật best_lap_time.
+                macro_reward = 50.0
                 terminated = True
-                info["termination_reason"] = "lap_completed"
-                info["arrive_dest"] = True
+                info["termination_reason"] = "segment_completed"
+                info["segment_completed"] = True
             else:
-                # Chuyển sang Lap tiếp theo trong chế độ đua liên tục nhiều lap
-                self.telemetry.last_completed_lap_data = list(self.telemetry.current_lap_data)
-                self.telemetry.reset()
-                self.current_lap += 1
-                self.lap_start_step = self.current_step
-                self.current_track_idx = 0
-                self.last_s = current_s - self.circuit_length
-                if hasattr(vehicle, "navigation") and vehicle.navigation is not None:
-                    vehicle.navigation.reset(vehicle)
+                self.total_finishes += 1
+                lap_time = float((self.current_step - self.lap_start_step) * self.dt)
+                
+                # Thưởng cán đích cơ bản (50đ) + Thưởng mốc thời gian (Exponential hoặc Cubic) theo preset
+                r_finish = 50.0
+                if self.finish_bonus == "exp":
+                    # Dạng hàm mũ: bonus = min(A * exp((T0 - lap_time) / tau), R_max)
+                    # Đọc T0 và tau chuẩn hóa từ preset
+                    time_bonus = min(150.0, 4.0 * float(np.exp((self.preset.finish_T0 - lap_time) / self.preset.finish_tau)))
+                else:
+                    eta = float(np.clip((self.preset.finish_T0 - lap_time) / (0.5 * self.preset.finish_T0), 0.0, 1.0))
+                    time_bonus = 100.0 * float(eta ** 3)
+                macro_reward = r_finish + time_bonus
+                
+                if lap_time < self.best_lap_time:
+                    self.best_lap_time = lap_time
+                    
+                info["lap_completed"] = True
+                info["completed_lap_number"] = int(self.current_lap)
+                info["completed_lap_time"] = float(lap_time)
+                info["lap_time"] = float(lap_time)
+                
+                if self.current_lap >= self.max_laps:
+                    self.lap_completed = True
+                    terminated = True
+                    info["termination_reason"] = "lap_completed"
+                    info["arrive_dest"] = True
+                else:
+                    # Chuyển sang Lap tiếp theo trong chế độ đua liên tục nhiều lap
+                    self.telemetry.last_completed_lap_data = list(self.telemetry.current_lap_data)
+                    self.telemetry.reset()
+                    self.current_lap += 1
+                    self.lap_start_step = self.current_step
+                    self.current_track_idx = 0
+                    self.last_s = current_s - self.circuit_length
+                    if hasattr(vehicle, "navigation") and vehicle.navigation is not None:
+                        vehicle.navigation.reset(vehicle)
                 
         total_reward = micro_reward + macro_reward
         

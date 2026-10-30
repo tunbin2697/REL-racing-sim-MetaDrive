@@ -38,8 +38,9 @@ def parse_args():
     parser.add_argument("--agent", type=str, default="ppo", choices=["ppo", "optimal"], help="Loại tác tử lái chính: 'ppo' (mạng neural PPO) hoặc 'optimal' (tác tử giải tích tối ưu lý thuyết)")
     parser.add_argument("--ghost", action="store_true", help="Bật xe bóng ma đối chứng (Ghost Car) điều khiển bởi OptimalRacingAgent")
     parser.add_argument("--manual", action="store_true", help="Chế độ tự lái bằng bàn phím (W-A-S-D) để so tài trực tiếp với Ghost Car")
-    parser.add_argument("--vehicle", type=str, default="gt3", choices=["gt3", "gt3_real", "sedan"], help="Loại xe biểu diễn ('gt3', 'gt3_real', hoặc 'sedan')")
-    parser.add_argument("--map", type=str, default="silverstone", help="Bản đồ đua ('silverstone', 'silverstone_half', hoặc 'silverstone_full')")
+    parser.add_argument("--vehicle", type=str, default=None, choices=["gt3", "gt3_real", "sedan"], help="Loại xe biểu diễn (mặc định: tự đọc từ checkpoint metadata hoặc 'gt3')")
+    parser.add_argument("--map", type=str, default=None, help="Bản đồ đua (mặc định: tự đọc từ checkpoint metadata hoặc 'silverstone')")
+    parser.add_argument("--obs-mode", type=str, default=None, choices=["pure", "line"], help="Chế độ quan sát (mặc định: tự đọc từ checkpoint metadata hoặc 'pure')")
     parser.add_argument("--traffic", type=float, default=0.0, help="Mật độ chướng ngại vật/xe khác (0.0 - 0.2)")
     parser.add_argument("--seed", type=int, default=42, help="Seed tạo bản đồ")
     parser.add_argument("--laps", type=int, default=2, help="Số vòng đua liên tục mỗi lượt chạy (mặc định 2: Lap 1 Standing Start + Lap 2 Flying Lap)")
@@ -47,13 +48,44 @@ def parse_args():
     parser.add_argument("--hide-line", action="store_true", help="Bắt đầu mô phỏng với Racing Line 3D ẩn (bật lại bằng phím [L])")
     return parser.parse_args()
 
+
+def _resolve_spectate_config(args):
+    """
+    Thứ tự ưu tiên (D34): CLI flag > checkpoint meta > legacy default ('silverstone', 'gt3', 'pure').
+    """
+    use_ckpt = (not args.manual) and (args.agent == "ppo") and os.path.exists(args.model)
+    meta = PPOAgent.peek_meta(args.model) if use_ckpt else {}
+
+    def resolve_field(cli_val, meta_key, legacy_default, label):
+        meta_val = meta.get(meta_key, None)
+        if cli_val is not None:
+            if meta_val is not None and str(cli_val).lower() != str(meta_val).lower():
+                print(
+                    f"⚠️ [CẢNH BÁO METADATA D34] Cờ CLI --{label}='{cli_val}' KHÁC với checkpoint meta "
+                    f"'{meta_key}'='{meta_val}' trong '{args.model}'! Ưu tiên dùng giá trị CLI '{cli_val}'."
+                )
+            return cli_val
+        if meta_val is not None:
+            return meta_val
+        return legacy_default
+
+    resolved_map = resolve_field(args.map, "map", "silverstone", "map")
+    resolved_vehicle = resolve_field(args.vehicle, "vehicle", "gt3", "vehicle")
+    resolved_obs_mode = resolve_field(args.obs_mode, "obs_mode", "pure", "obs-mode")
+    return resolved_map, resolved_vehicle, resolved_obs_mode, meta
+
+
 def main():
     args = parse_args()
-    race_car = get_vehicle(args.vehicle)
+    resolved_map, resolved_vehicle, resolved_obs_mode, ckpt_meta = _resolve_spectate_config(args)
+    race_car = get_vehicle(resolved_vehicle)
     
     print("=" * 75)
     print("🎬 CHẾ ĐỘ XEM BIỂU DIỄN 3D & GHOST CAR RACING (CINEMATIC SPECTATOR)")
     print("=" * 75)
+    if ckpt_meta:
+        print(f"Checkpoint Meta: {ckpt_meta}")
+    print(f"Bản đồ: {resolved_map} | Chế độ quan sát: {resolved_obs_mode}")
     print(f"Xe đua: {race_car.cfg.name} (Brake: {race_car.cfg.max_brake_force}N, Grip: {race_car.cfg.wheel_friction})")
     print(f"Tác tử điều khiển xe chính: {'TỰ LÁI BÀN PHÍM (MANUAL W-A-S-D)' if args.manual else args.agent.upper()}")
     print(f"Xe bóng ma đối chứng (Ghost Car): {'BẬT (OPTIMAL AGENT)' if args.ghost else 'TẮT'}")
@@ -76,10 +108,11 @@ def main():
         use_render=True,
         manual_control=args.manual,
         traffic_density=args.traffic,
-        map_config=args.map,
+        map_config=resolved_map,
         start_seed=args.seed,
         vehicle=race_car,
         max_laps=args.laps,
+        obs_mode=resolved_obs_mode,
     )
 
     # Khởi tạo Tác tử chính
@@ -92,10 +125,10 @@ def main():
             opt_agent = OptimalRacingAgent.from_benchmark(env.get_benchmark_engine(), vehicle_cfg=race_car.cfg, v_norm=float(env.preset.v_norm))
         else:
             obs_shape = env.observation_space.shape
-            state_dim = int(obs_shape[0]) if obs_shape is not None else 40
+            state_dim = int(obs_shape[0]) if obs_shape is not None else 35
             act_shape = env.action_space.shape
             action_dim = int(act_shape[0]) if act_shape is not None else 3
-            ppo_agent = PPOAgent(state_dim=state_dim, action_dim=action_dim)
+            ppo_agent = PPOAgent(state_dim=state_dim, action_dim=action_dim, logstd_max=env.preset.logstd_max)
             if os.path.exists(args.model):
                 print(f">> Đang nạp weights từ: {args.model}")
                 ppo_agent.load(args.model)

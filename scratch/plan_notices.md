@@ -71,3 +71,4 @@ Tuy nhiên, hàm thưởng vi mô (`micro_reward`) chỉ phạt độ giật gó
 - **Khởi tạo hàng đợi `--action-delay k`**: Khi `k > 0`, hàng đợi FIFO cần được làm mới (reset) ở đầu mỗi episode với `k` phần tử hành động trung lập `[0.0, -1.0, -1.0]` (tay lái thẳng, nhả ga, nhả phanh) để độ dài hàng đợi luôn cố định bằng `k` ngay từ bước đầu tiên.
 - **Nhiễu `--obs-noise σ`**: Áp dụng công thức nhân `obs_noisy = obs * (1.0 + rng.normal(0.0, sigma, size=obs.shape))` theo đúng chuẩn Fuchs et al. (2021) thông qua wrapper độc lập trong `evaluator.py`/`evaluate.py`, không sửa `MetaRacingEnv`.
 - **Đồng bộ văn bản D14 v2**: Giữ chuẩn `finish_T0 = 186.0, finish_tau = 26.0` trên `silverstone_full` (đã có trong `game_env/track_presets.py` và D14 v2).
+

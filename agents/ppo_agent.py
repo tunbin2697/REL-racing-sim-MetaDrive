@@ -4,7 +4,7 @@ Dựa trên kiến trúc chuẩn Clipped Surrogate Objective & Generalized Advan
 Đúng theo khung lý thuyết giáo trình Học tăng cường (REL).
 """
 
-from typing import Optional, Any, Tuple, overload, Literal
+from typing import Optional, Any, Dict, Tuple, overload, Literal
 import os
 import torch
 import torch.nn as nn
@@ -60,6 +60,7 @@ class PPOAgent:
         self.lr_critic = lr
         self.actor_optimizer = optim.Adam(self.actor_params, lr=self.lr_actor, eps=1e-5)
         self.critic_optimizer = optim.Adam(self.critic_params, lr=self.lr_critic, eps=1e-5)
+        self.loaded_meta: Dict[str, Any] = {}
 
     def _project_logstd(self):
         """Phép chiếu logstd (In-place projection) theo D2 và D19"""
@@ -261,21 +262,40 @@ class PPOAgent:
             "skipped_actor_updates": skipped_actor_updates,
         }
 
-    def save(self, filepath: str):
-        """Lưu checkpoint mô hình"""
+    def save(self, filepath: str, meta: Optional[Dict[str, Any]] = None):
+        """Lưu checkpoint mô hình kèm metadata cấu hình (D34)"""
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
-        torch.save({
+        payload: Dict[str, Any] = {
             "model_state_dict": self.ac.state_dict(),
             "actor_optimizer_state_dict": self.actor_optimizer.state_dict(),
             "critic_optimizer_state_dict": self.critic_optimizer.state_dict(),
             "state_dim": self.state_dim,
             "action_dim": self.action_dim,
-        }, filepath)
+            "meta": dict(meta) if meta is not None else {},
+        }
+        torch.save(payload, filepath)
+
+    @staticmethod
+    def peek_meta(filepath: str) -> Dict[str, Any]:
+        """Đọc trước metadata (map, vehicle, obs_mode, spawn_mode) từ file checkpoint nếu có (D34)"""
+        if not filepath or not os.path.exists(filepath):
+            return {}
+        try:
+            ckpt = torch.load(filepath, map_location="cpu")
+            if isinstance(ckpt, dict) and isinstance(ckpt.get("meta"), dict):
+                return dict(ckpt["meta"])
+        except Exception:
+            pass
+        return {}
 
     def load(self, filepath: str):
         """Nạp checkpoint mô hình (Tự động thích ứng với cấu hình 2D hoặc 3D action space)"""
         checkpoint = torch.load(filepath, map_location=self.device)
-        state_dict = checkpoint.get("model_state_dict", checkpoint)
+        if isinstance(checkpoint, dict) and isinstance(checkpoint.get("meta"), dict):
+            self.loaded_meta = dict(checkpoint["meta"])
+        else:
+            self.loaded_meta = {}
+        state_dict = checkpoint.get("model_state_dict", checkpoint) if isinstance(checkpoint, dict) else checkpoint
         
         # Tự động suy luận action_dim và state_dim từ metadata hoặc từ shape của trọng số
         ckpt_action_dim = checkpoint.get("action_dim")
