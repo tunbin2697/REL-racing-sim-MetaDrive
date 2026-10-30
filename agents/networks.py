@@ -20,6 +20,11 @@ class ActorCritic(nn.Module):
     LOGSTD_MAX = 0.0
     # Biên hành động sau tanh, dùng chung khi lấy mẫu và khi đánh giá lại để log_prob khớp tuyệt đối
     ACTION_BOUND = 0.999
+    # Bão hòa mềm mu trước tanh: giữ nguyên trong [-2.5, 2.5] (tanh = 0.987), ngoài đó tiệm cận +-3.5.
+    # Không có chặn này mu trôi tới 5-6 khi xe đạp hết ga/phanh; hành động bị kẹp ở atanh(0.999) = 3.8
+    # nằm hàng chục sigma khỏi mu -> log_prob cực trị, ratio PPO nổ (loss ~1e3, từng gây NaN).
+    MEAN_SOFT_START = 2.5
+    MEAN_SOFT_MAX = 3.5
 
     def __init__(self, state_dim: int, action_dim: int = 3, hidden_dim: int = 256, init_log_std: float = -0.8):
         super().__init__()
@@ -57,9 +62,17 @@ class ActorCritic(nn.Module):
         # Tham số log_std: Khởi tạo ở mức -0.8 (std ~ 0.45) để tạo biên độ khám phá rộng cho chân phanh và vô lăng
         self.actor_logstd = nn.Parameter(torch.full((1, action_dim), float(init_log_std)))
 
+    def bounded_mean(self, x: torch.Tensor) -> torch.Tensor:
+        """mu(s) qua bão hòa mềm: đồng nhất trong vùng |mu| <= MEAN_SOFT_START, đạo hàm liên tục tại biên"""
+        raw = self.actor_mean(x)
+        a, b = self.MEAN_SOFT_START, self.MEAN_SOFT_MAX
+        excess = torch.clamp(raw.abs() - a, min=0.0)
+        soft = torch.sign(raw) * (a + (b - a) * torch.tanh(excess / (b - a)))
+        return torch.where(raw.abs() > a, soft, raw)
+
     def actor_forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """Trả về (u_mean, action_logstd)"""
-        u_mean = self.actor_mean(x)
+        u_mean = self.bounded_mean(x)
         action_logstd = torch.clamp(self.actor_logstd.expand_as(u_mean), min=self.LOGSTD_MIN, max=self.LOGSTD_MAX)
         return u_mean, action_logstd
 
@@ -72,7 +85,7 @@ class ActorCritic(nn.Module):
         Lấy mẫu hành động qua Squashed Gaussian (Tanh Normal) với hiệu chỉnh Jacobian log-determinant.
         Hành động sinh ra luôn nằm nghiêm ngặt trong [-1.0, 1.0], triệt tiêu lỗi Action Boundary Mismatch.
         """
-        action_mean = self.actor_mean(x)
+        action_mean = self.bounded_mean(x)
         # Kẹp logstd trong [-2.3, 0.0] (tương ứng sigma trong [0.10, 1.00]) để bảo toàn khám phá mà chống nổ phương sai
         action_logstd = torch.clamp(self.actor_logstd.expand_as(action_mean), min=self.LOGSTD_MIN, max=self.LOGSTD_MAX)
         action_std = torch.exp(action_logstd)

@@ -26,6 +26,7 @@ class PPOAgent:
         max_grad_norm: float = 0.5,
         update_epochs: int = 10,
         minibatch_size: int = 64,
+        target_kl: Optional[float] = None,
         device: Optional[str] = None,
     ):
         if device is None:
@@ -43,6 +44,8 @@ class PPOAgent:
         self.max_grad_norm = max_grad_norm
         self.update_epochs = update_epochs
         self.minibatch_size = minibatch_size
+        # Dừng sớm các epoch còn lại khi KL xấp xỉ giữa chính sách mới và cũ vượt 1.5 * target_kl
+        self.target_kl = target_kl
         
         self.ac = ActorCritic(state_dim, action_dim).to(self.device)
         self.actor_params = list(self.ac.actor_mean.parameters()) + [self.ac.actor_logstd]
@@ -145,8 +148,12 @@ class PPOAgent:
         total_v_loss = 0.0
         total_entropy = 0.0
         num_updates = 0
-        
+        epochs_run = 0
+        approx_kl = 0.0
+
         for epoch in range(self.update_epochs):
+            epochs_run = epoch + 1
+            epoch_kls = []
             np.random.shuffle(indices)
             for start in range(0, batch_size, self.minibatch_size):
                 end = start + self.minibatch_size
@@ -159,6 +166,8 @@ class PPOAgent:
                 # Kẹp log_ratio: exp() tràn thành inf khi chính sách lệch xa -> loss NaN
                 log_ratio = torch.clamp(new_log_prob - b_log_probs[mb_idx], -20.0, 20.0)
                 ratio = torch.exp(log_ratio)
+                with torch.no_grad():
+                    epoch_kls.append(float(((ratio - 1.0) - log_ratio).mean()))
                 
                 # 1. PPO Policy Loss (Clipped Objective)
                 pg_loss1 = -b_advantages[mb_idx] * ratio
@@ -204,7 +213,11 @@ class PPOAgent:
                 total_v_loss += v_loss.item()
                 total_entropy += entropy_loss.item()
                 num_updates += 1
-                
+
+            approx_kl = float(np.mean(epoch_kls)) if epoch_kls else 0.0
+            if self.target_kl is not None and approx_kl > 1.5 * self.target_kl:
+                break
+
         # Explained Variance
         y_true = b_returns.cpu().numpy()
         y_pred = b_values_tensor.cpu().numpy()
@@ -216,6 +229,8 @@ class PPOAgent:
             "value_loss": total_v_loss / max(1, num_updates),
             "entropy": total_entropy / max(1, num_updates),
             "explained_var": explained_var,
+            "approx_kl": approx_kl,
+            "epochs": epochs_run,
         }
 
     def save(self, filepath: str):

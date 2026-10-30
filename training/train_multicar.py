@@ -46,12 +46,17 @@ def parse_args():
     parser.add_argument("--respawn", choices=["random", "inplace"], default="random",
                         help="Khi train: random = đặt lại ở chỗ trống ngẫu nhiên; inplace = đứng ngoài vài giây rồi quay lại chỗ văng")
     parser.add_argument("--respawn-delay", type=float, default=3.0, help="Thời gian phạt (s) trước khi xe hồi sinh tại chỗ")
+    parser.add_argument("--full-race-prob", type=float, default=0.0,
+                        help="Với --race-reset: xác suất một cuộc đua train chạy trọn (giữ thưởng về đích)")
     parser.add_argument("--race-reset", type=float, nargs=2, default=None, metavar=("MIN_S", "MAX_S"),
                         help="Khi train: cả cuộc đua bắt đầu lại từ vạch xuất phát sau ngẫu nhiên MIN_S..MAX_S giây (mặc định: hết cuộc đua)")
     parser.add_argument("--grid", choices=["abreast", "staggered"], default="abreast", help="Kiểu xếp xe xuất phát")
     parser.add_argument("--vehicle", choices=["gt3", "f1", "sedan"], default="gt3", help="Loại xe (f1: trần 340 km/h)")
     parser.add_argument("--init-model", type=str, default="models/best_agent.pt", help="Checkpoint đơn tác tử (40D / 52D) để warm start")
     parser.add_argument("--resume", type=str, default=None, help="Checkpoint đa tác tử để train tiếp")
+    parser.add_argument("--eval-races", type=int, default=0,
+                        help="Số cuộc đua ngẫu nhiên thêm vào mỗi lần eval (ngoài 1 cuộc tất định) để chọn best ít nhiễu hơn")
+    parser.add_argument("--target-kl", type=float, default=0.02, help="Dừng sớm epoch PPO khi KL > 1.5 * target_kl (<= 0 để tắt)")
     parser.add_argument("--eval-freq", type=int, default=5, help="Đánh giá sau mỗi N lần update")
     parser.add_argument("--milestone-freq", type=int, default=250000, help="Lưu snapshot mỗi N mẫu")
     parser.add_argument("--save-dir", type=str, default="models/multicar")
@@ -126,12 +131,16 @@ def main():
     def new_train_race():
         """Bắt đầu lại cả cuộc đua từ vạch xuất phát; độ dài ngẫu nhiên để luyện nhiều pha chạy thành cụm"""
         if args.race_reset:
-            lo, hi = args.race_reset
-            env.max_steps = int(np.random.uniform(lo, hi) / env.dt)
+            if np.random.random() < args.full_race_prob:
+                env.max_steps = race_steps
+            else:
+                lo, hi = args.race_reset
+                env.max_steps = int(np.random.uniform(lo, hi) / env.dt)
         return env.reset()
     obs_dim = int(env.obs_dim)
     agent = PPOAgent(state_dim=obs_dim, action_dim=3, lr=args.lr, gamma=args.gamma, gae_lambda=args.gae_lambda,
-                     clip_coef=args.clip_coef, ent_coef=args.ent_coef, minibatch_size=args.batch_size)
+                     clip_coef=args.clip_coef, ent_coef=args.ent_coef, minibatch_size=args.batch_size,
+                     target_kl=args.target_kl if args.target_kl > 0 else None)
 
     if args.resume:
         agent.load(args.resume)
@@ -146,8 +155,10 @@ def main():
     print("=" * 70)
     print(f">> MULTI-CAR PPO SELF-PLAY | {args.num_cars} xe | {args.lane_num} làn ({env.half_width * 2:.1f}m) | obs {obs_dim}D | device {agent.device}")
     print(f"   lr {args.lr} | gamma {args.gamma} | lambda {args.gae_lambda} | ent {args.ent_coef} | time {args.time_penalty} | collision {args.collision_penalty}")
-    reset_txt = f"{args.race_reset[0]:.0f}-{args.race_reset[1]:.0f}s" if args.race_reset else "hết cuộc đua"
-    print(f"   {args.laps} vòng | respawn {args.respawn} ({args.respawn_delay:.0f}s) | stall {args.stall_penalty} | race reset {reset_txt}")
+    reset_txt = (f"{args.race_reset[0]:.0f}-{args.race_reset[1]:.0f}s (trọn cuộc đua {args.full_race_prob:.0%})"
+                 if args.race_reset else "hết cuộc đua")
+    print(f"   {args.laps} vòng | respawn {args.respawn} ({args.respawn_delay:.0f}s) | stall {args.stall_penalty} | race reset {reset_txt} | grid {args.grid}")
+    print(f"   eval 1 tất định + {args.eval_races} ngẫu nhiên / {args.eval_freq} update | target KL {args.target_kl}")
     print("=" * 70)
 
     metrics: Dict[str, List] = {k: [] for k in [
@@ -171,11 +182,23 @@ def main():
         return (res["finished"], -res["mean_race_time"] if res["mean_race_time"] > 0 else -1e9, res["mean_completion"])
 
     def eval_race():
-        return run_race(env, agent, deterministic=True, respawn=eval_respawn, max_steps=race_steps)
+        """1 cuộc đua tất định + eval_races cuộc ngẫu nhiên, lấy trung bình (1 cuộc duy nhất quá nhiễu để chọn best)"""
+        races = [run_race(env, agent, deterministic=True, respawn=eval_respawn, max_steps=race_steps)]
+        races += [run_race(env, agent, deterministic=False, respawn=eval_respawn, max_steps=race_steps)
+                  for _ in range(args.eval_races)]
+        if len(races) == 1:
+            return races[0]
+        agg = {k: float(np.mean([r[k] for r in races]))
+               for k in ("finished", "outs", "stalls", "respawns", "contacts", "mean_completion")}
+        timed = [r for r in races if r["mean_race_time"] > 0]
+        agg["mean_race_time"] = float(np.mean([r["mean_race_time"] for r in timed])) if timed else 0.0
+        agg["mean_lap"] = float(np.mean([r["mean_lap"] for r in timed])) if timed else 0.0
+        agg["best_lap"] = float(min(r["best_lap"] for r in timed)) if timed else 0.0
+        return agg
 
     def describe(res):
-        return (f"về đích {res['finished']}/{args.num_cars} (TB {res['mean_race_time']:.1f}s) | văng {res['outs']} | dừng {res['stalls']} | "
-                f"hồi sinh {res['respawns']} | chạm {res['contacts']} | đi được {res['mean_completion']:.1f}% | "
+        return (f"về đích {res['finished']:.1f}/{args.num_cars} (TB {res['mean_race_time']:.1f}s) | văng {res['outs']:.1f} | dừng {res['stalls']:.1f} | "
+                f"hồi sinh {res['respawns']:.1f} | chạm {res['contacts']:.0f} | đi được {res['mean_completion']:.1f}% | "
                 f"lap TB {res['mean_lap']:.1f}s (best {res['best_lap']:.1f}s)")
 
     res = eval_race()
@@ -253,13 +276,14 @@ def main():
             log_eval(samples, res, train_info, train_laps)
             print(f"[Samples {samples:07d}/{args.total_samples} | {sps} mẫu/s | lap khi train: {train_laps}] "
                   f"Eval: {describe(res)} | "
-                  f"Loss P/V {train_info['policy_loss']:.3f}/{train_info['value_loss']:.3f} | ExpVar {train_info['explained_var']:.2f}")
+                  f"Loss P/V {train_info['policy_loss']:.3f}/{train_info['value_loss']:.3f} | ExpVar {train_info['explained_var']:.2f} | "
+                  f"KL {train_info.get('approx_kl', 0.0):.4f} ({train_info.get('epochs', 0)} ep)")
             agent.save(os.path.join(args.save_dir, "last_agent.pt"))
             if score(res) > best_score:
                 best_score = score(res)
                 agent.save(os.path.join(args.save_dir, "best_agent.pt"))
-                print(f"  🏆 [BEST SAVED] về đích {res['finished']}/{args.num_cars}, đua TB {res['mean_race_time']:.1f}s, "
-                      f"văng {res['outs']}, đi được {res['mean_completion']:.1f}%")
+                print(f"  🏆 [BEST SAVED] về đích {res['finished']:.1f}/{args.num_cars}, đua TB {res['mean_race_time']:.1f}s, "
+                      f"văng {res['outs']:.1f}, đi được {res['mean_completion']:.1f}%")
             if samples >= next_milestone:
                 agent.save(os.path.join(args.save_dir, f"agent_{next_milestone // 1000}k.pt"))
                 next_milestone += args.milestone_freq

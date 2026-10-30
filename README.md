@@ -328,8 +328,12 @@ python training/train_multicar.py --resume models/multicar_best.pt --total-sampl
 * Lưu snapshot `agent_{N}k.pt` mỗi `--milestone-freq` mẫu (mặc định 250k), cùng `best_agent.pt` / `last_agent.pt`.
 * **Luyện pha chạy thành cụm (F1)**: `--laps 2 --respawn inplace --race-reset 60 100` — cả cuộc đua bắt đầu lại từ vạch xuất phát sau ngẫu nhiên 60–100s (bootstrap $V(s')$ khi cắt giữa chừng), xe văng hồi sinh tại chỗ; eval là cuộc đua 2 vòng có hồi sinh, xếp hạng theo tổng thời gian đua.
 ```bash
-python training/train_multicar.py --vehicle f1 --resume models/multicar_f1_best.pt --lr 5e-5 --laps 2     --respawn inplace --race-reset 60 100 --stall-penalty 30 --eval-freq 10 --save-dir models/multicar_f1d --log-dir logs/multicar_f1d
+python training/train_multicar.py --vehicle f1 --resume models/multicar_f1_best.pt --lr 5e-5 --laps 2     --respawn inplace --race-reset 60 100 --full-race-prob 0.3 --stall-penalty 30 --collision-penalty 4     --grid staggered --eval-races 2 --eval-freq 20 --target-kl 0.02 --save-dir models/multicar_next --log-dir logs/multicar_next
 ```
+* `--full-race-prob P`: tỉ lệ cuộc đua train chạy trọn (không cắt) để vẫn học thưởng về đích.
+* `--eval-races N`: mỗi lượt eval = 1 cuộc đua tất định + N cuộc đua ngẫu nhiên (lấy trung bình) thay vì chỉ 1 cuộc đua.
+* `--target-kl K` (mặc định 0.02, ≤ 0 để tắt): dừng sớm các epoch PPO khi KL xấp xỉ > 1.5·K.
+* **Ổn định PPO**: trung bình Gaussian trước `tanh` được bão hòa mềm (giữ nguyên trong ±2.5, tiệm cận ±3.5). Trước đây mean trục phanh trôi tới 11 → hành động bị kẹp ở atanh(0.999) nằm rất xa mean → `log_prob`/ratio cực trị, loss nổ (~3000) và từng gây NaN. Model cũ đổi hành động ≤ 0.002.
 * **Đánh giá nhiều cuộc đua**: `python scripts/evaluate_multicar.py --vehicle f1 --races 6 --models "models/multicar_f1c/agent_*k.pt"` (thêm `--laps 2 --respawn` cho luật hồi sinh).
 * ⚠️ Eval khi train chỉ dùng 1 cuộc đua nên nhiễu: nên chọn model cuối bằng cách đánh giá nhiều cuộc đua trên các snapshot thay vì tin vào `best_agent.pt`.
 
@@ -439,16 +443,17 @@ Quá trình train (tổng ~6.8M mẫu, cộng dồn mọi xe):
 | Lap time | ~142 s | **111.7 s** |
 | Ngẫu nhiên: về đích / quãng đường | — | 80% / 92.7% |
 
-**6 xe — `models/multicar_f1_best.pt`** (`multicar_f1c/best_agent`, warm start 52D → 77D từ `f1_best.pt`): đánh giá 6 cuộc đua ngẫu nhiên + 1 tất định (`logs/multicar_f1c/checkpoint_eval.json`):
+**6 xe — `models/multicar_f1_best.pt`** (`multicar_f1e/agent_1500k`). Chuỗi train: warm start 52D → 77D từ `f1_best.pt` (`multicar_f1`, `f1c`) → luyện pha chạy thành cụm 2 vòng có hồi sinh tại chỗ, cắt cuộc đua sau 60–100 s (`f1d`) → thêm 30% cuộc đua trọn, phạt va chạm 4, lưới so le, eval nhiều cuộc đua và sửa ổn định PPO (`f1e`, 1.5M mẫu).
 
-| Chế độ | Về đích | Văng | Lap TB |
-| :--- | :---: | :---: | :---: |
-| Tất định | 4/6 | 1 | 123.8 s |
-| Ngẫu nhiên (TB 6 cuộc đua) | 2.2/6 | 3.2 | 127.7 s |
+Đánh giá cuộc đua 2 vòng có hồi sinh tại chỗ (đứng ngoài 3 s), 1 tất định + TB 4 ngẫu nhiên (`logs/multicar_f1e/checkpoint_eval.json`):
 
-* Gần như mọi xe bị loại trong **~1 km đầu** khi 6 xe còn chạy thành cụm (đường 13.5 m, 200–300 km/h); xe qua được đoạn này hầu như luôn về đích. Với `--respawn` cả 6 xe đều về đích 2 vòng (~245 s).
-* Đang thử luyện riêng pha chạy thành cụm (`--race-reset 60 100 --respawn inplace`, lượt `multicar_f1d`).
-* Lượt `multicar_f1` gặp lỗi NaN ở ~1.48M mẫu (vật lý nổ khi va chạm cực mạnh / tràn `exp(log_ratio)`); đã thêm chặn tốc độ khi tính lực ép, lưới an toàn NaN trong env và bỏ qua minibatch có loss không hữu hạn.
+| Model | Về đích (ngẫu nhiên) | Văng | Dừng | Hồi sinh | Đua TB | Chạm | Tất định |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| `multicar_f1d/agent_1000k` | 5.8/6 | 4.8 | 2.2 | 6.8 | 259.7 s | 131.5 | 4/6, văng 6 |
+| **`multicar_f1e/agent_1500k`** | **6.0/6** | **4.0** | **0.0** | **4.0** | **257.3 s** | **78.2** | **6/6, văng 3** |
+
+* Không có hồi sinh (xe văng bị loại), bản `multicar_f1c` chỉ về đích ~2/6: gần như mọi xe bị loại trong **~1 km đầu** khi 6 xe còn chạy thành cụm (đường 13.5 m, 200–300 km/h).
+* Sau sửa ổn định PPO, loss policy ở trong [-0.04, -0.015] và KL 0.018–0.034 suốt 1.5M mẫu (trước đây loss nổ tới ~3000 và chất lượng giảm sau 1M mẫu).
 
 ### 6.4. Đối chiếu benchmark (phiên bản trước)
 Bảng dưới đây là kết quả của phiên bản PPO trước (hàm thưởng không có time penalty), giữ lại để tham khảo cùng tác tử đối chứng và cận trên lý thuyết:

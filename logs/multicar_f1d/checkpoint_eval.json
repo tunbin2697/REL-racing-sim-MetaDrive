@@ -1,0 +1,170 @@
+{
+  "models/multicar_f1_best.pt": {
+    "deterministic": {
+      "finished": 6.0,
+      "outs": 6.0,
+      "stalls": 0.0,
+      "contacts": 181.0,
+      "respawns": 6.0,
+      "race_time": 244.88333333333335,
+      "completion": 100.0,
+      "mean_lap": 122.44166666666666,
+      "best_lap": 117.2
+    },
+    "stochastic": {
+      "finished": 5.25,
+      "outs": 7.0,
+      "stalls": 6.0,
+      "contacts": 224.0,
+      "respawns": 12.25,
+      "race_time": 261.6004166666667,
+      "completion": 88.13288988719515,
+      "mean_lap": 130.80020833333333,
+      "best_lap": 118.5
+    }
+  },
+  "models/multicar_f1d\\agent_250k.pt": {
+    "deterministic": {
+      "finished": 5.0,
+      "outs": 4.0,
+      "stalls": 6.0,
+      "contacts": 140.0,
+      "respawns": 9.0,
+      "race_time": 254.82,
+      "completion": 84.18414875126223,
+      "mean_lap": 127.41000000000001,
+      "best_lap": 121.60000000000001
+    },
+    "stochastic": {
+      "finished": 5.25,
+      "outs": 7.5,
+      "stalls": 5.75,
+      "contacts": 81.5,
+      "respawns": 12.5,
+      "race_time": 274.365,
+      "completion": 88.13158443485594,
+      "mean_lap": 137.1825,
+      "best_lap": 123.0
+    }
+  },
+  "models/multicar_f1d\\agent_500k.pt": {
+    "deterministic": {
+      "finished": 5.0,
+      "outs": 5.0,
+      "stalls": 6.0,
+      "contacts": 101.0,
+      "respawns": 10.0,
+      "race_time": 265.00000000000006,
+      "completion": 83.9409566858767,
+      "mean_lap": 132.50000000000003,
+      "best_lap": 120.10000000000001
+    },
+    "stochastic": {
+      "finished": 5.0,
+      "outs": 6.75,
+      "stalls": 6.75,
+      "contacts": 109.25,
+      "respawns": 12.5,
+      "race_time": 269.96500000000003,
+      "completion": 86.2622603639756,
+      "mean_lap": 135.2575,
+      "best_lap": 120.4
+    }
+  },
+  "models/multicar_f1d\\agent_750k.pt": {
+    "deterministic": {
+      "finished": 4.0,
+      "outs": 5.0,
+      "stalls": 10.0,
+      "contacts": 89.0,
+      "respawns": 13.0,
+      "race_time": 253.15000000000003,
+      "completion": 76.67552232149487,
+      "mean_lap": 125.92222222222222,
+      "best_lap": 117.80000000000001
+    },
+    "stochastic": {
+      "finished": 5.25,
+      "outs": 6.25,
+      "stalls": 4.75,
+      "contacts": 132.0,
+      "respawns": 10.25,
+      "race_time": 264.97749999999996,
+      "completion": 90.21165418170969,
+      "mean_lap": 132.46988636363636,
+      "best_lap": 123.0
+    }
+  },
+  "models/multicar_f1d\\agent_1000k.pt": {
+    "deterministic": {
+      "finished": 6.0,
+      "outs": 1.0,
+      "stalls": 0.0,
+      "contacts": 142.0,
+      "respawns": 1.0,
+      "race_time": 248.44999999999996,
+      "completion": 100.0,
+      "mean_lap": 124.22500000000002,
+      "best_lap": 116.60000000000001
+    },
+    "stochastic": {
+      "finished": 5.5,
+      "outs": 4.75,
+      "stalls": 3.75,
+      "contacts": 132.0,
+      "respawns": 8.0,
+      "race_time": 263.2408333333333,
+      "completion": 92.0907689232919,
+      "mean_lap": 131.62041666666664,
+      "best_lap": 121.7
+    }
+  },
+  "models/multicar_f1d\\agent_1250k.pt": {
+    "deterministic": {
+      "finished": 4.0,
+      "outs": 4.0,
+      "stalls": 10.0,
+      "contacts": 130.0,
+      "respawns": 12.0,
+      "race_time": 251.20000000000002,
+      "completion": 76.6990199311794,
+      "mean_lap": 126.4888888888889,
+      "best_lap": 120.2
+    },
+    "stochastic": {
+      "finished": 3.5,
+      "outs": 5.75,
+      "stalls": 13.25,
+      "contacts": 114.75,
+      "respawns": 16.5,
+      "race_time": 259.26625,
+      "completion": 72.9505812074537,
+      "mean_lap": 131.27683080808083,
+      "best_lap": 119.80000000000001
+    }
+  },
+  "models/multicar_f1d\\agent_1500k.pt": {
+    "deterministic": {
+      "finished": 5.0,
+      "outs": 6.0,
+      "stalls": 5.0,
+      "contacts": 192.0,
+      "respawns": 10.0,
+      "race_time": 255.16000000000003,
+      "completion": 92.50442782741409,
+      "mean_lap": 126.52727272727275,
+      "best_lap": 116.0
+    },
+    "stochastic": {
+      "finished": 4.5,
+      "outs": 9.75,
+      "stalls": 9.0,
+      "contacts": 147.25,
+      "respawns": 17.25,
+      "race_time": 280.28125,
+      "completion": 84.59780763320019,
+      "mean_lap": 140.53358585858587,
+      "best_lap": 125.2
+    }
+  }
+}
