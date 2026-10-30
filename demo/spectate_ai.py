@@ -41,6 +41,8 @@ def parse_args():
     parser.add_argument("--vehicle", type=str, default=None, choices=["gt3", "gt3_real", "sedan"], help="Loại xe biểu diễn (mặc định: tự đọc từ checkpoint metadata hoặc 'gt3')")
     parser.add_argument("--map", type=str, default=None, help="Bản đồ đua (mặc định: tự đọc từ checkpoint metadata hoặc 'silverstone')")
     parser.add_argument("--obs-mode", type=str, default=None, choices=["pure", "line"], help="Chế độ quan sát (mặc định: tự đọc từ checkpoint metadata hoặc 'pure')")
+    parser.add_argument("--action-mode", type=str, default=None, choices=["split", "combined"], help="Action 3 trục hoặc pedal gộp (mặc định: đọc từ checkpoint metadata hoặc 'split')")
+    parser.add_argument("--offtrack-mode", type=str, default=None, choices=["terminate", "penalty"], help="Xử lý ra ngoài đường (mặc định: đọc từ checkpoint metadata hoặc 'terminate')")
     parser.add_argument("--traffic", type=float, default=0.0, help="Mật độ chướng ngại vật/xe khác (0.0 - 0.2)")
     parser.add_argument("--seed", type=int, default=42, help="Seed tạo bản đồ")
     parser.add_argument("--laps", type=int, default=2, help="Số vòng đua liên tục mỗi lượt chạy (mặc định 2: Lap 1 Standing Start + Lap 2 Flying Lap)")
@@ -72,6 +74,8 @@ def _resolve_spectate_config(args):
     resolved_map = resolve_field(args.map, "map", "silverstone", "map")
     resolved_vehicle = resolve_field(args.vehicle, "vehicle", "gt3", "vehicle")
     resolved_obs_mode = resolve_field(args.obs_mode, "obs_mode", "pure", "obs-mode")
+    args.action_mode = resolve_field(args.action_mode, "action_mode", "split", "action-mode")
+    args.offtrack_mode = resolve_field(args.offtrack_mode, "offtrack_mode", "terminate", "offtrack-mode")
     return resolved_map, resolved_vehicle, resolved_obs_mode, meta
 
 
@@ -113,6 +117,8 @@ def main():
         vehicle=race_car,
         max_laps=args.laps,
         obs_mode=resolved_obs_mode,
+        action_mode=args.action_mode,
+        offtrack_mode=args.offtrack_mode,
     )
 
     # Khởi tạo Tác tử chính

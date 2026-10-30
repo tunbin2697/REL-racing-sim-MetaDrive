@@ -199,6 +199,8 @@ def collect_single_lap_trace(model_path: str) -> Optional[Dict[str, Any]]:
         vehicle=car,
         max_laps=1,
         obs_mode=obs_mode,
+        action_mode=meta.get("action_mode", "split"),
+        offtrack_mode=meta.get("offtrack_mode", "terminate"),
     )
     obs_dim = int(env.observation_space.shape[0])
     act_dim = int(env.action_space.shape[0])

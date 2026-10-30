@@ -108,7 +108,8 @@
 | :-- | :-- | :-- |
 | Mistake learning | D32, WI-20, WI-23 | Không đổi obs nên resume được |
 | Histogram lap time, tỉ lệ vòng sạch, độ bền nhiễu obs/trễ action, speed trace | D33, WI-21 | Chỉ cần eval |
-| Pedal 1 trục, không kết thúc episode, SAC/QR-SAC, obs lốp, lookahead theo thời gian | Hướng phát triển (`scratch/plan.md` mục D) | Phải train lại từ đầu |
+| Pedal 1 trục, ra ngoài đường thì phạt ∝ v² và chạy tiếp, mistake learning từ đầu run | **D35**, P2-single v2 và P2-line (`--action-mode combined --offtrack-mode penalty --spawn-mode mistake`) | Train lại từ đầu; v1 (setup cũ) giữ làm mốc so sánh |
+| SAC/QR-SAC, obs lốp, lookahead theo thời gian, episode cố định thời gian | Hướng phát triển (`scratch/plan.md` mục D) | Cần viết lại vòng lặp train hoặc đổi obs |
 
 ---
 

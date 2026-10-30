@@ -1,6 +1,7 @@
 # KẾ HOẠCH THEO WORK ITEM
 
-> **Vị trí**: `scratch/plan.md` · **Phiên bản**: v11.2 (30/10/2026, D2). Phase 1 đã dừng train ở 2.66M; P2-single đang train (4.04M/6M).
+> **Vị trí**: `scratch/plan.md` · **Phiên bản**: v11.3 (30/10/2026, D2). Phase 1 đã dừng ở 2.66M. P2-single v1 lưu trữ ở 4.54M (`p2_single_v1`); P2-single v2 dựng lại theo GT Sophy/Fuchs (D35).
+> **v11.3 so với v11.2**: người dùng bỏ việc chạy tiếp P2-single v1, lưu làm baseline. P2-single v2 và P2-line dùng setup mới theo hai bài báo: pedal gộp 1 trục, ra ngoài đường thì phạt và chạy tiếp, spawn học từ lỗi ngay từ đầu (D35). Eval nhẹ đi: 2 episode mỗi 10 update.
 > **v11.2 so với v11.1**: mở lại ablation thành 3 nhánh (optimal / PPO thuần / PPO + racing line, D30), nới luật ZERO DATA LEAKAGE cho riêng nhánh line (D31), spawn học từ lỗi kiểu GT Sophy (D32), bộ metric eval theo GT Sophy/Fuchs (D33), metadata checkpoint (D34). WI mới: WI-19 → WI-23. Ghi nhận bản sửa render map full và HUD demo (WI-12b). Cơ sở: F17–F19, `knowledge/related_work_racing_rl.md`.
 > **v11.1 so với v11.0**: thêm chuẩn hóa obs đầy đủ theo preset (WI-10/12), sửa `evaluate.py` + `spectate_ai.py` (WI-12), kiểm tra dim khi load (WI-12), chốt danh sách cờ của `train_multicar.py` (WI-15/16), chốt reward lúc hồi sinh và cách xếp hạng cho thưởng vượt (WI-L5), làm rõ phạm vi ent 0.01 (D19).
 > **Vấn đề còn mở**: `scratch/remain_problems_need_decision.md`
@@ -18,7 +19,7 @@
   - **P2-single**: một xe;
   - **P2-multi**: 6 xe, pool đối thủ, grid so le, phạt va chạm đối xứng, thưởng vượt sạch, hồi sinh khi vượt track limit;
   - không áp luật FIA, không dùng PID.
-- **Ablation (mở lại 30/10, D30)**: 3 nhánh trên map full + `gt3_real`: (1) ghost giải tích, (2) PPO thuần = P2-single, (3) PPO + racing line trong obs = P2-line. Giữ cờ `--no-logstd-projection`.
+- **Ablation (mở lại 30/10, D30; cập nhật D35)**: 3 nhánh chính trên map full + `gt3_real`: (1) ghost giải tích, (2) PPO thuần = **P2-single v2**, (3) PPO + racing line trong obs = P2-line (cùng setup D35). Thêm một mốc phụ: **P2-single v1** (setup cũ, 4.54M) để so setup cũ với setup theo bài báo. Giữ cờ `--no-logstd-projection`.
 
 ---
 
@@ -55,6 +56,7 @@
 | **D32** | **Spawn học từ lỗi** (mistake learning, theo GT Sophy) | Cờ `--spawn-mode {grid, mistake}`, mặc định `grid` (giữ hành vi cũ). `mistake`: 50% xuất phát đứng ở grid, 35% từ trạng thái của chính agent khoảng 3 s trước một lần crash gần đây, 15% đứng yên ở vị trí s ngẫu nhiên. Eval **luôn** xuất phát đứng ở grid. Không dùng dữ liệu tối ưu nên hợp lệ cho cả hai nhánh. Obs không đổi nên **resume được**. Chỉ dùng cho đoạn fine-tune sau 6M (D22), không dùng trong 6M đầu của ablation |
 | **D33** | **Metric eval bổ sung** (theo GT Sophy/Fuchs) | `evaluate.py`: N episode (mặc định 20, vì sim không tất định); lap time TB/độ lệch chuẩn/min trên các vòng sạch; tỉ lệ vòng sạch; histogram lap time; độ bền với nhiễu obs (`--obs-noise`) và trễ action (`--action-delay`); speed trace so với ghost theo sector |
 | **D34** | **Metadata checkpoint** | `PPOAgent.save` ghi thêm `map`, `vehicle`, `obs_mode`, `spawn_mode`. `evaluate.py`/`spectate_ai.py` tự lấy từ checkpoint khi không truyền cờ; truyền cờ lệch thì cảnh báo rõ. Checkpoint cũ không có metadata thì dùng cờ như hiện nay |
+| **D35** | **Setup P2 theo GT Sophy/Fuchs** | Người dùng chốt 30/10: bỏ chạy tiếp P2-single v1 (lưu ở `models/p2_single_v1`, `logs/p2_single_v1`), dựng lại P2-single với 3 thay đổi lấy từ hai bài báo, đều là cờ mới, mặc định vẫn là hành vi cũ: (a) `--action-mode combined`: action [lái, pedal], pedal > 0 là ga, < 0 là phanh; trần σ dùng 2 phần tử đầu của preset [0, −0.7]. (b) `--offtrack-mode penalty`: cả 4 bánh ra ngoài mặt nhựa thì **không** kết thúc; tắt reward tiến độ và phạt $-(0.1 + 1.0\,(v/v_{max})^2)$ mỗi bước; chỉ kết thúc như crash khi lật/va chạm, ra xa mép nhựa hơn 25 m, hoặc ở ngoài liên tục quá 5 s. Eval tính vòng có ra ngoài đường là **không sạch** (như crash tại điểm ra ngoài đầu tiên), nên tiêu chí lưu best giữ nguyên. (c) `--spawn-mode mistake` từ đầu run; lần đầu ra ngoài đường cũng được ghi làm snapshot. **Không** đổi: PPO, obs 35D, reward tiến độ, siêu tham số D1/D19. SAC, obs lốp, lookahead theo thời gian vẫn ở hướng phát triển. Eval: `--eval-episodes 2 --eval-freq 10` để tăng FPS train (người dùng chấp nhận eval thô hơn) |
 | D22 | Lịch siêu tham số cho Phase 2 | Thay decay bằng **fine-tune theo đoạn do người điều khiển**: run nền (Đêm 2) → đọc kết quả → các đoạn khoảng 1M step từ best, **mỗi đoạn chỉ đổi 1 tham số**, ghi lại trong `resume_marks`. Cách này học theo cách nhánh multicar ra được racing line tốt |
 
 ---
@@ -162,14 +164,15 @@ Nguồn: `game_env/benchmark.py` (commit `0180988`), T* = 112.6s, `profile_versi
 | P1C | Đóng Phase 1: eval, drive trace, biểu đồ | ⏳ Làm được ngay |
 | 10–13 | Map preset, `GT3RealCar`, obs/reward theo preset, benchmark hai map + ghost, D19 | ✅ Xong. R8 đạt: ghost map full 128.6s / flying 124.9s (T* 124.03s) |
 | 12b | Sửa render map full + HUD demo | ✅ Trợ lý đã sửa (chưa commit): `map_region_size` 2048 qua config env (F18); HUD tách tốc độ main/ghost và completion vòng/lượt (F19) |
-| 14 | P2-single (= nhánh PPO thuần của D30) | ⏸ Dừng ở 4.5M (commit `11807e4`), cần resume tới 6M. Chẩn đoán giữa chừng ở F17 |
+| 14 | P2-single v1 (setup cũ) | 🗄 Lưu trữ ở 4.54M (`e72ee80`), không train tiếp. Chẩn đoán ở F17 |
+| 14b | **P2-single v2** (setup D35) | ▶ Sẵn sàng bấm. Code D35 đã có smoke test (TEST 5) và smoke train 6144 bước chạy thông |
 | 15 | Port multicar | ⏳ D3, agent code làm → trợ lý review. **Ưu tiên thấp hơn WI-19 → WI-22** (P9) |
 | 16 | P2-multi | ⏳ Tùy lịch máy (P9) |
 | 19 | Obs racing line (`--obs-mode line`) + metadata checkpoint (D30, D31, D34) | ✅ Code xong, trợ lý review 30/10: smoke qua (pure khớp bit-for-bit, dựng lại line sai số 0.0001 m, nạp nhầm dim báo lỗi rõ). Obs line tốn thêm ~6% thời gian mỗi bước |
 | 20 | Spawn học từ lỗi (`--spawn-mode mistake`, D32) | ✅ Code xong, trợ lý review 30/10: snapshot đặt đúng vị trí/hướng/tốc độ (sai số 0), segment +50 không tính finish, curriculum → reset chạy thông. Smoke train 4096 bước (`line` + `mistake`) chạy thông, metadata đúng |
 | 21 | Eval mở rộng + sửa FPS sau resume (D33) | ✅ Code xong; trợ lý sửa 2 lỗi trong `plot_eval_report.py` (`env.last_long`, `bench.s_grid` không tồn tại; sai đường dẫn npz) và thêm `evaluate.py --agent optimal` cho nhánh ghost. Đã chạy thử cả 3 biểu đồ |
-| 22 | P2-line: train nhánh PPO + line 6M | ⏳ Sau khi WI-19 qua review và smoke |
-| 23 | Fine-tune P2-single với spawn mistake (D22 + D32) | ⏳ Sau khi P2-single đạt 6M và WI-20 qua review |
+| 22 | P2-line: train nhánh PPO + line 6M (setup D35) | ⏳ Sau P2-single v2, hoặc song song nếu FPS cho phép (P9) |
+| 23 | ~~Fine-tune P2-single với spawn mistake~~ | ❌ Bỏ: spawn mistake đã dùng từ đầu trong P2-single v2 (D35) |
 | 17 | Báo cáo | Làm liên tục |
 | 18 | Eval cuối, demo, đóng băng | D4 |
 
@@ -311,6 +314,23 @@ python training/train_racing.py --total-steps 6000000 `
   - Mỗi đoạn chỉ đổi 1 tham số so với đoạn trước.
   - Luôn copy checkpoint nguồn ra một tên riêng trước khi resume.
   - **Bắt buộc có `--save-dir`/`--log-dir`**, nếu không sẽ nạp nhầm metrics như sự cố ngày 29/10.
+
+### WI-14b · P2-single v2 (setup D35, khoảng 8–9h)
+```powershell
+python training/train_racing.py --total-steps 6000000 `
+  --gamma 0.99 --gae-lambda 0.90 --clip-coef 0.15 --ent-coef 0.010 `
+  --time-penalty 0.01 --finish-bonus exp --eval-episodes 2 --eval-freq 10 `
+  --map silverstone_full --vehicle gt3_real --max-laps 1 --seed 42 `
+  --action-mode combined --offtrack-mode penalty --spawn-mode mistake `
+  --save-dir models/p2_single --log-dir logs/p2_single
+```
+- **Theo dõi**:
+  - Dòng `[SPAWN CURRICULUM]`: số `Segment Finishes` phải tăng dần. Nếu deque luôn đầy mà không có segment nào về đích sau ~1M step thì agent đang kẹt ở các điểm khó.
+  - σ pedal (chiều thứ 2): nếu vẫn dính trần −0.7 suốt run như F14/F17 thì ghi nhận, không can thiệp giữa chừng.
+  - Completion và tỉ lệ vòng sạch theo eval. Với chế độ penalty, completion sẽ cao hơn v1 rất nhanh, vì ra ngoài đường không còn kết thúc episode. **So sánh với v1 phải dùng tỉ lệ vòng sạch và lap time sạch, không dùng completion.**
+- **Lý luận**:
+  - GT Sophy và Fuchs đều dùng pedal 1 trục và phạt ra ngoài đường thay vì kết thúc (`knowledge/related_work_racing_rl.md`). F17 chỉ ra pedal 2 trục giật và việc kết thúc sớm là hai nguyên nhân khả dĩ.
+  - Giữ PPO và obs 35D để vẫn so được với v1, và vì SAC cần viết lại vòng lặp train.
 
 ### WI-15 · Port multicar sang map lớn
 - [ ] Port `multicar_env.py`, `train_multicar.py`, `demo/race_multicar.py`, `game_env/gamepad.py` từ `origin/feature/multicar-selfplay`, chuyển sang 35D ego cùng preset map. Kế thừa toàn bộ bản vá F1/F13/D19 (multicar dùng chung `PPOAgent`; buffer phải lưu `raw_us`).
@@ -461,12 +481,12 @@ python training/train_multicar.py --total-samples <R10> `
 ```powershell
 python training/train_racing.py --total-steps 6000000 `
   --gamma 0.99 --gae-lambda 0.90 --clip-coef 0.15 --ent-coef 0.010 `
-  --time-penalty 0.01 --finish-bonus exp --eval-episodes 5 `
+  --time-penalty 0.01 --finish-bonus exp --eval-episodes 2 --eval-freq 10 `
   --map silverstone_full --vehicle gt3_real --max-laps 1 --seed 42 `
-  --obs-mode line --spawn-mode grid `
-  --save-dir models/p2_line --log-dir logs/p2_line
+  --action-mode combined --offtrack-mode penalty --spawn-mode mistake `
+  --obs-mode line --save-dir models/p2_line --log-dir logs/p2_line
 ```
-- Mọi cờ trùng với WI-14, chỉ khác `--obs-mode line` (D30).
+- Mọi cờ trùng với WI-14b (P2-single v2), chỉ khác `--obs-mode line` (D30). 
 - Theo dõi như WI-14, thêm giá trị trung bình qua mỗi lần eval của chiều 1 và 2 trong feature line (lệch line, lệch v*). Nếu agent bám được v* thì sai lệch tốc độ phải giảm dần.
 - **So sánh** với P2-single ở **cùng mốc step** (1M, 2M, …, 6M; cả hai đều có snapshot milestone). Không so best với best.
 
@@ -500,6 +520,6 @@ python training/train_racing.py --resume models/p2_single/ft_mistake_src.pt --st
 
 ## D. NGOÀI PHẠM VI (HƯỚNG PHÁT TRIỂN)
 - Ablation: A0 so với A1, η³ so với hàm mũ, sector bonus, các phương án D19 (a/b/c).
-- Theo GT Sophy/Fuchs (đều phải train lại từ đầu, không kịp trước bảo vệ): **gộp ga/phanh thành 1 trục**; **không kết thúc episode khi ra ngoài đường** (phạt ∝ v² và chạy tiếp, episode cố định thời gian); **SAC/QR-SAC** thay PPO; obs tải và góc trượt lốp; lookahead co giãn theo tốc độ (~6 s).
+- Theo GT Sophy/Fuchs, phần **chưa** làm: **SAC/QR-SAC** thay PPO; obs tải và góc trượt lốp; lookahead co giãn theo tốc độ (~6 s); episode cố định thời gian. Pedal 1 trục và phạt ra ngoài đường đã làm ở D35.
 - Dựng lại layout Silverstone từ centerline thật (ví dụ TUMFTM racetrack-database), thay cho bán kính đoán tay ×2.075. Người dùng quyết định không làm (30/10).
 - Luật hành vi FIA; delta time so với best lap của chính agent (F11); MAPPO.

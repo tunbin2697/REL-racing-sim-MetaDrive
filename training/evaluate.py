@@ -50,6 +50,8 @@ def parse_args():
     parser.add_argument("--vehicle", type=str, default=None, choices=["gt3", "gt3_real", "sedan"], help="Loại xe đánh giá (mặc định: tự đọc từ checkpoint metadata hoặc 'gt3')")
     parser.add_argument("--map", type=str, default=None, help="Bản đồ đua (mặc định: tự đọc từ checkpoint metadata hoặc 'silverstone')")
     parser.add_argument("--obs-mode", type=str, default=None, choices=["pure", "line"], help="Chế độ quan sát (mặc định: tự đọc từ checkpoint metadata hoặc 'pure')")
+    parser.add_argument("--action-mode", type=str, default=None, choices=["split", "combined"], help="Action 3 trục hoặc pedal gộp (mặc định: đọc từ checkpoint metadata hoặc 'split')")
+    parser.add_argument("--offtrack-mode", type=str, default=None, choices=["terminate", "penalty"], help="Xử lý ra ngoài đường (mặc định: đọc từ checkpoint metadata hoặc 'terminate')")
     parser.add_argument("--obs-noise", type=float, default=0.0, help="Độ lệch chuẩn nhiễu nhân trên quan sát sigma (VD: 0.01, 0.02, 0.05)")
     parser.add_argument("--action-delay", type=int, default=0, help="Số bước trễ hành động k (VD: 0, 1, 2)")
     parser.add_argument("--out", type=str, default=None, help="File lưu kết quả JSON (tương đương --save-json)")
@@ -80,6 +82,8 @@ def _resolve_config_with_meta(args):
     resolved_map = resolve_field(args.map, "map", "silverstone", "map")
     resolved_vehicle = resolve_field(args.vehicle, "vehicle", "gt3", "vehicle")
     resolved_obs_mode = resolve_field(args.obs_mode, "obs_mode", "pure", "obs-mode")
+    args.action_mode = resolve_field(args.action_mode, "action_mode", "split", "action-mode")
+    args.offtrack_mode = resolve_field(args.offtrack_mode, "offtrack_mode", "terminate", "offtrack-mode")
     out_path = args.save_json or args.out or "logs/evaluation_results.json"
     return resolved_map, resolved_vehicle, resolved_obs_mode, out_path, meta
 
@@ -113,6 +117,8 @@ def main():
         vehicle=race_car,
         max_laps=args.laps,
         obs_mode=resolved_obs_mode,
+        action_mode=args.action_mode,
+        offtrack_mode=args.offtrack_mode,
     )
     obs_shape = getattr(env.observation_space, "shape", None)
     act_shape = getattr(env.action_space, "shape", None)

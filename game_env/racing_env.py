@@ -81,6 +81,14 @@ class SingleRacingMetaDrive(MetaDriveEnv):
         return ret
 
 
+# D35 · Chế độ ra ngoài đường kiểu GT Sophy/Fuchs (--offtrack-mode penalty): không kết thúc episode ngay,
+# phạt theo tốc độ mỗi bước và tắt reward tiến độ khi cả 4 bánh ở ngoài mặt nhựa.
+OFFTRACK_PENALTY_BASE = 0.1       # phạt cố định mỗi bước ở ngoài đường
+OFFTRACK_PENALTY_SPEED = 1.0      # nhân với (v / v_max)^2: ~-1.1/bước ở 260 km/h, ~-0.4/bước ở 144 km/h
+OFFTRACK_LOST_DIST_M = 25.0       # ra xa mép nhựa hơn mức này (cỡ vùng runoff đường thật) thì coi như mất xe -> kết thúc như crash
+OFFTRACK_MAX_STEPS = 50           # ở ngoài đường liên tục quá 5 s -> kết thúc như crash
+
+
 class MetaRacingEnv(gym.Env):
     """
     Gym wrapper tối ưu hóa cho bài toán Đua xe Thể thao Tốc độ cao (Sim Racing RL)
@@ -103,6 +111,8 @@ class MetaRacingEnv(gym.Env):
         time_penalty: float = 0.0,
         finish_bonus: str = "exp",
         obs_mode: str = "pure",
+        action_mode: str = "split",
+        offtrack_mode: str = "terminate",
         **kwargs,
     ):
         super().__init__()
@@ -117,6 +127,15 @@ class MetaRacingEnv(gym.Env):
         self.obs_mode = str(config.get("obs_mode", obs_mode)).strip().lower() if isinstance(config, dict) and "obs_mode" in config else str(obs_mode).strip().lower()
         if self.obs_mode not in ("pure", "line"):
             raise ValueError(f"obs_mode không hợp lệ: '{self.obs_mode}'. Chỉ hỗ trợ 'pure' hoặc 'line'.")
+        # D35: 'split' = [lái, ga, phanh] (mặc định cũ); 'combined' = [lái, pedal] với pedal > 0 là ga, < 0 là phanh
+        self.action_mode = str(action_mode).strip().lower()
+        if self.action_mode not in ("split", "combined"):
+            raise ValueError(f"action_mode không hợp lệ: '{self.action_mode}'. Chỉ hỗ trợ 'split' hoặc 'combined'.")
+        self.action_dim = 2 if self.action_mode == "combined" else 3
+        # D35: 'terminate' = kết thúc khi cả 4 bánh ra ngoài (mặc định cũ); 'penalty' = phạt và chạy tiếp
+        self.offtrack_mode = str(offtrack_mode).strip().lower()
+        if self.offtrack_mode not in ("terminate", "penalty"):
+            raise ValueError(f"offtrack_mode không hợp lệ: '{self.offtrack_mode}'. Chỉ hỗ trợ 'terminate' hoặc 'penalty'.")
         
         self.use_render = use_render
         self.window_size = window_size
@@ -189,7 +208,7 @@ class MetaRacingEnv(gym.Env):
         self.observation_space = spaces.Box(-np.inf, np.inf, shape=(self.obs_dim,), dtype=np.float32)
         # 3 chiều Continuous Racing Action: [steer, throttle, brake]
         # steer: [-1, 1], throttle: [-1, 1] -> [0, 1], brake: [-1, 1] -> [0, 1]
-        self.action_space = spaces.Box(-1.0, 1.0, shape=(3,), dtype=np.float32)
+        self.action_space = spaces.Box(-1.0, 1.0, shape=(self.action_dim,), dtype=np.float32)
         
         # Dữ liệu hình học đường đua dạng Polyline
         self.circuit_initialized = False
@@ -209,7 +228,7 @@ class MetaRacingEnv(gym.Env):
         self.last_pos = np.zeros(2, dtype=np.float32)
         self.current_step = 0
         self.last_s = 0.0
-        self.last_action = np.zeros(3, dtype=np.float32)
+        self.last_action = np.zeros(self.action_dim, dtype=np.float32)
         self.last_acc_long_g = 0.0
         self.last_acc_lat_g = 0.0
         self.lap_completed = False
@@ -217,6 +236,10 @@ class MetaRacingEnv(gym.Env):
         self.last_crash_history = []
         self.stagnant_steps = 0
         self.is_flying_start = False
+        self.offtrack_steps = 0
+        self.last_offtrack_history = []
+        self.last_hard_fail = False
+        self.last_all_wheels_off = False
         self.is_segment_start = False
         self.current_start_mode = "standing"
 
@@ -452,7 +475,7 @@ class MetaRacingEnv(gym.Env):
             self.get_line_obs_encoder()
             
         self.current_step = 0
-        self.last_action = np.zeros(3, dtype=np.float32)
+        self.last_action = np.zeros(self.action_dim, dtype=np.float32)
         self.last_acc_long_g = 0.0
         self.last_acc_lat_g = 0.0
         self.lap_completed = False
@@ -460,6 +483,8 @@ class MetaRacingEnv(gym.Env):
         self.telemetry.last_completed_lap_data = []
         self.episode_history = []
         self.stagnant_steps = 0
+        self.offtrack_steps = 0
+        self.last_offtrack_history = []
         self.current_track_idx = 0
         self.current_lap = 1
         self.lap_start_step = 0
@@ -567,6 +592,11 @@ class MetaRacingEnv(gym.Env):
         is_full_out = False
         on_runoff = False
         is_airborne_or_flipped = self.car.is_airborne_or_flipped()
+        # D35: tách lỗi cứng (lật, va chạm) khỏi trường hợp chỉ 4 bánh ra ngoài mặt nhựa
+        self.last_hard_fail = bool(
+            is_airborne_or_flipped or self.car.crash_object or self.car.crash_vehicle or self.car.crash_sidewalk
+        )
+        self.last_all_wheels_off = bool(wheels_on_track == 0)
         
         if (
             wheels_on_track == 0
@@ -685,6 +715,27 @@ class MetaRacingEnv(gym.Env):
         self.last_s = current_s
         r_progress = self.preset.progress_coef * max(0.0, float(delta_s))
 
+        # D35 · Ra ngoài đường ở chế độ penalty: tắt reward tiến độ, phạt theo tốc độ, chỉ kết thúc khi mất xe
+        r_offtrack = 0.0
+        offtrack_entry = False
+        offtrack_lost = False
+        is_off_track = bool(self.offtrack_mode == "penalty" and self.last_all_wheels_off and not self.last_hard_fail)
+        if is_off_track:
+            self.offtrack_steps += 1
+            if self.offtrack_steps == 1:
+                offtrack_entry = True
+                self.last_offtrack_history = list(self.episode_history)
+            r_progress = 0.0
+            speed_ratio_off = float(np.clip(speed_km_h / self.max_speed_km_h, 0.0, 1.0))
+            r_offtrack = -(OFFTRACK_PENALTY_BASE + OFFTRACK_PENALTY_SPEED * speed_ratio_off ** 2)
+            off_dist = float(np.linalg.norm(self.car.position - self.track_xy[self.current_track_idx])) - float(self.preset.half_width)
+            offtrack_lost = bool(off_dist > OFFTRACK_LOST_DIST_M or self.offtrack_steps > OFFTRACK_MAX_STEPS)
+        else:
+            self.offtrack_steps = 0
+        # Ở chế độ penalty, chỉ lỗi cứng (lật, va chạm) hoặc mất xe mới kết thúc episode
+        if self.offtrack_mode == "penalty":
+            is_full_out = bool(self.last_hard_fail or offtrack_lost)
+
         # b. Phạt rung lắc đánh lái (Steering Smoothness Regularization từ feature/clean-111s-optimal-ghost)
         r_steer_smooth = -0.10 * float(delta_steer ** 2)
 
@@ -698,7 +749,7 @@ class MetaRacingEnv(gym.Env):
         r_time = -self.time_penalty
         
         # Hàm thưởng vi mô thuần túy Markov:
-        micro_reward = r_progress + r_steer_smooth + r_idle + r_time
+        micro_reward = r_progress + r_steer_smooth + r_idle + r_time + r_offtrack
         macro_reward = 0.0
         
         self.last_action = np.array(action, dtype=np.float32)
@@ -809,6 +860,9 @@ class MetaRacingEnv(gym.Env):
         info["track_s"] = float(current_s)
         info["route_completion"] = float(progress_ratio)
         info["on_runoff"] = bool(on_runoff)
+        info["off_track"] = bool(is_off_track)
+        info["offtrack_entry"] = bool(offtrack_entry)
+        info["r_offtrack"] = float(r_offtrack)
         
         return obs, float(total_reward), terminated, truncated, info
 

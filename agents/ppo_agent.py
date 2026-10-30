@@ -69,7 +69,8 @@ class PPOAgent:
         with torch.no_grad():
             self.ac.actor_logstd.clamp_(min=self.ac.LOGSTD_MIN)
             if self.logstd_max_tensor is not None:
-                max_tensor = self.logstd_max_tensor.to(self.ac.actor_logstd.device)
+                # Preset ghi trần cho [lái, ga, phanh]; với action 2 chiều (D35: [lái, pedal]) chỉ lấy 2 phần tử đầu
+                max_tensor = self.logstd_max_tensor[:, : self.ac.actor_logstd.shape[1]].to(self.ac.actor_logstd.device)
                 self.ac.actor_logstd.data = torch.min(self.ac.actor_logstd.data, max_tensor)
             else:
                 self.ac.actor_logstd.clamp_(max=self.ac.LOGSTD_MAX)

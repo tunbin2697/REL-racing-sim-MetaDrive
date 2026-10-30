@@ -21,7 +21,8 @@ class EvalPerturbation:
     Không sửa MetaRacingEnv hay trọng số mạng.
     """
 
-    def __init__(self, obs_noise: float = 0.0, action_delay: int = 0, seed: int = 12345):
+    def __init__(self, obs_noise: float = 0.0, action_delay: int = 0, seed: int = 12345, action_dim: int = 3):
+        self.action_dim = int(action_dim)
         self.obs_noise = max(0.0, float(obs_noise))
         self.action_delay = max(0, int(action_delay))
         self.rng = np.random.default_rng(seed)
@@ -30,7 +31,8 @@ class EvalPerturbation:
 
     def reset(self):
         self._queue.clear()
-        neutral = np.array([0.0, -1.0, -1.0], dtype=np.float32)
+        # Lệnh trung tính: thẳng lái, nhả ga, nhả phanh ([0, -1, -1] cho 3 chiều; [0, 0] cho pedal gộp D35)
+        neutral = np.array([0.0, -1.0, -1.0], dtype=np.float32) if self.action_dim >= 3 else np.zeros(self.action_dim, dtype=np.float32)
         for _ in range(self.action_delay):
             self._queue.append(neutral.copy())
 
@@ -111,7 +113,11 @@ class RacingEvaluator:
         max_laps = max(1, int(getattr(self.env, "max_laps", 1)))
         max_eval_steps = int(max_eval_steps_per_lap * time_scale * max_laps)
 
-        perturbation = EvalPerturbation(obs_noise=obs_noise, action_delay=action_delay, seed=1000)
+        act_space = getattr(self.env, "action_space", None)
+        act_dim = int(act_space.shape[0]) if act_space is not None and act_space.shape is not None else 3
+        perturbation = EvalPerturbation(obs_noise=obs_noise, action_delay=action_delay, seed=1000, action_dim=act_dim)
+        offtrack_ep_count: int = 0
+        finish_lap_times: List[float] = []
 
         for ep in range(num_episodes):
             num_scenarios = max(1, getattr(self.env, "num_scenarios", 1))
@@ -132,6 +138,8 @@ class RacingEvaluator:
             ep_best_lap: Optional[float] = None
             is_crash = False
             is_arrived = False
+            ep_offtrack_steps = 0
+            first_offtrack_s: Optional[float] = None
 
             while True:
                 if obs.shape[0] >= 47:
@@ -153,6 +161,10 @@ class RacingEvaluator:
 
                 speed = float(step_info.get("speed_km_h", 0.0))
                 speeds.append(speed)
+                if step_info.get("off_track", False):
+                    ep_offtrack_steps += 1
+                    if first_offtrack_s is None:
+                        first_offtrack_s = float(step_info.get("track_s", 0.0))
 
                 if step_info.get("lap_completed", False):
                     comp_lap_t = float(step_info.get("completed_lap_time", step_info.get("lap_time", 0.0)))
@@ -173,10 +185,19 @@ class RacingEvaluator:
                         or (step_info.get("termination_reason") in ["crash_or_track_limit", "stalled"])
                     )
                     is_arrived = bool(step_info.get("arrive_dest", False))
+                    if is_arrived and ep_lap1_time is not None:
+                        finish_lap_times.append(ep_lap1_time)
+                    # D35 (--offtrack-mode penalty): episode không bị kết thúc khi ra ngoài đường, nên vòng nào có
+                    # ra ngoài (cả 4 bánh) thì tính như crash tại điểm ra ngoài đầu tiên -> không phải vòng sạch.
+                    if ep_offtrack_steps > 0:
+                        offtrack_ep_count += 1
+                    dirty_lap = bool(ep_offtrack_steps > 0 and not is_crash)
+                    if dirty_lap:
+                        is_crash = True
 
                     if is_crash:
                         crash_count += 1
-                        crash_dist = float(
+                        crash_dist = float(first_offtrack_s) if (dirty_lap and first_offtrack_s is not None) else float(
                             step_info.get(
                                 "crash_distance",
                                 float(step_info.get("route_completion", 0.0) * circuit_len),
@@ -230,7 +251,7 @@ class RacingEvaluator:
                 if "theoretical_best_lap_time" in bench and bench["theoretical_best_lap_time"] > 0:
                     theoretical_best_lap_time = bench["theoretical_best_lap_time"]
 
-            status_str = "ARRIVED" if is_arrived else ("CRASH" if is_crash else "OUT_OF_TIME")
+            status_str = ("ARRIVED_OFFTRACK" if ep_offtrack_steps > 0 else "ARRIVED") if is_arrived else ("CRASH" if is_crash else "OUT_OF_TIME")
             episode_records.append({
                 "episode": ep + 1,
                 "seed": int(target_seed),
@@ -240,6 +261,7 @@ class RacingEvaluator:
                 "mean_speed_kmh": float(eval_speeds[-1]),
                 "max_speed_kmh": float(eval_max_speeds[-1]),
                 "status": status_str,
+                "offtrack_steps": int(ep_offtrack_steps),
                 "clean_finish": bool(is_arrived and not is_crash),
                 "lap1_time": float(ep_lap1_time) if ep_lap1_time is not None else None,
                 "lap2_time": float(ep_lap2_time) if ep_lap2_time is not None else None,
@@ -274,6 +296,8 @@ class RacingEvaluator:
             "success_rate": float(success_count / max(1, num_episodes)),
             "clean_lap_rate": clean_lap_rate,
             "crash_rate": float(crash_count / max(1, num_episodes)),
+            "offtrack_episode_rate": float(offtrack_ep_count / max(1, num_episodes)),
+            "finish_lap_times": finish_lap_times,
             "crash_locations": crash_locations,
             "crash_distances_m": crash_distances_m,
             "crash_bins_50m": crash_bins_50m,
@@ -318,6 +342,8 @@ class RacingEvaluator:
         print(f"  - Average Track Completion:    {results['mean_completion']:.1f}%")
         print(f"  - Clean Lap Rate:              {results.get('clean_lap_rate', results['success_rate'])*100:.1f}% (Success: {results['success_rate']*100:.1f}%)")
         print(f"  - Crash Rate:                  {results['crash_rate']*100:.1f}%")
+        if results.get("offtrack_episode_rate", 0.0) > 0:
+            print(f"  - Off-track Episode Rate:      {results['offtrack_episode_rate']*100:.1f}% (vòng có ra ngoài đường được tính như crash)")
         if results.get("crash_locations"):
             print(f"  - Crash Locations:             {', '.join(results['crash_locations'])}")
         if results.get("crash_bins_50m"):

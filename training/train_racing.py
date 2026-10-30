@@ -70,6 +70,8 @@ def parse_args():
     parser.add_argument("--max-laps", type=int, default=2, help="Số vòng đua tối đa mỗi episode (mặc định 2 laps: Lap 1 Standing + Lap 2 Flying)")
     parser.add_argument("--obs-mode", type=str, default="pure", choices=["pure", "line"], help="Chế độ vector quan sát: 'pure' (35D chuẩn) hoặc 'line' (47D kèm prior racing line & v* theo D30/D31)")
     parser.add_argument("--spawn-mode", type=str, default="grid", choices=["grid", "mistake"], help="Chế độ điểm xuất phát: 'grid' (đứng tại vạch đích) hoặc 'mistake' (học từ lỗi kiểu GT Sophy theo D32)")
+    parser.add_argument("--action-mode", type=str, default="split", choices=["split", "combined"], help="Action: 'split' [lái, ga, phanh] (cũ) hoặc 'combined' [lái, pedal] gộp ga/phanh 1 trục như GT Sophy/Fuchs (D35)")
+    parser.add_argument("--offtrack-mode", type=str, default="terminate", choices=["terminate", "penalty"], help="Ra ngoài đường: 'terminate' kết thúc episode (cũ) hoặc 'penalty' phạt theo v^2 và chạy tiếp như GT Sophy/Fuchs (D35)")
     
     # Cờ điều khiển lịch trình suy giảm tham số (Schedules) - Mặc định TẮT (giữ nguyên LR và Entropy cố định)
     parser.add_argument("--lr-decay", action="store_true", default=False, help="Bật giảm dần Learning Rate tuyến tính từ --lr về --min-lr (mặc định: TẮT)")
@@ -154,6 +156,7 @@ def main():
     obs_banner = f"{args.obs_mode.upper()} (47D - PRIVILEGED PRIOR: Racing Line & V* in Obs [D31])" if args.obs_mode == "line" else "PURE (35D - Zero Optimal Data Leakage)"
     print(f"  - Observation Mode: {obs_banner}")
     print(f"  - Spawn Mode: {args.spawn_mode.upper()}")
+    print(f"  - Action Mode: {args.action_mode.upper()} | Off-track Mode: {args.offtrack_mode.upper()}")
 
     # Khởi tạo TensorBoard
     tb_run_name = f"ppo_racing_{time.strftime('%Y%m%d_%H%M%S')}"
@@ -180,6 +183,8 @@ def main():
         time_penalty=args.time_penalty,
         finish_bonus=args.finish_bonus,
         obs_mode=args.obs_mode,
+        action_mode=args.action_mode,
+        offtrack_mode=args.offtrack_mode,
     )
 
     obs_shape = env.observation_space.shape
@@ -253,6 +258,11 @@ def main():
             raise ValueError(
                 f"Lệch chế độ quan sát (D34): Checkpoint '{args.resume}' có obs_mode='{ckpt_obs_mode}', "
                 f"nhưng cờ hiện tại là --obs-mode='{args.obs_mode}'. Dừng để tránh hỏng trọng số."
+            )
+        if int(agent.action_dim) != int(act_dim):
+            raise ValueError(
+                f"Lệch số chiều action (D35): Checkpoint '{args.resume}' có action_dim={agent.action_dim}, "
+                f"nhưng --action-mode='{args.action_mode}' cần action_dim={act_dim}."
             )
         agent.set_lr(args.lr)
 
@@ -377,6 +387,8 @@ def main():
         "vehicle": args.vehicle,
         "obs_mode": args.obs_mode,
         "spawn_mode": args.spawn_mode,
+        "action_mode": args.action_mode,
+        "offtrack_mode": args.offtrack_mode,
         "git_commit": git_commit,
     }
     curriculum: Optional[SpawnCurriculum] = None
@@ -422,6 +434,9 @@ def main():
 
             if step_info.get("termination_reason") == "crash_or_track_limit" and curriculum is not None:
                 curriculum.record_crash(env.last_crash_history, start_mode=env.current_start_mode)
+            elif step_info.get("offtrack_entry", False) and curriculum is not None:
+                # D35: ở chế độ penalty, lần đầu ra ngoài đường cũng là một "lỗi" đáng luyện lại (GT Sophy)
+                curriculum.record_crash(env.last_offtrack_history, start_mode=env.current_start_mode)
 
             obs = next_obs
             if is_done:
