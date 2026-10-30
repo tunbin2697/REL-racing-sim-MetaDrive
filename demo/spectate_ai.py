@@ -38,7 +38,7 @@ def parse_args():
     parser.add_argument("--agent", type=str, default="ppo", choices=["ppo", "optimal"], help="Loại tác tử lái chính: 'ppo' (mạng neural PPO) hoặc 'optimal' (tác tử giải tích tối ưu lý thuyết)")
     parser.add_argument("--ghost", action="store_true", help="Bật xe bóng ma đối chứng (Ghost Car) điều khiển bởi OptimalRacingAgent")
     parser.add_argument("--manual", action="store_true", help="Chế độ tự lái bằng bàn phím (W-A-S-D) để so tài trực tiếp với Ghost Car")
-    parser.add_argument("--vehicle", type=str, default=None, choices=["gt3", "gt3_real", "sedan"], help="Loại xe biểu diễn (mặc định: tự đọc từ checkpoint metadata hoặc 'gt3')")
+    parser.add_argument("--vehicle", type=str, default=None, choices=["gt3", "gt3_anchor", "gt3_real", "sedan"], help="Loại xe biểu diễn (mặc định: tự đọc từ checkpoint metadata hoặc 'gt3')")
     parser.add_argument("--map", type=str, default=None, help="Bản đồ đua (mặc định: tự đọc từ checkpoint metadata hoặc 'silverstone')")
     parser.add_argument("--obs-mode", type=str, default=None, choices=["pure", "line"], help="Chế độ quan sát (mặc định: tự đọc từ checkpoint metadata hoặc 'pure')")
     parser.add_argument("--action-mode", type=str, default=None, choices=["split", "combined"], help="Action 3 trục hoặc pedal gộp (mặc định: đọc từ checkpoint metadata hoặc 'split')")

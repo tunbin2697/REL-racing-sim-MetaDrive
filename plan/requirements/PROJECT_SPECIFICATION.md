@@ -14,8 +14,8 @@
 3. [Tiêu Chí Quan Sát Đánh Giá Dựa Trên Lý Thuyết Đua F1](#3-tiêu-chí-quan-sát-đánh-giá-dựa-trên-lý-thuyết-đua-f1)
 4. [Nguyên Tắc Học Thuật: Tuyệt Đối Không Data Leak](#4-nguyên-tắc-học-thuật-tuyệt-đối-không-data-leak)
 5. [Hiện Trạng Nhánh Main (Trước Bàn Giao) & Gợi Ý Cho Team Mình](#5-hiện-trạng-nhánh-main-trước-bàn-giao--gợi-ý-cho-team-mình)
-6. [Outcome Kỳ Vọng & Mốc Benchmark Đối Chiếu](#6-outcome-kỳ-vọng--mốc-benchmark-đối-chiếu)
-7. [Các Hướng Mở Rộng Khuyến Khích (Bonus)](#7-các-hướng-mở-rộng-khuyến-khích-bonus)
+6. [Outcome & Mốc Benchmark Đối Chiếu](#-6-outcome--mốc-benchmark-đối-chiếu-cập-nhật-31102026)
+7. [Các Hướng Mở Rộng](#-7-các-hướng-mở-rộng-cập-nhật-31102026)
 
 ---
 
@@ -108,53 +108,45 @@ Dưới đây là tổng hợp trung thực một số vấn đề và thử ngh
 
 ---
 
-### 5.4. Trạng thái & Giải pháp Kỹ thuật Đã Hoàn Thiện Thực Tế (Resolved Implementations)
-Toàn bộ các nút thắt trên nhánh `main` cũ đã được nhóm nghiên cứu và giải quyết triệt để thông qua các giải pháp kỹ thuật có luận chứng khoa học:
-1. **Tích hợp Sa bàn Đua F1 Silverstone Closed-Loop ($3,417.8\text{m}$)**:
-   * Tái hiện 18 góc cua kinh điển của đường đua Silverstone, khép góc hình học hoàn hảo qua bộ giải lặp `solve_silverstone_layout.py`.
-   * Giải quyết dứt điểm lỗi đứt đoạn 98%, thiết lập vạch đích Start/Finish chính xác trên đoạn thẳng Hamilton Straight.
-2. **Không Gian Quan Sát 35 Chiều (Obs 35D) - Zero Data Leakage**:
-   * $10$ chiều Ego Kinematics: Vận tốc chuẩn hóa, vận tốc dọc/ngang thân xe ($v_x, v_y$), vận tốc góc yaw $\dot{\psi}$, góc lái hiện tại & bước trước, chân ga/phanh bước trước, cos/sin góc lệch tiếp tuyến tim đường ($\cos\Delta\theta, \sin\Delta\theta$), độ lệch tim đường $d_{\text{lat}}$.
-   * $5$ chiều Track Limits & Tiến trình: Khoảng cách tới mép cỏ trái/phải (`dist_left`, `dist_right`), cờ lấn lề Runoff, tiến trình vòng đua ($s / L$), độ cong tức thời dưới bánh xe ($\kappa_{\text{track}}$).
-   * $20$ chiều Lookahead Horizon Preview: 5 waypoint tim đường tại các cự ly $[10, 20, 35, 50, 70]\text{m}$. Tầm nhìn $70\text{m}$ cung cấp tín hiệu hình học khúc cua gấp sắc nét, không bị nhiễu hay gập khúc khi qua các góc cua chữ U (The Loop).
-3. **Không Gian Hành Động 3 Chiều Độc Lập & Bộ Trộn Chân Ga/Phanh $C^1$**:
-   * Phân tách riêng biệt Chân Ga (`throttle`) và Chân Phanh (`brake`), kết hợp bộ trộn Drive-by-Wire liên tục $C^1$ và Slew Rate Limiter, triệt tiêu 100% bẫy bão hòa chân ga và rung giật bàn đạp.
-4. **Kháng Rung Lắc Tay Lái (Anti-Chatter) Qua Slew Rate Limiter & Phạt Vi Sai Lái**:
-   * Sử dụng trực tiếp cơ chế vật lý Bullet nguyên bản của thư viện MetaDrive kết hợp **Slew Rate Limiter** ($\Delta\text{steer}_{\max} = 0.18/\text{step}$) trong [game_env/vehicle.py](file:///c:/Users/tunbi/Project/school/REL%20Assignment/game_env/vehicle.py) và hình phạt đạo hàm góc lái $r_{\text{steer\_smooth}} = -0.10 (\Delta\text{steer})^2$.
-5. **Hàm Thưởng Chuẩn Hóa Markovian (Không Phạt Tim Đường)**:
-   * Loại bỏ hoàn toàn hình phạt lệch tim đường ($r_{\text{center}} = 0$) để Agent tự do mở rộng góc vào cua Out - In - Out và chém Apex.
-   * Thưởng tiến độ dọc trục Frenet $\Delta s$, phạt vi sai lái $r_{\text{steer\_smooth}} = -0.10 (\Delta\text{steer})^2$, và thưởng cán đích hàm bậc 3 phi tuyến $R_{\text{finish}} = 50 + 100 \cdot \text{clip}\left(\frac{180 - T_{\text{lap}}}{90}, 0, 1\right)^3$.
+### 5.4. Trạng thái thực hiện (cập nhật 31/10/2026, nhánh `feature/111s-honest-anchor`)
+
+Kết quả chính là **mô hình tham chiếu `ref_111s`** (`models/ref_111s/best_agent.pt`, commit gốc `ee99f9d`). Các điểm lệch so với §2 và §4 được liệt kê đầy đủ, kèm lý do, ở [SPECIFICATION_INTENDED_VIOLATION.md](SPECIFICATION_INTENDED_VIOLATION.md).
+
+1. **Map Silverstone khép kín** (map half, khoảng 2.85 km, 2 làn × 4.5 m = 9 m): dựng từ các block MetaDrive bằng `scripts/solve_silverstone_layout.py`, vạch đích trên Hamilton Straight. Hết lỗi kết thúc ở 98% (§5.1 mục 5).
+2. **Obs 35D, chỉ dùng hình học tim đường**: 10 chiều động học xe (vận tốc, v_x, v_y, yaw rate, lái/ga/phanh bước trước, cos/sin lệch hướng, lệch tim đường); 5 chiều biên đường và tiến trình (khoảng cách tới mép trái/phải, cờ lấn lề, s/L, độ cong); 20 chiều lookahead (5 điểm tim đường ở 10/20/35/50/70 m). Không có dữ liệu tối ưu.
+3. **Action 3D** `[lái, ga, phanh]` qua bộ trộn pedal và giới hạn tốc độ xoay vô lăng 0.18/bước.
+4. **Reward của `ref_111s`**: thưởng tiến độ dọc tim đường 0.05·Δs; phạt Δlái² (−0.10); **phạt lệch tim đường `r_center = −0.04·(lat/4.5)²`**; phạt đứng yên dưới 10 km/h; kết thúc và phạt theo tốc độ khi ra khỏi đường; thưởng về đích 100 + bậc thang theo lap time. `r_center` lệch với khuyến nghị ở §4 (xem file violation).
+5. **Luật 4 bánh** (§2.2): env hiện tại kết thúc khi cả 4 bánh rời mặt nhựa, không có kerb ảo. `ref_111s` được train dưới luật cũ (4 góc thân xe, kerb ảo) và được **eval lại dưới luật 4 bánh**.
 
 ---
 
-## 📊 6. Outcome Kỳ Vọng & Mốc Benchmark Đối Chiếu
+## 📊 6. Outcome & Mốc Benchmark Đối Chiếu (cập nhật 31/10/2026)
 
-### 6.1. Xây dựng Mốc So Sánh Độc Lập (Reference Benchmark)
-Đồ án đã xây dựng độc lập động cơ phân tích học thuật `RacingBenchmarkEngine` ([game_env/benchmark.py](file:///c:/Users/tunbi/Project/school/REL%20Assignment/game_env/benchmark.py)) và tác tử giải tích `OptimalRacingAgent` (sử dụng `LongitudinalRacingMPC`):
-* **Quỹ đạo Cực tiểu Độ cong (Convex QP Minimum Curvature Line + C2 Gaussian Smoothing)**: Tối ưu hóa độ dịch chuyển ngang $d_{\text{lat}}$ bằng bộ giải bậc hai để giảm thiểu lực ly tâm $a_y = v^2 \kappa$ trên mặt đường nhựa thật $4.5\text{m}$.
-* **Profile Tốc độ Cực hạn (Lipp & Boyd 3-Pass Method)**: Tính toán phân bố tốc độ tối ưu thời gian dọc quỹ đạo khớp với vật lý Bullet nguyên bản, mang lại mốc thời gian cận trên lý thuyết:
-  $$\mathbf{T^* = 110.41\text{s}} \quad (\text{Optimal Agent Flying Lap: } 112.60\text{s}, \text{ Standing Start: } 117.40\text{s}, \text{ Apex Accuracy: } 100\%)$$
-* **Cam kết Zero Data Leakage**: Dữ liệu cận trên lý thuyết chỉ được dùng làm thước đo đánh giá ngoại tuyến, tuyệt đối không mớm vào Observation hay Reward của PPO.
+### 6.1. Mốc so sánh độc lập
+- `RacingBenchmarkEngine` (`game_env/benchmark.py`): racing line cực tiểu độ cong (QP, biên ngang ±4.05 m) và profile tốc độ tối ưu thời gian (Lipp & Boyd 3 pass, elip ma sát Kamm). Cho ra T\* của mô hình chất điểm.
+- `OptimalRacingAgent` (`agents/optimal_agent.py`): ghost bám profile bằng MPC dọc và pure pursuit.
+- **Ghost hiệu chỉnh (xe `gt3_anchor`)**: giới hạn gia tốc lấy từ số đo trên Bullet (bám ngang, phanh, tăng tốc), chọn cấu hình nhanh nhất mà ghost vẫn chạy sạch trong 33 cấu hình đã quét. Ghost legacy dùng hệ số chỉnh tay (phanh 6.2 m/s² trong khi xe phanh được khoảng 18 m/s²).
+- Profile tối ưu **chỉ** dùng để đối chiếu và chạy ghost; không vào obs hay reward của `ref_111s`.
 
-### 6.2. Các Chỉ Số Định Lượng Đánh Giá Độc Lập
-Hệ thống đánh giá học thuật tự động [training/evaluator.py](file:///c:/Users/tunbi/Project/school/REL%20Assignment/training/evaluator.py) trích xuất 5 chỉ số so sánh với mốc chuẩn:
-1. **Racing Line MAE & RMSE (m)**: Sai số độ lệch ngang trung bình so với đường đua tối ưu lý thuyết.
-2. **Apex Accuracy (%)**: Tỷ lệ phần trăm bám sát đỉnh góc cua trong phạm vi $\le 1.0\text{m}$.
-3. **Corner Delta V (km/h)**: Chênh lệch tốc độ đáy cua so với tốc độ tối ưu lý thuyết.
-4. **G-G Friction Utilization (%)**: Tỷ lệ khai thác vòng tròn ma sát lốp Kamm (GT3 Grip Limit $\mu = 1.35$).
-5. **Pace Efficiency (%)**: Tỷ lệ thời gian vòng đua thực tế so với cận trên lý thuyết ($T_{\text{agent}} / T^* \times 100\%$).
+### 6.2. Kết quả (cùng env, luật 4 bánh, cùng vật lý xe)
+| | Vòng xuất phát đứng | Vòng flying | T\* | Sạch |
+| :-- | :-- | :-- | :-- | :-- |
+| Ghost legacy | 119.5s | 114.2s | 112.59s | 2/2 |
+| Ghost hiệu chỉnh | 118.2s | 112.8s | 110.62s | 3/3 |
+| **`ref_111s`** (20 episode × 2 vòng) | **114.8 ± 0.4s** | **109.4 ± 0.5s** | – | 18/20 |
 
----
+Diễn giải: policy RL nhanh hơn bộ điều khiển dựa trên mô hình đã hiệu chỉnh khoảng 3%, và vòng flying nhanh hơn cả T\* của mọi envelope mà ghost chạy được. T\* là cận của **mô hình chất điểm**, không phải cận của simulator (`knowledge/vehicle_and_engine_physics.md` §7).
 
-## 🌟 7. Các Hướng Mở Rộng Khuyến Khích (Bonus Extensions - Đã Hoàn Thành)
-
-Cả 3 hướng mở rộng nâng cao đều đã được nghiên cứu và tích hợp hoàn chỉnh trong mã nguồn dự án:
-1. **Chế độ Đua Người vs AI / Ghost Car thời gian thực ([demo/play_vs_ai.py](file:///c:/Users/tunbi/Project/school/REL%20Assignment/demo/play_vs_ai.py))**:
-   * Mở cửa sổ 3D 60FPS cho phép người dùng dùng phím `W-A-S-D` trực tiếp so tài tốc độ cùng AI hoặc Xe đối chứng lý thuyết.
-2. **Thực thể Xe Bóng Ma 3D Hologram ([game_env/ghost_car.py](file:///c:/Users/tunbi/Project/school/REL%20Assignment/game_env/ghost_car.py))**:
-   * Xe đối chứng lý thuyết chạy song song dưới dạng bóng ma bán trong suốt ($70\%$ opacity), tắt toàn bộ va chạm vật lý để không cản trở xe chính, hiển thị live Telemetry Delta Time ($\Delta t$).
-3. **Tổng quát hóa Sa bàn F1 danh tiếng**:
-   * Sa bàn Silverstone F1 Grand Prix ($3.4\text{km}$) khép kín hoàn chỉnh với đầy đủ 18 góc cua và đoạn thẳng tốc độ cao.
+### 6.3. Các chỉ số đánh giá (`training/evaluator.py`)
+Lap time trên vòng sạch (trung bình, độ lệch chuẩn, min), tỉ lệ vòng sạch, vị trí crash; Racing Line MAE/RMSE và Apex Accuracy so với racing line tham chiếu; Corner ΔV; mức dùng elip ma sát; Pace Efficiency so với T\*.
 
 ---
-*Tài liệu này là căn cứ đặc tả kỹ thuật và đối chiếu nghiệm thu chính thức của đồ án môn học REL.*
+
+## 🌟 7. Các Hướng Mở Rộng (cập nhật 31/10/2026)
+
+1. **Ghost car và demo người với AI**: đã có (`demo/spectate_ai.py --ghost`, `demo/play_vs_ai.py`). Ghost xuyên thấu, không va chạm với xe chính.
+2. **Silverstone tỉ lệ 1:1 với xe GT3 gần thật** (Phase 2): đã thử với nhiều cấu hình (obs racing line, phạt ra ngoài đường kiểu GT Sophy, học từ lỗi); best sạch 143.4s so với ghost 124.9s. **Đóng băng**, giữ làm chương "mở rộng đã thử" (`knowledge/ablation_inventory.md` R12–R14b).
+3. **Đua nhiều xe**: khung 6 xe self-play đã có trên `origin/feature/multicar-selfplay`; bản demo cuối do team làm theo `plan/team_handoff_multicar.md`.
+
+---
+*Tài liệu này là đặc tả yêu cầu gốc của đồ án. Mục 1–5.3 giữ nguyên như lúc giao đề; mục 5.4–7 ghi trạng thái thực hiện.*

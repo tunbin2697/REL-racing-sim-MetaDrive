@@ -294,6 +294,26 @@ class DefaultCivilianSedan(BaseRaceVehicle):
         super().__init__(cfg)
 
 
+def make_gt3_anchor_car() -> GT3RaceCar:
+    """
+    D41 · Xe "neo" cho so sánh 111s với ghost trên map half: vật lý Bullet GIỐNG HỆT GT3RaceCar (xe của 111s,
+    gồm cả μ cầu trước 0.9 của F16), chỉ thêm envelope đo trên Bullet để benchmark + ghost dùng pipeline v23
+    như map full. Envelope chọn bằng quét 33 cấu hình (bám ngang 0.81-1.10 G, phanh 12-17 m/s^2, biên ngang
+    racing line 4.05/4.5/4.9 m): đây là cấu hình nhanh nhất mà ghost vẫn chạy sạch cả 2 vòng.
+    Số đo gốc (logs/calibration/calibration_results.json): bám ngang ổn định 0.88-0.90 G, phanh 1.84 G từ 100 km/h,
+    a_x 3.09 m/s^2 tới trần 120 km/h.
+    """
+    base = GT3RaceCar().cfg
+    cfg = VehicleConfig(**{
+        **base.__dict__,
+        "name": "GT3_RaceCar_Anchor",
+        "envelope_a_lat": 9.32,     # 0.95 G: cao hơn bám ổn định đo được; 1.00 G thì ghost văng ở cua s≈2390 m
+        "envelope_a_brake": 15.0,   # 1.53 G, dưới mức 1.84 G đo được (17.0 làm ghost văng 1/2 lần ở 0.95 G)
+        "envelope_a_engine": 3.09,  # đo: 3.09 m/s^2 từ 0 tới 100 km/h
+    })
+    return GT3RaceCar(cfg)
+
+
 def get_vehicle(name: Optional[str] = "gt3") -> BaseRaceVehicle:
     """
     Factory Function (Mẫu thiết kế Factory):
@@ -302,11 +322,13 @@ def get_vehicle(name: Optional[str] = "gt3") -> BaseRaceVehicle:
     """
     if name is None or str(name).lower() in ["gt3", "gt3_racecar", "racing"]:
         return GT3RaceCar()
+    elif str(name).lower() in ["gt3_anchor", "anchor"]:
+        return make_gt3_anchor_car()
     elif str(name).lower() in ["gt3_real", "real", "gt3_realcar"]:
         return GT3RealCar()
     elif str(name).lower() in ["sedan", "default", "civilian"]:
         return DefaultCivilianSedan()
     else:
         raise ValueError(
-            f"Không nhận diện được loại xe '{name}'. Chọn 'gt3', 'gt3_real' hoặc 'sedan'."
+            f"Không nhận diện được loại xe '{name}'. Chọn 'gt3', 'gt3_anchor', 'gt3_real' hoặc 'sedan'."
         )

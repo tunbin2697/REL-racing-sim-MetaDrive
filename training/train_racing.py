@@ -66,7 +66,7 @@ def parse_args():
     parser.add_argument("--reset-logstd", type=float, default=None, help="Reset độ lệch chuẩn khám phá actor_logstd khi resume")
     parser.add_argument("--steps-to-run", type=int, default=None, help="Số bước muốn chạy thêm khi resume")
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
-    parser.add_argument("--vehicle", type=str, default="gt3", choices=["gt3", "gt3_real", "sedan"], help="Loại xe đua ('gt3', 'gt3_real' cho map full, hoặc 'sedan' đối chứng)")
+    parser.add_argument("--vehicle", type=str, default="gt3", choices=["gt3", "gt3_anchor", "gt3_real", "sedan"], help="Loại xe đua ('gt3', 'gt3_real' cho map full, hoặc 'sedan' đối chứng)")
     parser.add_argument("--max-laps", type=int, default=2, help="Số vòng đua tối đa mỗi episode (mặc định 2 laps: Lap 1 Standing + Lap 2 Flying)")
     parser.add_argument("--obs-mode", type=str, default="pure", choices=["pure", "line"], help="Chế độ vector quan sát: 'pure' (35D chuẩn) hoặc 'line' (47D kèm prior racing line & v* theo D30/D31)")
     parser.add_argument("--spawn-mode", type=str, default="grid", choices=["grid", "mistake"], help="Chế độ điểm xuất phát: 'grid' (đứng tại vạch đích) hoặc 'mistake' (học từ lỗi kiểu GT Sophy theo D32)")

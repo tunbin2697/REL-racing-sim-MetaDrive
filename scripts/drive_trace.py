@@ -46,7 +46,7 @@ def parse_args():
         "--vehicle",
         type=str,
         default="gt3",
-        choices=["gt3", "gt3_real", "sedan"],
+        choices=["gt3", "gt3_anchor", "gt3_real", "sedan"],
         help="Loại xe ('gt3', 'gt3_real', 'sedan')",
     )
     parser.add_argument(

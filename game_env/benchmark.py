@@ -64,7 +64,8 @@ class RacingBenchmarkEngine:
         else:
             map_tag = "silverstone_full" if self.circuit_length > 4000.0 else "silverstone_half"
         veh_tag = getattr(self.cfg, "name", "gt3").lower()
-        if map_tag == "silverstone_half" and ("real" not in veh_tag):
+        # File legacy chỉ dành cho profile v22 của map half; xe có envelope (v23) luôn có cache riêng để không ghi đè
+        if map_tag == "silverstone_half" and ("real" not in veh_tag) and self.profile_version < 23.0:
             cache_file = "silverstone_optimal_profile.npz"
         else:
             cache_file = f"{map_tag}_{veh_tag}_optimal_profile.npz"
@@ -79,6 +80,8 @@ class RacingBenchmarkEngine:
                     and np.linalg.norm(data["optimal_line_xy"][0] - self.track_xy[0]) < 4.5
                     and float(data.get("profile_version", 0)) == self.profile_version
                     and np.allclose(data["envelope"] if "envelope" in data.files else np.zeros(3), self.envelope)
+                    # Đổi bề rộng đường (số làn) thì racing line cũ không còn hợp lệ. File cũ không lưu bề rộng: chấp nhận
+                    and (abs(float(data["track_width"]) - self.track_width) < 1e-3 if "track_width" in data.files else True)
                 ):
                     self.optimal_line_xy = data["optimal_line_xy"]
                     self.optimal_line_kappa = data["optimal_line_kappa"]
@@ -114,6 +117,7 @@ class RacingBenchmarkEngine:
                     mu=self.mu,
                     profile_version=self.profile_version,
                     envelope=self.envelope,
+                    track_width=self.track_width,
                 )
             except Exception:
                 pass

@@ -509,6 +509,27 @@ Từ `p2_line/best_agent.pt` (1.74M), 200k step, `--line-reward-lat 0.03 --line-
 
 ---
 
+## F24. Neo liêm chính: 111s nhanh hơn ghost đã hiệu chỉnh dưới luật chặt (D41)
+
+**[Đã kiểm chứng 31/10, nhánh `feature/111s-honest-anchor`]** Env: map half, luật 4 bánh (không kerb ảo), GT3RaceCar (vật lý của 111s, kể cả F16), trần 120 km/h. Số liệu: `logs/anchor/`.
+
+### Ghost: nâng cấp từ hệ số legacy lên envelope đo được
+- Ghost legacy (v22) dùng phanh 6.2 m/s² trong khi xe phanh được ~18 m/s², và bám 1.04–1.2 G ở cua nhanh trong khi trần đo được ~0.90 G. Lệch ~6% so với T\* của chính nó.
+- Quét 33 cấu hình envelope (bám ngang 0.81–1.10 G, phanh 12/15/17 m/s², tăng tốc 3.09 m/s² đo được; biên ngang racing line 4.05/4.5/4.9 m). Từ 1.00 G trở lên ghost văng ở cùng một cua (s≈2390 m); nới biên ngang không giúp.
+
+| Đối tượng | Vòng đứng | Vòng flying | T\* của mô hình | Sạch |
+| :-- | :-- | :-- | :-- | :-- |
+| Ghost legacy (v22) | 119.5s | 114.2s | 112.59s | 2/2 |
+| **Ghost hiệu chỉnh** (`gt3_anchor`: 0.95 G / 15.0 / 3.09, biên 4.05 m) | **118.2s** | **112.8s** | 110.62s | 3/3 |
+| **111s** (20 episode × 2 vòng) | **114.8 ± 0.4s** | **109.4 ± 0.5s** | – | 18/20 (văng ở 2637 m, 364 m) |
+
+### Diễn giải
+- 111s nhanh hơn ghost tốt nhất khoảng 3.4s ở cả hai vòng (~3%), và vòng flying nhanh hơn cả T\* của mọi envelope mà ghost chạy được (T\* thấp nhất còn chạy được: 110.30s ở 0.95 G / 17).
+- **[Suy luận]** Nguồn chênh: mô hình chất điểm dùng bám ngang ổn định không đổi, còn agent dùng được bám tức thời cao hơn (a_lat p95 0.99 G, max 1.21 G ở F23) và các hiệu ứng động học mà mô hình bỏ qua. Đây là sai lệch mô hình–hệ thật (§7 file vật lý): RL tối ưu trực tiếp simulator.
+- Hạn chế còn lại: F16 có ở cả hai bên (công bằng nhưng xe chưa thật); ghost là một bộ điều khiển cụ thể (MPC dọc + pure pursuit), chưa phải mọi bộ điều khiển dựa trên mô hình; 111s được train dưới luật kerb ảo rồi eval dưới luật 4 bánh.
+
+---
+
 ## Tổng hợp insight Phase 1 → quyết định Phase 2
 
 | # | Insight | Áp dụng cho Phase 2 |

@@ -47,7 +47,7 @@ def parse_args():
     parser.add_argument("--agent", type=str, default="ppo", choices=["ppo", "optimal"], help="'ppo' (checkpoint) hoặc 'optimal' (ghost giải tích, nhánh 1 của ablation D30; cần --map và --vehicle)")
     parser.add_argument("--episodes", type=int, default=20, help="Số episode thử nghiệm (mặc định 20)")
     parser.add_argument("--laps", type=int, default=2, help="Số vòng đua mỗi episode (mặc định 2: Lap 1 Standing + Lap 2 Flying)")
-    parser.add_argument("--vehicle", type=str, default=None, choices=["gt3", "gt3_real", "sedan"], help="Loại xe đánh giá (mặc định: tự đọc từ checkpoint metadata hoặc 'gt3')")
+    parser.add_argument("--vehicle", type=str, default=None, choices=["gt3", "gt3_anchor", "gt3_real", "sedan"], help="Loại xe đánh giá (mặc định: tự đọc từ checkpoint metadata hoặc 'gt3')")
     parser.add_argument("--map", type=str, default=None, help="Bản đồ đua (mặc định: tự đọc từ checkpoint metadata hoặc 'silverstone')")
     parser.add_argument("--obs-mode", type=str, default=None, choices=["pure", "line"], help="Chế độ quan sát (mặc định: tự đọc từ checkpoint metadata hoặc 'pure')")
     parser.add_argument("--action-mode", type=str, default=None, choices=["split", "combined"], help="Action 3 trục hoặc pedal gộp (mặc định: đọc từ checkpoint metadata hoặc 'split')")
