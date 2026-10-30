@@ -54,3 +54,5 @@ GEMINI.md
 # Intermediate checkpoints of experiment runs (only keep final models)
 models/run_v*/
 models/multicar_v*/
+models/run_f1*/
+models/multicar_f1*/

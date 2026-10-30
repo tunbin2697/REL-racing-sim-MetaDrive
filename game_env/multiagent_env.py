@@ -206,8 +206,8 @@ class MultiAgentRacingEnv:
         yaw_rate = float(getattr(vehicle, "yaw_rate", 0.0))
         
         ego_state = [
-            float(np.clip(speed_m_s / 40.0, 0.0, 1.5)),
-            float(np.clip(vx / 40.0, -1.0, 1.5)),
+            float(np.clip(speed_m_s / 40.0, 0.0, 2.5)),
+            float(np.clip(vx / 40.0, -1.0, 2.5)),
             float(np.clip(vy / 20.0, -1.5, 1.5)),
             float(np.clip(yaw_rate / 3.14159, -2.0, 2.0)),
             float(action_applied[0]),

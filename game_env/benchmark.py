@@ -53,7 +53,9 @@ class RacingBenchmarkEngine:
         self.max_lat_bound = min(4.05, max(1.0, 0.5 * self.track_width - 0.45))
         
         # Đường dẫn lưu cache để nạp tức thì trong 1 mili-giây
-        cache_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "scripts", "silverstone_optimal_profile.npz")
+        # Profile vận tốc phụ thuộc tốc độ trần -> mỗi loại xe (GT3 120 km/h, F1 340 km/h) dùng file cache riêng
+        cache_name = "silverstone_optimal_profile.npz" if abs(self.cfg.max_speed_km_h - 120.0) < 1e-3 else f"silverstone_optimal_profile_v{int(round(self.cfg.max_speed_km_h))}.npz"
+        cache_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "scripts", cache_name)
         loaded_from_cache = False
         if not force_recompute and os.path.exists(cache_path):
             try:

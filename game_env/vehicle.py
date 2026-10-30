@@ -3,13 +3,15 @@
 Áp dụng nguyên lý Single Responsibility (SRP) và Lập trình hướng đối tượng (OOP):
 - Tách biệt hoàn toàn phần Cơ khí / Động lực học (Vehicle Dynamics) ra khỏi Trọng tài Môi trường (RacingEnv).
 - Quản lý lực phanh, lực kéo, độ bám lốp, tỷ số truyền lái, bộ lọc làm mịn góc lái (Slew Rate Limiter).
-- Cung cấp sẵn các mẫu xe: GT3RaceCar (xe đua thể thao) và DefaultCivilianSedan (xe dân dụng đối chứng).
+- Cung cấp sẵn các mẫu xe: GT3RaceCar (xe đua thể thao), F1RaceCar (xe công thức 340 km/h) và DefaultCivilianSedan (xe dân dụng đối chứng).
 """
 
 import copy
+import weakref
 from dataclasses import dataclass
 from typing import List, Tuple, Optional
 import numpy as np
+from panda3d.core import Vec3
 
 
 @dataclass
@@ -25,6 +27,28 @@ class VehicleConfig:
     length: float = 4.50               # Chiều dài xe (m)
     width: float = 1.85                # Chiều rộng xe (m)
     max_speed_km_h: float = 120.0      # Vận tốc giới hạn trần (km/h)
+    downforce_coef: float = 0.0        # Lực ép khí động học tại 200 km/h tính theo số lần trọng lượng xe (tỉ lệ v^2)
+    max_suspension_force: Optional[float] = None  # Giới hạn lực lò xo mỗi bánh (N); Bullet mặc định 6000N -> chạm đáy khi có downforce
+    roll_influence: Optional[float] = None        # Độ nghiêng thân xe khi vào cua (MetaDrive mặc định 0.5)
+
+
+# Các xe đang có lực ép khí động học; lực được áp ở MỌI bước vật lý 0.02s (Bullet xóa lực sau mỗi bước)
+_DOWNFORCE_CARS = weakref.WeakSet()
+
+
+def _install_downforce_hook(engine):
+    """Bọc engine.step_physics_world để áp downforce cho các xe đăng ký trước mỗi bước vật lý (cài 1 lần mỗi engine)"""
+    if engine is None or getattr(engine, "_race_downforce_hooked", False):
+        return
+    step_physics_world = engine.step_physics_world
+
+    def step_with_downforce():
+        for car in list(_DOWNFORCE_CARS):
+            car.apply_downforce()
+        step_physics_world()
+
+    engine.step_physics_world = step_with_downforce
+    engine._race_downforce_hooked = True
 
 
 class BaseRaceVehicle:
@@ -67,6 +91,32 @@ class BaseRaceVehicle:
         if hasattr(self.raw_vehicle, "wheels"):
             for wheel in self.raw_vehicle.wheels:
                 wheel.setFrictionSlip(float(self.cfg.wheel_friction))
+                if self.cfg.max_suspension_force is not None:
+                    wheel.setMaxSuspensionForce(float(self.cfg.max_suspension_force))
+                if self.cfg.roll_influence is not None:
+                    wheel.setRollInfluence(float(self.cfg.roll_influence))
+
+        if self.cfg.downforce_coef > 0.0:
+            from metadrive.engine.engine_utils import get_engine
+            _DOWNFORCE_CARS.add(self)
+            _install_downforce_hook(get_engine())
+
+    def apply_downforce(self):
+        """Lực ép xuống F = coef * m * g * (v / 200 km/h)^2 đặt tại trọng tâm (mô phỏng cánh gió F1)"""
+        raw = self.raw_vehicle
+        body = getattr(raw, "body", None) if raw is not None else None
+        if body is None:
+            return
+        try:
+            # Chặn tốc độ ở trần thiết kế: va chạm mạnh có thể làm vận tốc vọt lên, lực ~v^2 sẽ khuếch đại thành NaN
+            speed = float(raw.speed_km_h)
+            if not np.isfinite(speed):
+                return
+            ratio = min(speed, self.cfg.max_speed_km_h) / 200.0
+            body.applyCentralForce(Vec3(0.0, 0.0, -self.cfg.downforce_coef * self.cfg.mass * 9.81 * ratio * ratio))
+        except (AssertionError, AttributeError):
+            # Xe đã bị hủy khỏi engine
+            pass
 
     def process_action(self, raw_action) -> Tuple[np.ndarray, float, float]:
         """
@@ -221,6 +271,30 @@ class GT3RaceCar(BaseRaceVehicle):
         super().__init__(cfg)
 
 
+class F1RaceCar(BaseRaceVehicle):
+    """Cấu hình xe công thức F1: trần 340 km/h, lực kéo lớn (0-100 ~3.0s, 0-300 ~10s trên đường thẳng)
+    MetaDrive không có khí động học và tăng wheel_friction trên ~1.35 không tăng độ bám (trần ~0.86G cua / ~1.5G phanh),
+    nên mô phỏng lực ép khí động học (downforce ~ v^2) + nâng giới hạn lò xo + giảm nghiêng thân xe:
+    phanh ~3.8G, cua ~1.16G @120 km/h / ~1.59G @180 km/h, thân xe nghiêng tối đa ~5 độ (đo trên đường thẳng dài)."""
+    def __init__(self, config: Optional[VehicleConfig] = None):
+        cfg = config or VehicleConfig(
+            name="F1_RaceCar",
+            mass=1100.0,
+            max_engine_force=2500.0,
+            max_brake_force=650.0,
+            max_steering_deg=20.0,
+            wheel_friction=1.35,
+            max_steer_rate=0.18,
+            length=4.50,
+            width=1.85,
+            max_speed_km_h=340.0,
+            downforce_coef=1.0,
+            max_suspension_force=60000.0,
+            roll_influence=0.2,
+        )
+        super().__init__(cfg)
+
+
 class DefaultCivilianSedan(BaseRaceVehicle):
     """Cấu hình xe sedan dân dụng nguyên bản của MetaDrive (dành cho đối chứng / Ablation Study)"""
     def __init__(self, config: Optional[VehicleConfig] = None):
@@ -243,11 +317,13 @@ def get_vehicle(name: Optional[str] = "gt3") -> BaseRaceVehicle:
     """
     Factory Function (Mẫu thiết kế Factory):
     Tạo đối tượng xe đua tương ứng theo tên định danh.
-    Hỗ trợ: 'gt3', 'racing', 'sedan', 'civilian'
+    Hỗ trợ: 'gt3', 'racing', 'f1', 'sedan', 'civilian'
     """
     if name is None or str(name).lower() in ["gt3", "gt3_racecar", "racing"]:
         return GT3RaceCar()
+    elif str(name).lower() in ["f1", "f1_racecar", "formula1"]:
+        return F1RaceCar()
     elif str(name).lower() in ["sedan", "default", "civilian"]:
         return DefaultCivilianSedan()
     else:
-        raise ValueError(f"Không nhận diện được loại xe '{name}'. Chọn 'gt3' hoặc 'sedan'.")
+        raise ValueError(f"Không nhận diện được loại xe '{name}'. Chọn 'gt3', 'f1' hoặc 'sedan'.")

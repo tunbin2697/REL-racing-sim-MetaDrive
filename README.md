@@ -279,12 +279,38 @@ python demo/race_multicar.py --spectate
 python demo/race_multicar.py --laps 2 --grid staggered --model models/multicar_best.pt
 ```
 * **Tay cầm**: Joystick trái = lái, `RT` = ga, `LT` = phanh (`--steer-gamma 1.5` để lái mềm hơn quanh tâm).
+* **Loại xe** (`--vehicle`): `gt3` (mặc định, trần 120 km/h, model `multicar_best.pt`) hoặc `f1` (trần **340 km/h**, model `multicar_f1_best.pt`, xem bên dưới).
+* **Hồi sinh** (`--respawn`): xe văng / đứng yên không bị loại mà đứng ngoài `--respawn-delay` giây (mặc định 3s) rồi quay lại đúng chỗ văng (cách xe khác ≥ 20m), giữ nguyên vòng và quãng đường; tối đa 5 lần mỗi xe. HUD hiện `PEN x.xs` khi xe đang chờ.
 * **Lưới xuất phát** (`--grid`): `abreast` (mặc định) mỗi hàng 3 xe ngang hàng, mỗi làn 1 xe, hàng cách nhau 10m; `staggered` so le kiểu F1.
 * **Camera**:
   * `1`–`6`: theo xe tương ứng; `0`: theo xe dẫn đầu.
   * `N` / `Tab`: xe kế tiếp; `M`: xe trước đó (dùng phím chữ khi bộ gõ tiếng Việt chặn phím số).
   * Khi xe đang theo bị loại, camera tự chuyển sang xe dẫn đầu.
 * **HUD**: bảng xếp hạng trực tiếp P1–P6, khoảng cách tới xe dẫn đầu, tốc độ, số lần va chạm, danh sách xe bị loại.
+
+---
+
+#### 🏎️ Xe F1 (`--vehicle f1`)
+Có thể dùng cho mọi script (`spectate_ai.py`, `play_vs_ai.py`, `race_multicar.py`, `train_racing.py`, `train_multicar.py`, `evaluate*.py`). Model đã train: `models/f1_best.pt` (1 xe) và `models/multicar_f1_best.pt` (6 xe).
+```bash
+python demo/spectate_ai.py --vehicle f1 --model models/f1_best.pt
+python demo/race_multicar.py --vehicle f1 --model models/multicar_f1_best.pt --laps 2 --respawn --spectate
+```
+
+| Thông số | GT3 (`gt3`) | F1 (`f1`) |
+| :--- | :---: | :---: |
+| Tốc độ trần | 120 km/h | 340 km/h (đạt ~301 km/h trên đường thẳng) |
+| Lực kéo động cơ / khối lượng | 850 N / 1100 kg | 2500 N / 1100 kg |
+| 0–100 / 0–200 / 0–300 km/h | 8.9 s / 17.9 s / — | 3.0 s / 6.1 s / 9.1 s |
+| Lực ép khí động học | không | $F = m g \,(v / 200\text{ km/h})^2$ |
+| Phanh tối đa | ~1.5 G | ~3.8 G |
+| Bám ngang khi cua | ~0.86 G | 1.16 G @120 km/h, 1.59 G @180 km/h |
+
+* **Lực ép (downforce)**: MetaDrive giới hạn độ bám ở ~0.86 G cua / ~1.5 G phanh dù tăng `wheel_friction` đến đâu, nên xe F1 mô phỏng cánh gió bằng lực ép xuống tăng theo $v^2$ (bằng trọng lượng xe ở 200 km/h), áp vào thân xe ở **mỗi bước vật lý 0.02s**. Kèm theo đó lực giảm xóc tối đa nâng lên 60000 N (mặc định 6000 N bị chạm đáy) và `roll_influence` 0.2 để xe không lật khi cua (nghiêng tối đa ~5°).
+* **Tầm nhìn mở rộng**: xe có trần > 150 km/h tự động thêm 3 điểm nhìn trước ở 200 / 300 / 400 m → quan sát **52D** (1 xe) / **77D** (6 xe). Model 40D cũ được nạp sang 52D bằng `PPOAgent.load_widened` (cột mới khởi tạo 0, hành vi ban đầu giữ nguyên).
+* **Chống mẹo đứng yên**: `--stall-penalty 30` phạt khi xe dừng quá 12s (không có phạt này agent học cách dừng trước cua khó để né phạt văng).
+* Thanh **Speed** trên dashboard được chuẩn hóa theo tốc độ trần của xe đang theo dõi (MetaDrive gốc chia cứng cho 120 km/h).
+* ⚠️ `OptimalRacingAgent` / benchmark lý thuyết chưa mô phỏng lực ép, nên chỉ đúng cho GT3.
 
 ---
 
@@ -300,6 +326,11 @@ python training/train_multicar.py --resume models/multicar_best.pt --total-sampl
     --collision-penalty 4 --save-dir models/multicar_next --log-dir logs/multicar_next
 ```
 * Lưu snapshot `agent_{N}k.pt` mỗi `--milestone-freq` mẫu (mặc định 250k), cùng `best_agent.pt` / `last_agent.pt`.
+* **Luyện pha chạy thành cụm (F1)**: `--laps 2 --respawn inplace --race-reset 60 100` — cả cuộc đua bắt đầu lại từ vạch xuất phát sau ngẫu nhiên 60–100s (bootstrap $V(s')$ khi cắt giữa chừng), xe văng hồi sinh tại chỗ; eval là cuộc đua 2 vòng có hồi sinh, xếp hạng theo tổng thời gian đua.
+```bash
+python training/train_multicar.py --vehicle f1 --resume models/multicar_f1_best.pt --lr 5e-5 --laps 2     --respawn inplace --race-reset 60 100 --stall-penalty 30 --eval-freq 10 --save-dir models/multicar_f1d --log-dir logs/multicar_f1d
+```
+* **Đánh giá nhiều cuộc đua**: `python scripts/evaluate_multicar.py --vehicle f1 --races 6 --models "models/multicar_f1c/agent_*k.pt"` (thêm `--laps 2 --respawn` cho luật hồi sinh).
 * ⚠️ Eval khi train chỉ dùng 1 cuộc đua nên nhiễu: nên chọn model cuối bằng cách đánh giá nhiều cuộc đua trên các snapshot thay vì tin vào `best_agent.pt`.
 
 ---
@@ -399,7 +430,27 @@ Quá trình train (tổng ~6.8M mẫu, cộng dồn mọi xe):
 * Đổi sang **lưới ngang hàng + tăng phạt va chạm** giúp giảm va chạm ~3 lần và tăng gấp đôi số xe về đích so với v1.
 * **Hạn chế**: AI đua trong nhóm thận trọng hơn, chậm hơn ~12s/vòng so với model 1 xe; kết quả giữa các snapshot dao động mạnh nên cần đánh giá nhiều cuộc đua để chọn model. Demo dùng chính sách tất định nên từng cuộc đua có thể khác bảng trên.
 
-### 6.3. Đối chiếu benchmark (phiên bản trước)
+### 6.3. Xe F1 (lực ép khí động học)
+**1 xe — `models/f1_best.pt`** (`run_f1c/agent_step_1000k`, warm start từ model F1 trước khi có lực ép, 1M bước, `logs/run_f1c/checkpoint_eval.json`):
+
+| Chỉ số | GT3 (`best_agent.pt`) | F1 (`f1_best.pt`) |
+| :--- | :---: | :---: |
+| Tất định: về đích | 5/6 | 2/2 (100%) |
+| Lap time | ~142 s | **111.7 s** |
+| Ngẫu nhiên: về đích / quãng đường | — | 80% / 92.7% |
+
+**6 xe — `models/multicar_f1_best.pt`** (`multicar_f1c/best_agent`, warm start 52D → 77D từ `f1_best.pt`): đánh giá 6 cuộc đua ngẫu nhiên + 1 tất định (`logs/multicar_f1c/checkpoint_eval.json`):
+
+| Chế độ | Về đích | Văng | Lap TB |
+| :--- | :---: | :---: | :---: |
+| Tất định | 4/6 | 1 | 123.8 s |
+| Ngẫu nhiên (TB 6 cuộc đua) | 2.2/6 | 3.2 | 127.7 s |
+
+* Gần như mọi xe bị loại trong **~1 km đầu** khi 6 xe còn chạy thành cụm (đường 13.5 m, 200–300 km/h); xe qua được đoạn này hầu như luôn về đích. Với `--respawn` cả 6 xe đều về đích 2 vòng (~245 s).
+* Đang thử luyện riêng pha chạy thành cụm (`--race-reset 60 100 --respawn inplace`, lượt `multicar_f1d`).
+* Lượt `multicar_f1` gặp lỗi NaN ở ~1.48M mẫu (vật lý nổ khi va chạm cực mạnh / tràn `exp(log_ratio)`); đã thêm chặn tốc độ khi tính lực ép, lưới an toàn NaN trong env và bỏ qua minibatch có loss không hữu hạn.
+
+### 6.4. Đối chiếu benchmark (phiên bản trước)
 Bảng dưới đây là kết quả của phiên bản PPO trước (hàm thưởng không có time penalty), giữ lại để tham khảo cùng tác tử đối chứng và cận trên lý thuyết:
 
 | Chỉ Số Đánh Giá | Baseline Cũ (LiDAR 259D + Single Pedal) | AI Agent PPO (phiên bản trước) | Tác Tử Đối Chứng Tối Ưu (`OptimalRacingAgent`) | Giới Hạn Cận Trên Vật Lý Lý Thuyết |

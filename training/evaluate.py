@@ -26,7 +26,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Evaluate Trained RL Agent")
     parser.add_argument("--model", type=str, default="models/best_agent.pt", help="File weights cần đánh giá")
     parser.add_argument("--episodes", type=int, default=10, help="Số vòng đua thử nghiệm")
-    parser.add_argument("--vehicle", type=str, default="gt3", choices=["gt3", "sedan"], help="Loại xe đánh giá ('gt3' hoặc 'sedan')")
+    parser.add_argument("--vehicle", type=str, default="gt3", choices=["gt3", "f1", "sedan"], help="Loại xe đánh giá ('gt3' hoặc 'sedan')")
     parser.add_argument("--out", type=str, default="logs/evaluation_results.json", help="File lưu kết quả")
     return parser.parse_args()
 

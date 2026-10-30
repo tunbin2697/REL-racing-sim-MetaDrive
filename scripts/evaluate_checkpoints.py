@@ -33,7 +33,7 @@ def parse_args():
     parser.add_argument("--models", type=str, nargs="+", default=["models/run_v6/agent_step_*k.pt", "models/run_v6/best_agent.pt"], help="Đường dẫn / glob các checkpoint")
     parser.add_argument("--stochastic-episodes", type=int, default=10, help="Số episode đánh giá chính sách ngẫu nhiên")
     parser.add_argument("--det-episodes", type=int, default=2, help="Số episode đánh giá chính sách tất định (Standing + Flying)")
-    parser.add_argument("--vehicle", type=str, default="gt3", choices=["gt3", "sedan"], help="Loại xe đánh giá")
+    parser.add_argument("--vehicle", type=str, default="gt3", choices=["gt3", "f1", "sedan"], help="Loại xe đánh giá")
     parser.add_argument("--seed", type=int, default=0, help="Torch seed cho việc lấy mẫu hành động")
     parser.add_argument("--out", type=str, default="logs/run_v6/checkpoint_eval.json", help="File lưu kết quả")
     return parser.parse_args()
@@ -53,7 +53,7 @@ def main():
         return
 
     env = MetaRacingEnv(use_render=False, traffic_density=0.0, map_config="silverstone", start_seed=42, vehicle=get_vehicle(args.vehicle), max_laps=1)
-    agent = PPOAgent(state_dim=40, action_dim=3, device="cpu")
+    agent = PPOAgent(state_dim=env.obs_dim, action_dim=3, device="cpu")
     evaluator = RacingEvaluator(env=env, agent=agent)
 
     all_results = {}

@@ -7,6 +7,7 @@
 Cách chạy:
     python demo/race_multicar.py --model models/multicar_best.pt
     python demo/race_multicar.py --spectate      # Xem 6 xe AI đua với nhau
+    python demo/race_multicar.py --vehicle f1 --model models/multicar_f1_best.pt --laps 2 --respawn --spectate
 """
 
 import os
@@ -33,10 +34,15 @@ def parse_args():
     parser.add_argument("--model", type=str, default="models/multicar_best.pt", help="Weights PPO đa tác tử")
     parser.add_argument("--num-cars", type=int, default=6)
     parser.add_argument("--laps", type=int, default=1, help="Số vòng đua")
+    parser.add_argument("--respawn", action="store_true",
+                        help="Xe văng không bị loại: đứng ngoài vài giây rồi quay lại đúng chỗ văng (tối đa 5 lần)")
+    parser.add_argument("--respawn-delay", type=float, default=3.0, help="Thời gian phạt (s) trước khi hồi sinh")
     parser.add_argument("--spectate", action="store_true", help="Xe 0 cũng do AI lái (không cần tay cầm)")
     parser.add_argument("--steer-gamma", type=float, default=1.0, help="Đường cong lái tay cầm")
     parser.add_argument("--grid", choices=["abreast", "staggered"], default="abreast",
                         help="Xếp xe ngang hàng (mỗi làn 1 xe) hoặc so le kiểu F1")
+    parser.add_argument("--vehicle", choices=["gt3", "f1", "sedan"], default="gt3",
+                        help="Loại xe: gt3 (trần 120 km/h) hoặc f1 (trần 340 km/h, cần model train cho F1)")
     return parser.parse_args()
 
 
@@ -45,7 +51,8 @@ def main():
     gamepad = None if args.spectate else XboxGamepad(steer_gamma=args.steer_gamma)
 
     env = MultiCarRacingEnv(num_cars=args.num_cars, use_render=True, max_laps=args.laps, max_steps=3000 * args.laps,
-                            grid=args.grid)
+                            grid=args.grid, vehicle=args.vehicle, respawn="inplace" if args.respawn else False,
+                            respawn_delay=args.respawn_delay)
     agent = PPOAgent(state_dim=env.obs_dim, action_dim=3)
     if os.path.exists(args.model):
         agent.load(args.model)
@@ -132,6 +139,8 @@ def main():
                     st = env.racers[car]
                     if st.finished:
                         status = f"FIN {sum(st.lap_times):6.1f}s"
+                    elif st.respawn_step >= 0:
+                        status = f"PEN {max(0, st.respawn_step - env.current_step) * env.dt:4.1f}s"
                     elif not st.active:
                         status = "OUT" if st.termination_reason == "crash_or_track_limit" else "DNF"
                     else:
@@ -139,7 +148,7 @@ def main():
                     board.append(f"P{pos + 1} {names[car]:5s} {status}")
                 cam_car = update_camera()
                 me = env.racers[0]
-                out_cars = [names[st.car_id] for st in env.racers if not st.active and not st.finished]
+                out_cars = [names[st.car_id] for st in env.racers if not st.active and not st.finished and st.respawn_step < 0]
                 hud = {
                     "Camera": f"{names[cam_car]}{' (leader)' if follow['leader'] else ''} | [1]-[{args.num_cars}] / [N] [M] doi xe, [0] dan dau",
                     "Out": ", ".join(out_cars) if out_cars else "-",
@@ -151,7 +160,7 @@ def main():
                 }
                 env.render(text=hud)
 
-                if truncated or not env.active_mask().any():
+                if truncated or env.race_over():
                     break
 
             print("\n" + "=" * 50)
@@ -159,7 +168,7 @@ def main():
             for pos, car in enumerate(env.standings()):
                 st = env.racers[car]
                 result = f"{sum(st.lap_times):.2f}s" if st.finished else st.termination_reason or "chưa về đích"
-                print(f"  P{pos + 1} {names[car]:5s} {result} | va chạm {st.contacts}")
+                print(f"  P{pos + 1} {names[car]:5s} {result} | va chạm {st.contacts} | hồi sinh {st.respawns}")
             print("=" * 50)
             time.sleep(2.0)
     except KeyboardInterrupt:

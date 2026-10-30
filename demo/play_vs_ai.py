@@ -35,7 +35,7 @@ def parse_args():
     parser.add_argument("--model", type=str, default="models/best_agent.pt", help="Đường dẫn file weights của AI")
     parser.add_argument("--opponent", "--ai-type", dest="opponent", type=str, default="ppo", choices=["ppo", "optimal"], help="Loại đối thủ AI: 'ppo' (mô hình RL PPO) hoặc 'optimal' (Ghost / Benchmark Optimal Agent)")
     parser.add_argument("--map", type=str, default="O", help="Bản đồ đua ('O' cho oval track hoặc 'S', 'C', '3')")
-    parser.add_argument("--vehicle", type=str, default="gt3", choices=["gt3", "sedan"], help="Loại xe đua ('gt3' hoặc 'sedan')")
+    parser.add_argument("--vehicle", type=str, default="gt3", choices=["gt3", "f1", "sedan"], help="Loại xe đua ('gt3' hoặc 'sedan')")
     parser.add_argument("--seed", type=int, default=42, help="Bản đồ ngẫu nhiên")
     return parser.parse_args()
 

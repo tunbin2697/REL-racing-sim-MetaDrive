@@ -156,7 +156,8 @@ class PPOAgent:
                     b_states[mb_idx], b_actions[mb_idx]
                 )
                 
-                log_ratio = new_log_prob - b_log_probs[mb_idx]
+                # Kẹp log_ratio: exp() tràn thành inf khi chính sách lệch xa -> loss NaN
+                log_ratio = torch.clamp(new_log_prob - b_log_probs[mb_idx], -20.0, 20.0)
                 ratio = torch.exp(log_ratio)
                 
                 # 1. PPO Policy Loss (Clipped Objective)
@@ -168,6 +169,10 @@ class PPOAgent:
                 entropy_loss = entropy.mean()
                 actor_loss = pg_loss - self.ent_coef * entropy_loss
                 
+                # Bỏ qua minibatch hỏng thay vì ghi NaN vào trọng số
+                if not torch.isfinite(actor_loss):
+                    continue
+
                 # Cập nhật riêng mạng Actor
                 self.actor_optimizer.zero_grad()
                 actor_loss.backward()
@@ -186,6 +191,9 @@ class PPOAgent:
                 v_loss_clipped = (v_clipped - b_returns[mb_idx]) ** 2
                 v_loss = 0.5 * torch.max(v_loss_unclipped, v_loss_clipped).mean()
                 
+                if not torch.isfinite(v_loss):
+                    continue
+
                 # Cập nhật riêng mạng Critic
                 self.critic_optimizer.zero_grad()
                 v_loss.backward()
@@ -220,6 +228,32 @@ class PPOAgent:
             "state_dim": self.state_dim,
             "action_dim": self.action_dim,
         }, filepath)
+
+    def load_widened(self, filepath: str) -> int:
+        """
+        Warm start từ checkpoint có state_dim nhỏ hơn (vd 40D GT3 -> 52D F1 hoặc 40D -> 65D đua nhiều xe):
+        lớp đầu copy các cột cũ, các cột quan sát mới khởi tạo 0 -> hành vi ban đầu giống hệt model cũ.
+        Trả về state_dim của checkpoint.
+        """
+        checkpoint = torch.load(filepath, map_location=self.device)
+        old_sd = checkpoint.get("model_state_dict", checkpoint)
+        new_sd = self.ac.state_dict()
+        old_dim = int(old_sd["actor_mean.0.weight"].shape[1])
+        if old_dim > self.state_dim:
+            raise ValueError(f"Checkpoint {filepath} có state_dim {old_dim} > {self.state_dim}, không thể mở rộng")
+        for key, val in old_sd.items():
+            if key not in new_sd:
+                continue
+            if new_sd[key].shape == val.shape:
+                new_sd[key] = val.clone()
+            elif key in ("actor_mean.0.weight", "critic.0.weight"):
+                widened = torch.zeros_like(new_sd[key])
+                widened[:, :old_dim] = val
+                new_sd[key] = widened
+        self.ac.load_state_dict(new_sd)
+        with torch.no_grad():
+            self.ac.actor_logstd.clamp_(self.ac.LOGSTD_MIN, self.ac.LOGSTD_MAX)
+        return old_dim
 
     def load(self, filepath: str):
         """Nạp checkpoint mô hình (Tự động thích ứng với cấu hình 2D hoặc 3D action space)"""

@@ -41,7 +41,7 @@ def parse_args():
     parser.add_argument("--manual", action="store_true", help="Chế độ tự lái bằng bàn phím (W-A-S-D) để so tài trực tiếp với Ghost Car")
     parser.add_argument("--gamepad", action="store_true", help="Tự lái bằng tay cầm Xbox: Joystick trái = lái, RT = ga, LT = phanh")
     parser.add_argument("--steer-gamma", type=float, default=1.0, help="Đường cong lái tay cầm (1.0 tuyến tính, 1.5-2.0 mềm hơn quanh tâm)")
-    parser.add_argument("--vehicle", type=str, default="gt3", choices=["gt3", "sedan"], help="Loại xe biểu diễn ('gt3' hoặc 'sedan')")
+    parser.add_argument("--vehicle", type=str, default="gt3", choices=["gt3", "f1", "sedan"], help="Loại xe biểu diễn ('gt3' hoặc 'sedan')")
     parser.add_argument("--map", type=str, default="silverstone", help="Bản đồ đua ('silverstone' hoặc 'racing')")
     parser.add_argument("--traffic", type=float, default=0.0, help="Mật độ chướng ngại vật/xe khác (0.0 - 0.2)")
     parser.add_argument("--seed", type=int, default=42, help="Seed tạo bản đồ")

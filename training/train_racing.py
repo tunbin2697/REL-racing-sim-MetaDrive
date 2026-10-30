@@ -62,8 +62,9 @@ def parse_args():
     parser.add_argument("--reset-logstd", type=float, default=None, help="Reset độ lệch chuẩn khám phá actor_logstd khi resume")
     parser.add_argument("--steps-to-run", type=int, default=None, help="Số bước muốn chạy thêm khi resume")
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
-    parser.add_argument("--vehicle", type=str, default="gt3", choices=["gt3", "sedan"], help="Loại xe đua ('gt3' hoặc 'sedan' đối chứng)")
+    parser.add_argument("--vehicle", type=str, default="gt3", choices=["gt3", "f1", "sedan"], help="Loại xe đua ('gt3' hoặc 'sedan' đối chứng)")
     parser.add_argument("--max-laps", type=int, default=1, help="Số vòng đua tối đa mỗi episode (mặc định 1 lap: Clean Single Lap)")
+    parser.add_argument("--stall-penalty", type=float, default=0.0, help="Phạt khi xe dừng hẳn trên đường (vd 30 = ngang văng xe ở tốc độ cao)")
     parser.add_argument("--time-penalty", type=float, default=0.0, help="Áp lực thời gian: phạt hằng số mỗi bước 0.1s (vd 0.02 -> lap 150s chịu -30)")
     
     # Cờ điều khiển lịch trình suy giảm tham số (Schedules) - Mặc định KHÔNG decay, giữ cố định LR
@@ -167,6 +168,7 @@ def main():
         vehicle=race_car,
         max_laps=args.max_laps,
         time_penalty=args.time_penalty,
+        stall_penalty=args.stall_penalty,
     )
 
     obs_shape = env.observation_space.shape
@@ -258,8 +260,8 @@ def main():
             target_total_steps = global_step + 50000
 
     elif args.warmup_model and os.path.exists(args.warmup_model):
-        print(f">> Nạp trọng số khởi đầu từ Warmup Model: {args.warmup_model}")
-        agent.load(args.warmup_model)
+        old_dim = agent.load_widened(args.warmup_model)
+        print(f">> Nạp trọng số khởi đầu từ Warmup Model: {args.warmup_model} ({old_dim}D -> {obs_dim}D)")
         if args.reset_logstd is not None:
             agent.ac.actor_logstd.data.fill_(float(args.reset_logstd))
             curr_std = float(torch.exp(agent.ac.actor_logstd[0, 0]).item())

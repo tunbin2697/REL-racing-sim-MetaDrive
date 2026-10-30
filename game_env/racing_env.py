@@ -3,6 +3,7 @@ MetaRacingEnv: Môi trường Đua xe 3D chuẩn RL tối ưu hóa cao cho MetaD
 - Không gian quan sát 40 chiều (Compact Racing State - Zero Data Leakage):
   + 16 chiều Ego Kinematics, IMU & Controls: Vận tốc dọc/ngang, Yaw rate, Body slip beta, Gia tốc dọc/ngang IMU (G), Roll/Pitch, Hành động bước trước, Tốc độ xoay vô lăng, Cờ lấn lề, Độ lệch ngang tim đường, Sin/Cos góc lệch hướng.
   + 24 chiều Tầm nhìn góc cua (Lookahead Horizon): 6 mốc [10m, 25m, 45m, 70m, 105m, 150m] với tọa độ tương đối dx, dy, sin góc lệch hướng, và độ cong cua kappa.
+  + (Xe nhanh > 150 km/h, vd F1) +12 chiều cho 3 mốc xa [200m, 300m, 400m] -> 52 chiều.
 - Track Limits chuẩn thể thao FIA 4 bánh:
   + Bỏ hoàn toàn gờ Kerb ảo, lấy chuẩn đúng mép đường nhựa thật 4.5m.
   + Vòng chạy hợp lệ khi còn ít nhất 1 lốp xe trên mặt nhựa (<= 4.5m), chỉ dừng cuộc đua khi cả 4 lốp hoàn toàn rơi khỏi mặt nhựa.
@@ -19,11 +20,26 @@ from metadrive.constants import TerrainProperty
 TerrainProperty.map_region_size = 2048
 
 from metadrive.envs.marl_envs.marl_racing_env import RacingMapManager
+from metadrive.component.sensors.dashboard import DashBoard
 from game_env.silverstone_map import SilverstoneMapManager
 from game_env.telemetry import TelemetryTracker
 from game_env.vehicle import BaseRaceVehicle, GT3RaceCar, DefaultCivilianSedan
 from game_env.benchmark import RacingBenchmarkEngine
 from typing import Optional, Dict
+
+
+# Thanh Speed trên dashboard MetaDrive chia cứng cho 120 km/h -> xe F1 340 km/h sẽ tràn khung.
+# Chuẩn hóa theo tốc độ trần của xe đang được camera theo dõi và chặn trong [0, 1].
+_dashboard_update_vehicle_state = DashBoard.update_vehicle_state
+
+
+def _race_dashboard_update(self, vehicle):
+    _dashboard_update_vehicle_state(self, vehicle)
+    max_speed = max(1.0, float(getattr(vehicle, "max_speed_km_h", self.MAX_SPEED)))
+    self.para_vis_np["Speed"].setScale(float(np.clip(vehicle.speed_km_h / max_speed, 0.0, 1.0)), 1, 1)
+
+
+DashBoard.update_vehicle_state = _race_dashboard_update
 
 
 class SingleRacingMetaDrive(MetaDriveEnv):
@@ -101,6 +117,8 @@ class MetaRacingEnv(gym.Env):
         time_penalty: float = 0.0,
         lane_num: int = 2,
         lane_width: float = 4.5,
+        extended_lookahead: Optional[bool] = None,
+        stall_penalty: float = 0.0,
         **kwargs,
     ):
         super().__init__()
@@ -112,6 +130,8 @@ class MetaRacingEnv(gym.Env):
         self.half_width = 0.5 * self.lane_num * self.lane_width
         # Áp lực thời gian r_time = -time_penalty mỗi bước 0.1s: tổng phạt tỉ lệ thuận với lap time
         self.time_penalty = float(time_penalty)
+        # Phạt khi xe dừng hẳn trên đường (stalled); mặc định 0 giữ nguyên hàm thưởng cũ của các model GT3
+        self.stall_penalty = float(stall_penalty)
         
         # Thực thể phương tiện đua xe chuyên biệt (OOP Race Car Entity)
         self.car: BaseRaceVehicle = vehicle if vehicle is not None else GT3RaceCar()
@@ -176,8 +196,15 @@ class MetaRacingEnv(gym.Env):
         
         self.env = SingleRacingMetaDrive(self.config)
         
-        # 40 chiều Compact Racing State (16 Ego Kinematics/IMU/Controls + 24 Centerline Lookahead)
-        self.obs_dim = 40
+        # Tầm nhìn mở rộng 200/300/400m cho xe nhanh (F1 300 km/h cần ~210m để phanh, vượt mốc 150m gốc)
+        # Mặc định tự bật khi tốc độ trần > 150 km/h; các mốc mới nối vào cuối nên 40 chiều đầu giữ nguyên ý nghĩa
+        if extended_lookahead is None:
+            extended_lookahead = self.car.cfg.max_speed_km_h > 150.0
+        self.extended_lookahead = bool(extended_lookahead)
+        self.lookahead_distances = [10.0, 25.0, 45.0, 70.0, 105.0, 150.0] + ([200.0, 300.0, 400.0] if self.extended_lookahead else [])
+
+        # 40 chiều Compact Racing State (16 Ego Kinematics/IMU/Controls + 24 Centerline Lookahead), 52 chiều khi mở rộng
+        self.obs_dim = 16 + 4 * len(self.lookahead_distances)
         self.observation_space = spaces.Box(-np.inf, np.inf, shape=(self.obs_dim,), dtype=np.float32)
         # 3 chiều Continuous Racing Action: [steer, throttle, brake]
         # steer: [-1, 1], throttle: [-1, 1] -> [0, 1], brake: [-1, 1] -> [0, 1]
@@ -376,7 +403,7 @@ class MetaRacingEnv(gym.Env):
         
         # --- 16 CHIỀU EGO KINEMATICS, IMU & CONTROLS ---
         ego_state = [
-            float(np.clip(vx / 40.0, -1.0, 1.5)),               # 1. Vận tốc dọc thân xe
+            float(np.clip(vx / 40.0, -1.0, 2.5)),               # 1. Vận tốc dọc thân xe (2.5 = 360 km/h cho xe F1)
             float(np.clip(vy / 20.0, -1.5, 1.5)),               # 2. Vận tốc ngang thân xe
             float(np.clip(yaw_rate / 3.14159, -2.0, 2.0)),      # 3. Yaw rate quanh trục Z
             float(body_slip),                                   # 4. Góc trượt thân xe beta
@@ -394,10 +421,9 @@ class MetaRacingEnv(gym.Env):
             float(cos_dh),                                      # 16. Cos góc lệch hướng
         ]
         
-        # --- 24 CHIỀU LOOKAHEAD HORIZON (6 WAYPOINTS X 4) ---
-        lookahead_distances = [10.0, 25.0, 45.0, 70.0, 105.0, 150.0]
+        # --- 24 CHIỀU LOOKAHEAD HORIZON (6 WAYPOINTS X 4), +12 CHIỀU KHI MỞ RỘNG (3 WAYPOINTS XA X 4) ---
         lookahead_features = []
-        for dist_ahead in lookahead_distances:
+        for dist_ahead in self.lookahead_distances:
             target_s = (current_s + dist_ahead) % self.circuit_length
             wpt_idx = int(np.searchsorted(self.track_s, target_s)) % self.num_track_points
             wpt_pos = self.track_xy[wpt_idx]
@@ -409,9 +435,11 @@ class MetaRacingEnv(gym.Env):
             dy_rel = float(np.dot(d_vec, lat_vec))
             d_theta = (wpt_theta - heading + np.pi) % (2.0 * np.pi) - np.pi
             
+            # Mốc xa (> 150m) chuẩn hóa theo 400m / 160m để không bị chặn trần
+            dx_scale, dy_scale = (150.0, 40.0) if dist_ahead <= 150.0 else (400.0, 160.0)
             lookahead_features.extend([
-                float(np.clip(dx_rel / 150.0, -1.0, 1.5)),
-                float(np.clip(dy_rel / 40.0, -2.0, 2.0)),
+                float(np.clip(dx_rel / dx_scale, -1.0, 1.5)),
+                float(np.clip(dy_rel / dy_scale, -2.0, 2.0)),
                 float(np.sin(d_theta)),
                 float(np.clip(wpt_kappa * 50.0, -2.0, 2.0)),
             ])
@@ -686,7 +714,8 @@ class MetaRacingEnv(gym.Env):
             info["termination_reason"] = "stalled"
             info["crash_distance"] = float(current_s)
             info["crash_speed"] = float(speed_km_h)
-            macro_reward = 0.0
+            # Dừng hẳn không được rẻ hơn văng xe, nếu không agent học cách đứng yên trước khúc cua khó
+            macro_reward = -self.stall_penalty
             
         elif arrive_dest:
             self.total_finishes += 1

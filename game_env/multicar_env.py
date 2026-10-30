@@ -4,20 +4,20 @@ MultiCarRacingEnv: Đua 6 xe trên Silverstone mở rộng (3 làn x 4.5m = 13.5
 - Va chạm vật lý Bullet thật giữa các xe (khác GhostCar xuyên thấu); va chạm chỉ bị phạt nhẹ, không loại xe.
 - Lưới xuất phát phía sau vạch x = 60m: mặc định xếp ngang hàng (mỗi làn 1 xe, hàng cách 10m), tùy chọn so le kiểu F1.
 - Mỗi xe giữ trạng thái riêng (RacerState) và dùng lại đúng quan sát 40D / luật 4 bánh FIA / hàm thưởng của MetaRacingEnv.
-- Quan sát 40D + K đối thủ gần nhất (dx, dy, dvx, dvy trong hệ trục xe + cờ có xe) -> 40 + 5K chiều. Zero Data Leakage:
+- Quan sát 40D (52D với xe F1) + K đối thủ gần nhất (dx, dy, dvx, dvy trong hệ trục xe + cờ có xe) -> 40 + 5K chiều. Zero Data Leakage:
   chỉ chứa trạng thái vật lý quan sát được, không có racing line tối ưu.
 """
 
 from typing import Dict, List, Optional, Tuple
 import numpy as np
 from gymnasium import spaces
+from panda3d.core import Vec3
 
 from metadrive.component.vehicle.vehicle_type import DefaultVehicle
 from game_env.racing_env import MetaRacingEnv
 from game_env.telemetry import TelemetryTracker
-from game_env.vehicle import BaseRaceVehicle, GT3RaceCar
+from game_env.vehicle import BaseRaceVehicle, get_vehicle
 
-BASE_OBS_DIM = 40
 OPPONENT_FEATURES = 5
 
 # Màu xe: xe 0 (người chơi) xanh lá, các xe AI màu khác nhau để dễ phân biệt
@@ -60,6 +60,10 @@ class RacerState:
         self.termination_reason = ""
         self.speed_km_h = 0.0
         self.on_runoff = False
+        self.crashes = 0           # Số lần văng (tính cả các lần đã hồi sinh)
+        self.stalls = 0
+        self.respawns = 0
+        self.respawn_step = -1     # >= 0: đang chờ hồi sinh tại chỗ ở bước mô phỏng này
 
 
 class MultiCarRacingEnv(MetaRacingEnv):
@@ -76,32 +80,46 @@ class MultiCarRacingEnv(MetaRacingEnv):
         max_steps: int = 3000,
         start_seed: int = 42,
         window_size=(1280, 720),
-        respawn: bool = False,
+        respawn=False,
         respawn_clearance: float = 40.0,
+        respawn_delay: float = 3.0,
+        max_respawns: int = 5,
         grid: str = "abreast",
+        vehicle: str = "gt3",
+        stall_penalty: float = 0.0,
     ):
         super().__init__(
             use_render=use_render,
             window_size=window_size,
             start_seed=start_seed,
-            vehicle=GT3RaceCar(),
+            vehicle=get_vehicle(vehicle),
             max_laps=max_laps,
             time_penalty=time_penalty,
             lane_num=lane_num,
             horizon=max_steps + 100,
+            stall_penalty=stall_penalty,
         )
         self.num_cars = int(num_cars)
+        self.vehicle_name = vehicle
         self.collision_penalty = float(collision_penalty)
         self.opponent_slots = int(opponent_slots)
         self.opponent_range = float(opponent_range)
         self.max_steps = int(max_steps)
-        # Chỉ dùng khi train: xe bị loại được đặt lại ở vị trí trống ngẫu nhiên thay vì rời cuộc đua
-        self.respawn = bool(respawn)
+        # Xe bị loại (văng / đứng yên):
+        # - False: rời cuộc đua
+        # - True / "random": đặt lại ngay ở vị trí trống ngẫu nhiên (episode mới, kiểu cũ)
+        # - "inplace": đứng ngoài respawn_delay giây rồi quay lại đúng chỗ văng, giữ nguyên vòng / quãng đường
+        self.respawn = respawn
         self.respawn_clearance = float(respawn_clearance)
+        self.respawn_delay = float(respawn_delay)
+        # Quá số lần hồi sinh tại chỗ -> bỏ cuộc (tránh xe kẹt vô hạn, vd. policy tất định đứng yên trước cua khó)
+        self.max_respawns = int(max_respawns)
         if grid not in ("abreast", "staggered"):
             raise ValueError(f"grid phải là 'abreast' hoặc 'staggered', nhận được {grid!r}")
         self.grid = grid
-        self.obs_dim = BASE_OBS_DIM + OPPONENT_FEATURES * self.opponent_slots
+        # Phần quan sát của 1 xe: 40D (GT3) hoặc 52D (F1, tầm nhìn mở rộng)
+        self.base_obs_dim = int(self.obs_dim)
+        self.obs_dim = self.base_obs_dim + OPPONENT_FEATURES * self.opponent_slots
         self.observation_space = spaces.Box(-np.inf, np.inf, shape=(self.obs_dim,), dtype=np.float32)
         self.racers: List[RacerState] = []
         self.extra_vehicles = []
@@ -163,7 +181,7 @@ class MultiCarRacingEnv(MetaRacingEnv):
                 raw = self.env.agent
                 car = self.car
             else:
-                car = GT3RaceCar()
+                car = get_vehicle(self.vehicle_name)
                 raw = self._spawn_extra_vehicle(car, (x, y), 0.0)
                 self.extra_vehicles.append(raw)
             car.attach_agent(raw)
@@ -229,8 +247,8 @@ class MultiCarRacingEnv(MetaRacingEnv):
                 on_runoff=bool(runoffs[i]),
                 state=st,
             )
-            obs[i, :BASE_OBS_DIM] = base
-            obs[i, BASE_OBS_DIM:] = self._opponent_features(st)
+            obs[i, :self.base_obs_dim] = base
+            obs[i, self.base_obs_dim:] = self._opponent_features(st)
         return obs
 
     # ------------------------------------------------------------------ step
@@ -244,6 +262,86 @@ class MultiCarRacingEnv(MetaRacingEnv):
         except Exception:
             pass
 
+    @property
+    def respawn(self):
+        return self._respawn_mode
+
+    @respawn.setter
+    def respawn(self, mode):
+        if mode is True:
+            mode = "random"
+        if mode not in (False, None, "random", "inplace"):
+            raise ValueError(f"respawn phải là False / 'random' / 'inplace', nhận được {mode!r}")
+        self._respawn_mode = mode or False
+
+    def race_over(self) -> bool:
+        """Cuộc đua kết thúc khi không còn xe nào đang chạy hoặc đang chờ hồi sinh"""
+        return not any(st.active or st.respawn_step >= 0 for st in self.racers)
+
+    def _handle_out(self, st: RacerState) -> bool:
+        """Xử lý xe vừa kết thúc ở bước này. Trả về True nếu xe được đặt lại ngay (obs là trạng thái mới)"""
+        if st.finished or not self.respawn:
+            self._retire(st)
+            return False
+        if self.respawn == "random":
+            self._respawn(st)
+            return True
+        # inplace: tạm rời đường đua, chờ phạt thời gian rồi quay lại chỗ văng
+        self._retire(st)
+        if st.respawns >= self.max_respawns:
+            return False
+        st.respawn_step = self.current_step + max(1, int(round(self.respawn_delay / self.dt)))
+        st.respawns += 1
+        return False
+
+    def _try_rejoin(self, st: RacerState) -> bool:
+        """Đặt xe đang chờ trở lại tim đường gần chỗ văng (ưu tiên lùi về sau), cách các xe khác >= 20m"""
+        others = [ot.car.position for ot in self.racers if ot is not st and ot.active]
+        spacing = self.circuit_length / self.num_track_points
+        chosen = None
+        for off_m in (0, -10, -20, -30, -40, -50, -60, 10, 20, 30):
+            idx = int((st.current_track_idx + int(round(off_m / spacing))) % self.num_track_points)
+            if all(np.linalg.norm(self.track_xy[idx] - p) >= 20.0 for p in others):
+                chosen = idx
+                break
+        if chosen is None:
+            return False
+        pos = self.track_xy[chosen]
+        raw = st.raw_vehicle
+        raw.set_static(False)
+        raw.set_position([float(pos[0]), float(pos[1])])
+        raw.set_heading_theta(float(self.track_theta[chosen]))
+        raw.set_velocity([0.0, 0.0])
+        try:
+            raw.set_pitch(0.0)
+            raw.set_roll(0.0)
+            raw.body.setAngularVelocity(Vec3(0.0, 0.0, 0.0))
+        except Exception:
+            pass
+        # Giữ tiến độ đua: cộng phần chênh lệch Frenet giữa chỗ văng và chỗ quay lại (thường <= vài chục mét)
+        new_s = float(self.track_s[chosen])
+        delta_s = new_s - st.last_s
+        if delta_s < -0.5 * self.circuit_length:
+            delta_s += self.circuit_length
+        elif delta_s > 0.5 * self.circuit_length:
+            delta_s -= self.circuit_length
+        st.progress += delta_s
+        st.last_s = new_s
+        st.current_track_idx = chosen
+        st.car.reset_state()
+        st.telemetry.reset()
+        st.last_action = np.zeros(3, dtype=np.float32)
+        st.last_acc_long_g = 0.0
+        st.last_acc_lat_g = 0.0
+        st.stagnant_steps = 0
+        st.in_contact = False
+        st.speed_km_h = 0.0
+        st.on_runoff = False
+        st.respawn_step = -1
+        st.active = True
+        st.termination_reason = ""
+        return True
+
     def _respawn(self, st: RacerState):
         """Đặt lại xe đứng yên trên tim đường tại điểm ngẫu nhiên cách mọi xe khác >= respawn_clearance (episode mới của xe đó)"""
         others = [ot.car.position for ot in self.racers if ot is not st and ot.active]
@@ -255,6 +353,13 @@ class MultiCarRacingEnv(MetaRacingEnv):
         st.raw_vehicle.set_position([float(pos[0]), float(pos[1])])
         st.raw_vehicle.set_heading_theta(float(self.track_theta[idx]))
         st.raw_vehicle.set_velocity([0.0, 0.0])
+        try:
+            # Xóa quay/lật còn sót lại (kể cả trạng thái NaN sau va chạm cực mạnh)
+            st.raw_vehicle.set_pitch(0.0)
+            st.raw_vehicle.set_roll(0.0)
+            st.raw_vehicle.body.setAngularVelocity(Vec3(0.0, 0.0, 0.0))
+        except Exception:
+            pass
         st.car.reset_state()
         st.telemetry.reset()
         st.current_track_idx = idx
@@ -357,9 +462,12 @@ class MultiCarRacingEnv(MetaRacingEnv):
                 macro = -10.0 - 20.0 * (speed_ratio ** 2)
                 dones[i] = True
                 st.termination_reason = "crash_or_track_limit"
+                st.crashes += 1
             elif is_stalled:
+                macro = -self.stall_penalty
                 dones[i] = True
                 st.termination_reason = "stalled"
+                st.stalls += 1
             elif st.progress >= st.lap_target:
                 lap_time = float((self.current_step - st.lap_start_step) * self.dt)
                 st.lap_times.append(lap_time)
@@ -388,15 +496,30 @@ class MultiCarRacingEnv(MetaRacingEnv):
             })
 
         for i, st in enumerate(self.racers):
-            if dones[i]:
-                if self.respawn:
-                    self._respawn(st)
-                    runoffs[i] = False
-                    delta_steers[i] = 0.0
-                else:
-                    self._retire(st)
+            if dones[i] and self._handle_out(st):
+                runoffs[i] = False
+                delta_steers[i] = 0.0
+        # Hồi sinh tại chỗ: xe đã hết thời gian phạt quay lại đường đua (bắt đầu chuỗi mới ở bước sau)
+        for i, st in enumerate(self.racers):
+            if st.respawn_step >= 0 and self.current_step >= st.respawn_step and self._try_rejoin(st):
+                runoffs[i] = False
+                delta_steers[i] = 0.0
         # Với respawn: obs của xe vừa done là trạng thái đầu của episode mới (trainer đã cắt chuỗi bằng dones)
         obs = self._all_observations(delta_steers, runoffs)
+        # Lưới an toàn: vật lý Bullet có thể nổ (NaN/inf) khi va chạm cực mạnh -> coi như văng, đặt lại xe
+        bad = [i for i in range(self.num_cars) if not (np.isfinite(obs[i]).all() and np.isfinite(rewards[i]))]
+        if bad:
+            for i in bad:
+                st = self.racers[i]
+                rewards[i] = -30.0
+                if not dones[i]:
+                    dones[i] = True
+                    st.termination_reason = "crash_or_track_limit"
+                    st.crashes += 1
+                    if self._handle_out(st):
+                        runoffs[i] = False
+                        delta_steers[i] = 0.0
+            obs = np.nan_to_num(self._all_observations(delta_steers, runoffs), nan=0.0, posinf=0.0, neginf=0.0)
         truncated = bool(self.current_step >= self.max_steps)
         return obs, rewards, dones, truncated, infos
 

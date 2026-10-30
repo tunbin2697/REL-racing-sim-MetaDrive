@@ -1,0 +1,142 @@
+{
+  "models/multicar_f1\\agent_250k.pt": {
+    "deterministic": {
+      "finished": 1.0,
+      "outs": 5.0,
+      "stalls": 0.0,
+      "contacts": 68.0,
+      "completion": 32.181380501930335,
+      "mean_lap": 126.5,
+      "best_lap": 126.5
+    },
+    "stochastic": {
+      "finished": 1.0,
+      "outs": 2.5,
+      "stalls": 2.5,
+      "contacts": 89.5,
+      "completion": 33.66431927585978,
+      "mean_lap": 127.38333333333333,
+      "best_lap": 126.0
+    }
+  },
+  "models/multicar_f1\\agent_500k.pt": {
+    "deterministic": {
+      "finished": 2.0,
+      "outs": 2.0,
+      "stalls": 2.0,
+      "contacts": 66.0,
+      "completion": 40.04242626485026,
+      "mean_lap": 119.45,
+      "best_lap": 117.5
+    },
+    "stochastic": {
+      "finished": 0.5,
+      "outs": 2.0,
+      "stalls": 3.5,
+      "contacts": 111.25,
+      "completion": 29.6399075593683,
+      "mean_lap": 122.15,
+      "best_lap": 120.9
+    }
+  },
+  "models/multicar_f1\\agent_750k.pt": {
+    "deterministic": {
+      "finished": 2.0,
+      "outs": 3.0,
+      "stalls": 1.0,
+      "contacts": 99.0,
+      "completion": 68.72117596019885,
+      "mean_lap": 118.4,
+      "best_lap": 115.80000000000001
+    },
+    "stochastic": {
+      "finished": 0.25,
+      "outs": 4.75,
+      "stalls": 1.0,
+      "contacts": 67.25,
+      "completion": 19.491013684358116,
+      "mean_lap": 126.30000000000001,
+      "best_lap": 126.30000000000001
+    }
+  },
+  "models/multicar_f1\\agent_1000k.pt": {
+    "deterministic": {
+      "finished": 3.0,
+      "outs": 2.0,
+      "stalls": 1.0,
+      "contacts": 201.0,
+      "completion": 60.348978721070964,
+      "mean_lap": 122.96666666666665,
+      "best_lap": 121.0
+    },
+    "stochastic": {
+      "finished": 3.0,
+      "outs": 2.0,
+      "stalls": 1.0,
+      "contacts": 152.25,
+      "completion": 61.67660263066886,
+      "mean_lap": 123.79125000000002,
+      "best_lap": 120.2
+    }
+  },
+  "models/multicar_f1\\agent_1250k.pt": {
+    "deterministic": {
+      "finished": 2.0,
+      "outs": 1.0,
+      "stalls": 3.0,
+      "contacts": 103.0,
+      "completion": 54.04240409128328,
+      "mean_lap": 123.65,
+      "best_lap": 120.0
+    },
+    "stochastic": {
+      "finished": 1.0,
+      "outs": 3.75,
+      "stalls": 1.25,
+      "contacts": 113.0,
+      "completion": 35.813429495553514,
+      "mean_lap": 124.28333333333335,
+      "best_lap": 119.7
+    }
+  },
+  "models/multicar_f1/best_agent.pt": {
+    "deterministic": {
+      "finished": 3.0,
+      "outs": 1.0,
+      "stalls": 2.0,
+      "contacts": 72.0,
+      "completion": 67.84636219047552,
+      "mean_lap": 123.43333333333334,
+      "best_lap": 120.60000000000001
+    },
+    "stochastic": {
+      "finished": 2.25,
+      "outs": 3.5,
+      "stalls": 0.25,
+      "contacts": 155.25,
+      "completion": 45.87403399233372,
+      "mean_lap": 127.25277777777778,
+      "best_lap": 122.0
+    }
+  },
+  "models/multicar_f1/last_agent.pt": {
+    "deterministic": {
+      "finished": 1.0,
+      "outs": 3.0,
+      "stalls": 2.0,
+      "contacts": 63.0,
+      "completion": 25.752505623716353,
+      "mean_lap": 121.60000000000001,
+      "best_lap": 121.60000000000001
+    },
+    "stochastic": {
+      "finished": 1.75,
+      "outs": 3.75,
+      "stalls": 0.5,
+      "contacts": 110.25,
+      "completion": 55.23054306057723,
+      "mean_lap": 120.91250000000001,
+      "best_lap": 114.60000000000001
+    }
+  }
+}
