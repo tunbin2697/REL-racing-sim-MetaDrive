@@ -1,6 +1,6 @@
 # Lưu Ý Kỹ Thuật Khi Triển Khai Plan v11.2 (Implementation Notices)
 
-> **Vị trí**: `scratch/plan_notices.md` · **Ngày tạo**: 30/10/2026
+> **Vị trí**: `plan/plan_notices.md` · **Ngày tạo**: 30/10/2026
 > **Mục đích**: Ghi nhận các phân tích cơ chế bổ sung cho F17 và 5 điểm bẫy kỹ thuật trong mã nguồn cần tuân thủ nghiêm ngặt khi triển khai **WI-19**, **WI-20**, **WI-21**, **WI-22**, **WI-23**.
 
 ---

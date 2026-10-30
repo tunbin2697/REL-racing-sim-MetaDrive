@@ -294,7 +294,7 @@ Hệ quả kèm theo khi chuyển sang 1:1:
 
 ## F15. Thói quen lái: chậm vì thả trôi, không phải vì lạng lách
 
-**[Đã kiểm chứng: 1 vòng deterministic, xuất phát đứng, map nhỏ]** Script tham chiếu: `scratch/drive_trace_reference.py`.
+**[Đã kiểm chứng: 1 vòng deterministic, xuất phát đứng, map nhỏ]** Script tham chiếu: `scripts/drive_trace.py`.
 
 | Checkpoint | Lap | TB / max km/h | Full ga | Thả trôi | Có phanh | Đảo lái /100 bước |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -401,6 +401,32 @@ Khi demo map full, minimap đủ cả vòng nhưng mặt đường 3D chỉ hi�
 ### Bản sửa
 - HUD ghi `[MAIN]`/`[GHOST]` cho dòng Speed theo xe đang được theo dõi. Completion hiện `Lap x% | Race y%` khi chạy nhiều vòng. Env không đổi.
 - D34 lưu `map`/`vehicle`/`obs_mode` vào checkpoint để demo và eval tự lấy, tránh lặp lại lần 1.
+
+---
+
+## F20. P2 v2: pedal/lái vẫn giật, drift do tốc độ cao sát giới hạn bám (so với nhánh `feature/f1-downforce`)
+
+### Hiện tượng [Đã kiểm chứng 30/10, 1 vòng deterministic, mỗi model chạy trong code của nhánh nó]
+| | P2 v2 `best_agent` (map full) | F1 `f1_best` (nhánh team, map half) | GT3 `best_agent` (nhánh team) | Ghost |
+| :-- | :-- | :-- | :-- | :-- |
+| Tốc độ TB | 144 km/h | 87 km/h | 67 km/h | 163 km/h |
+| Pedal đổi ga↔phanh /100 bước | 20.3 | 19.7 | 10.9 | 0.5 |
+| Lái đổi chiều /100 bước; \|Δlái\| TB | 74; 0.121 | 64; 0.109 | 57; 0.116 | 14; 0.004 |
+| Góc trượt β p95 / max | **8.9° / 52.7°** | 2.7° / 8.7° | 2.4° / 7.4° | 0.6° / 1.3° |
+| % thời gian β > 5° | **8.1%** | 0.6% | 0.6% | 0% |
+| a_lat p95 | 1.65 G (> trần bám 1.56) | 1.18 G | 0.90 G | 1.44 G |
+
+Ở 3.0–3.3M (σ pedal 0.32 → 0.21), lap nhanh hơn (137–142s) nhưng eval 10 episode còn 0/10 sạch, 5/10 mất xe quanh 5374–5432 m.
+
+### Cơ chế [Suy luận]
+- **Giật pedal và lái là chung cho mọi model PPO của dự án**, kể cả nhánh F1: vòng dao động qua obs action bước trước, phạt −0.1·Δlái² quá nhỏ (I11), không có phạt Δpedal.
+- **Drift là khác biệt thật, do tốc độ và vật lý xe**: cùng biên độ giật lái, nhiễu gia tốc ngang ∝ v²·δ, nên ở tốc độ gấp đôi lớn gấp ~4 lần. Xe P2 vào cua 150–200 km/h ngay sát trần bám, mỗi lần giật lái là mất bám. Xe F1 nhánh team chạy chậm trên map nhỏ, có downforce ∝ v², lò xo cứng (60000 N), `roll_influence` 0.2, và vẫn dính F16 (μ trước 0.9 < sau 1.35, understeer mạnh) nên đuôi không văng.
+- **"Không học racing line" phần lớn là do nhìn và do thước đo**: Line MAE / nửa bề rộng đường là 0.55 (P2) so với 0.53 (F1). Apex Acc thấp hơn vì ngưỡng 2.2 m cố định trên map lớn gấp đôi.
+
+### Hướng xử lý (chưa làm)
+1. Giới hạn tốc độ xoay vô lăng giảm theo tốc độ xe (obs/action không đổi, fine-tune được).
+2. Phạt Δlái² mạnh hơn khoảng 20 lần và thêm phạt Δpedal² (đổi reward, resume theo D22).
+3. Downforce (đổi vật lý, phải hiệu chỉnh lại envelope/T*/ghost): không kịp.
 
 ---
 

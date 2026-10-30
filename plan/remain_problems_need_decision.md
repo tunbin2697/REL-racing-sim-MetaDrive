@@ -1,6 +1,6 @@
 # Vấn đề còn mở cần quyết định
 
-> Đi kèm `scratch/plan.md` v11.2. Mỗi mục ghi rõ loại:
+> Đi kèm `plan/plan.md` v11.2. Mỗi mục ghi rõ loại:
 > - **[Chốt ngay]**: có thể quyết định ngay bây giờ.
 > - **[Chờ kết quả]**: cần có output trước rồi mới quyết định.
 >

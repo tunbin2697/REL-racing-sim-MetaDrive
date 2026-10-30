@@ -1,6 +1,6 @@
 """
 Phân Tích Thói Quen Lái Xe Của Checkpoint (Driving Behavior Trace & Telemetry Analysis)
-Được phát triển từ scratch/drive_trace_reference.py theo kế hoạch Phase 2 (WI-12 / WI-P1C).
+Được phát triển từ scripts/drive_trace.py theo kế hoạch Phase 2 (WI-12 / WI-P1C).
 Đo đạc và phân tích định lượng thói quen lái xe của một hoặc nhiều checkpoint PPO qua các vòng đua:
 - Tốc độ trung bình, tốc độ tối đa, % thời gian ở vận tốc bão hòa (v_max - 5 km/h).
 - Tần suất đảo chiều vô lăng (reversals / 100 steps), độ lệch chuẩn vô lăng trên đoạn thẳng (|kappa| < 0.004).
@@ -32,7 +32,7 @@ def parse_args():
     parser.add_argument(
         "--models",
         nargs="+",
-        default=["models/p1_main/best_agent.pt", "scratch/b111.pt"],
+        default=["models/p1_main/best_agent.pt", "models/ref_111s/best_agent.pt"],
         help="Danh sách các file checkpoint cần đánh giá (cách nhau bởi khoảng trắng)",
     )
     parser.add_argument(

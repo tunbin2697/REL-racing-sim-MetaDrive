@@ -6,7 +6,7 @@
 > [!IMPORTANT]
 > **TÀI LIỆU ĐẶC TẢ YÊU CẦU ĐỀ TÀI CHÍNH THỨC:**  
 > Xem chi tiết toàn bộ quy định học thuật, luật đua 4 bánh, cấm data leak và tiêu chuẩn benchmark tại:  
-> 📄 **[`PROJECT_SPECIFICATION.md`](file:///c:/Users/tunbi/Project/school/REL%20Assignment/PROJECT_SPECIFICATION.md)**
+> 📄 **[`PROJECT_SPECIFICATION.md`](file:///c:/Users/tunbi/Project/school/REL%20Assignment/plan/requirements/PROJECT_SPECIFICATION.md)**
 
 ---
 
@@ -44,7 +44,7 @@ Mục tiêu cốt lõi: Huấn luyện một Agent có khả năng **tự học 
 
 ```text
 REL Assignment/
-├── PROJECT_SPECIFICATION.md   # 📄 ĐẶC TẢ YÊU CẦU ĐỒ ÁN MÔN HỌC (Quy tắc, Luật đua, Benchmark)
+├── plan/requirements/PROJECT_SPECIFICATION.md # 📄 ĐẶC TẢ YÊU CẦU ĐỒ ÁN MÔN HỌC (Quy tắc, Luật đua, Benchmark)
 ├── README.md                  # Hướng dẫn chi tiết, cài đặt và thực thi hệ thống
 │
 ├── agents/

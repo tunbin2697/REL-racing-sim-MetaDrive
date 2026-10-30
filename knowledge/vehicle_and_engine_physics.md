@@ -8,7 +8,7 @@
 > **[Suy luận]** lập luận, chưa kiểm chứng bằng thí nghiệm riêng.
 >
 > Số đo thô: `logs/calibration/calibration_results.json`, `logs/calibration/calibration_run.txt`.
-> Script: `scripts/calibrate_vehicle.py`, `scratch/bench_regression.py`, `scratch/ghost_lap_test.py`.
+> Script: `scripts/calibrate_vehicle.py`, `scripts/tests/bench_regression.py`, `scripts/tests/ghost_lap_test.py`.
 
 ---
 
@@ -63,7 +63,7 @@ Trọng tâm cao (~0.55 m) và gần cầu trước là nguyên nhân của hi�
 | `config["mass"]` không có tác dụng [Đo] | Đặt 1350 kg nhưng Bullet vẫn dùng 1100 | Đặt config = 1100 cho trung thực |
 | Đo hiệu chuẩn qua `MetaRacingEnv.step()` | Episode kết thúc khi ra khỏi đường đua, cắt ngang bài phanh/vòng tròn; ra số sai (bám 0.48–0.77 G, quãng phanh 200 km/h ngắn hơn 180 km/h) | Đo bằng `env.env.step()` của MetaDrive trên địa hình tự do (mục 3) |
 | `max_brake_force` lớn [Đo] | Giảm tốc bão hòa sớm, phanh thành bật/tắt; với 2200 N chỉ ~10–20% đầu bàn đạp có tác dụng, riêng deadband 5% đã cho ~1 G | Đặt lực phanh dưới ngưỡng bão hòa (mục 4.3) |
-| `force_recompute` của benchmark ghi đè cache | File cache map half (được git track) bị đổi | `scratch/bench_regression.py` giữ và khôi phục cache |
+| `force_recompute` của benchmark ghi đè cache | File cache map half (được git track) bị đổi | `scripts/tests/bench_regression.py` giữ và khôi phục cache |
 | Đo a_y bằng yaw rate của body | Đỉnh giả ±3–4 G khi xe giật/xoay | Chỉ dùng trong bài đo ổn định (lấy trung bình trượt), không dùng làm số bám |
 
 ---

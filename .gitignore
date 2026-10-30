@@ -43,9 +43,6 @@ main_index_*.png
 !plots/learning_curves.png
 
 scratch/*
-!scratch/plan.md
-!scratch/remain_problems_need_decision.md
-!scratch/plan_notices.md
 runs/
 logs/*_prev_run.json
 

@@ -55,7 +55,7 @@ class SpawnCurriculum:
     def record_crash(self, crash_history: List[Dict[str, Any]], start_mode: str = "standing") -> bool:
         """
         Trích xuất trạng thái ~30 bước (3s) trước khi crash từ episode_history của env để đưa vào deque.
-        Áp dụng Lưu ý 3 (scratch/plan_notices.md):
+        Áp dụng Lưu ý 3 (plan/plan_notices.md):
         - Nếu lịch sử đủ >= 30 bước: lấy phần tử tại -30.
         - Nếu lịch sử ngắn hơn 30 bước:
             + Nếu xuất phát từ 'snapshot' mà crash lại ngay trong < 30 bước: bỏ qua, không nạp đè

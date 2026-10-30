@@ -1,0 +1,356 @@
+
+==================================================
+BRANCH: feature/clean-111s-optimal-ghost
+        # --- HÀM THƯỞNG CHUẨN HÓA THỂ THAO GT3 (MARKOVIAN REWARD) ---
+        # a. Thưởng tiến độ dọc tim đường Frenet s
+        delta_s = current_s - self.last_s
+        self.last_s = current_s
+        r_progress = 0.05 * max(0.0, float(delta_s))
+
+        # b. Phạt rung lắc đánh lái để vô-lăng mượt mà, ổn định trên đường thẳng
+        r_steer_smooth = -0.10 * float(delta_steer ** 2)
+
+        # c. Phạt lệch tim đường (Racing Line Centering): khuyến khích đi trong lòng đường, tránh bám mép cỏ
+        lat_offset_val = float(obs[9]) * 4.5  # Khôi phục từ ego_state lat_offset / 4.5
+        r_center = -0.04 * float((lat_offset_val / 4.5) ** 2)
+
+        # d. Phạt đứng yên / quay mòng mòng tại chỗ (< 10 km/h)
+        r_idle = -0.15 if speed_km_h < 10.0 else 0.0
+        
+        # Hàm thưởng thuần túy Markov (Không mớm quy tắc tay ga/phanh):
+        micro_reward = r_progress + r_steer_smooth + r_center + r_idle
+        macro_reward = 0.0
+        
+        self.last_action = np.array(action, dtype=np.float32)
+        
+        # Kiểm tra hoàn thành vòng đua (cán đích)
+        progress_ratio = float(np.clip(current_s / self.circuit_length, 0.0, 1.0))
+        has_completed_majority = bool(current_s > 0.85 * self.circuit_length)
+        arrive_dest = bool((info.get("arrive_dest", False) or progress_ratio >= 0.985) and has_completed_majority)
+        
+        # --- TẦNG VĨ MÔ (Macro Reward) ---
+        if is_full_out or self.car.crash_vehicle or self.car.crash_object:
+            terminated = True
+            info["termination_reason"] = "crash_or_track_limit"
+            info["crash_distance"] = float(current_s)
+            info["crash_speed"] = float(speed_km_h)
+            self.last_crash_history = list(self.episode_history)
+            
+            # Phạt va chạm theo vận tốc: tốc độ càng cao phạt càng nặng (-10đ đến -30đ)
+            speed_ratio = float(np.clip(speed_km_h / 120.0, 0.0, 1.0))
+            macro_reward = -10.0 - 20.0 * (speed_ratio ** 2)
+            
+        elif is_stalled:
+            terminated = True
+            info["termination_reason"] = "stalled"
+            info["crash_distance"] = float(current_s)
+            info["crash_speed"] = float(speed_km_h)
+            macro_reward = 0.0
+            
+        elif arrive_dest:
+            self.lap_completed = True
+            terminated = True
+            self.total_finishes += 1
+            info["termination_reason"] = "lap_completed"
+            info["arrive_dest"] = True
+            info["lap_completed"] = True
+            self.last_crash_history = []
+            
+            # Thưởng cán đích cơ bản + Thưởng mốc thời gian bậc thang (mỗi mốc 20s)
+            r_finish = 100.0
+            if current_time < 140.0:
+                time_bonus = 50.0
+            elif current_time < 160.0:
+                time_bonus = 40.0
+            elif current_time < 180.0:
+                time_bonus = 30.0
+            elif current_time < 200.0:
+                time_bonus = 20.0
+            elif current_time < 220.0:
+                time_bonus = 10.0
+            else:
+                time_bonus = 0.0
+            macro_reward = r_finish + time_bonus
+            
+            if current_time < self.best_lap_time:
+                self.best_lap_time = current_time
+                
+        total_reward = micro_reward + macro_reward
+        total_reward = micro_reward + macro_reward
+
+==================================================
+BRANCH: single-agent-with-optimal-ghost-car
+        # --- HÀM THƯỞNG CHUẨN HÓA THỂ THAO GT3 (MARKOVIAN REWARD) ---
+        # a. Thưởng tiến độ dọc tim đường Frenet s
+        prev_s = float(self.last_s)
+        delta_s = current_s - prev_s
+        if delta_s < -0.5 * self.circuit_length:
+            # Wrap-around qua vạch đích từ cuối vòng về đầu vòng
+            delta_s += self.circuit_length
+        self.last_s = current_s
+        r_progress = 0.05 * max(0.0, float(delta_s))
+
+        # b. Phạt nhẹ rung lắc đầu ra lái để giữ ổn định toán học cho mạng Actor (không cản trở đánh lái gắt)
+        r_steer_smooth = -0.01 * float(delta_steer ** 2)
+
+        # c. Phạt đứng yên / quay mòng mòng tại chỗ (< 10 km/h)
+        r_idle = -0.15 if speed_km_h < 10.0 else 0.0
+        
+        # Hàm thưởng vi mô thuần túy Markov (Không mớm quy tắc ga/phanh, không phạt tim đường để tự do chém apex):
+        micro_reward = r_progress + r_steer_smooth + r_idle
+        macro_reward = 0.0
+        
+        self.last_action = np.array(action, dtype=np.float32)
+        
+        # Kiểm tra hoàn thành vòng đua (cán đích) qua hàm kiểm tra vạch đích an toàn
+        arrive_dest = self._check_lap_completion(current_s=current_s, prev_s=prev_s)
+        self.last_pos = np.array(self.car.position[:2], dtype=np.float32)
+        
+        # Tiến trình hoàn thành vòng đua (cán đích đạt 100%)
+        progress_ratio = 1.0 if arrive_dest else float(np.clip(current_s / self.circuit_length, 0.0, 1.0))
+        
+        # --- TẦNG VĨ MÔ (Macro Reward) ---
+        if is_full_out or self.car.crash_vehicle or self.car.crash_object:
+            terminated = True
+            info["termination_reason"] = "crash_or_track_limit"
+            info["crash_distance"] = float(current_s)
+            info["crash_speed"] = float(speed_km_h)
+            self.last_crash_history = list(self.episode_history)
+            
+            # Phạt va chạm theo vận tốc: tốc độ càng cao phạt càng nặng (-10đ đến -30đ)
+            speed_ratio = float(np.clip(speed_km_h / 120.0, 0.0, 1.0))
+            macro_reward = -10.0 - 20.0 * (speed_ratio ** 2)
+            
+        elif is_stalled:
+            terminated = True
+            info["termination_reason"] = "stalled"
+            info["crash_distance"] = float(current_s)
+            info["crash_speed"] = float(speed_km_h)
+            macro_reward = 0.0
+            
+        elif arrive_dest:
+            self.total_finishes += 1
+            self.last_crash_history = []
+            lap_time = float((self.current_step - self.lap_start_step) * self.dt)
+            
+            # Thưởng cán đích cơ bản (50đ) + Thưởng mốc thời gian lũy thừa bậc 3 (Option A)
+            r_finish = 50.0
+            eta = float(np.clip((180.0 - lap_time) / 90.0, 0.0, 1.0))
+            time_bonus = 100.0 * float(eta ** 3)
+            macro_reward = r_finish + time_bonus
+            
+            if lap_time < self.best_lap_time:
+                self.best_lap_time = lap_time
+                
+            info["lap_completed"] = True
+            info["completed_lap_number"] = int(self.current_lap)
+            info["completed_lap_time"] = float(lap_time)
+            info["lap_time"] = float(lap_time)
+            
+            if self.current_lap >= self.max_laps:
+                self.lap_completed = True
+                terminated = True
+                info["termination_reason"] = "lap_completed"
+                info["arrive_dest"] = True
+            else:
+                # Chuyển sang Lap tiếp theo trong chế độ đua liên tục nhiều lap
+                self.telemetry.last_completed_lap_data = list(self.telemetry.current_lap_data)
+                self.telemetry.reset()
+                self.current_lap += 1
+                self.lap_start_step = self.current_step
+                self.current_track_idx = 0
+                self.last_s = current_s - self.circuit_length
+                if hasattr(vehicle, "navigation") and vehicle.navigation is not None:
+                    vehicle.navigation.reset(vehicle)
+                
+        total_reward = micro_reward + macro_reward
+        total_reward = micro_reward + macro_reward
+
+==================================================
+BRANCH: feature/extended-physics-mpc-optimal
+        # --- HÀM THƯỞNG CHUẨN HÓA THỂ THAO GT3 (MARKOVIAN REWARD) ---
+        # a. Thưởng tiến độ dọc tim đường Frenet s
+        prev_s = float(self.last_s)
+        delta_s = current_s - prev_s
+        if delta_s < -0.5 * self.circuit_length:
+            # Wrap-around qua vạch đích từ cuối vòng về đầu vòng
+            delta_s += self.circuit_length
+        self.last_s = current_s
+        r_progress = 0.05 * max(0.0, float(delta_s))
+
+        # b. Phạt đứng yên / quay mòng mòng tại chỗ (< 10 km/h)
+        r_idle = -0.15 if speed_km_h < 10.0 else 0.0
+        
+        # Hàm thưởng vi mô thuần túy Markov (Bỏ hoàn toàn r_steer_smooth và r_center)
+        # Độ êm vô-lăng được cơ chế chấp hành đảm bảo qua bộ lọc quán tính EMA
+        r_steer_smooth = 0.0
+        r_center = 0.0
+        micro_reward = r_progress + r_idle
+        macro_reward = 0.0
+        
+        self.last_action = np.array(action, dtype=np.float32)
+        
+        # Kiểm tra hoàn thành vòng đua (cán đích) qua hàm kiểm tra vạch đích an toàn
+        arrive_dest = self._check_lap_completion(current_s=current_s, prev_s=prev_s)
+        self.last_pos = np.array(self.car.position[:2], dtype=np.float32)
+        
+        # Tiến trình hoàn thành vòng đua (cán đích đạt 100%)
+        progress_ratio = 1.0 if arrive_dest else float(np.clip(current_s / self.circuit_length, 0.0, 1.0))
+        
+        # --- TẦNG VĨ MÔ (Macro Reward) ---
+        if is_full_out or self.car.crash_vehicle or self.car.crash_object:
+            terminated = True
+            info["termination_reason"] = "crash_or_track_limit"
+            info["crash_distance"] = float(current_s)
+            info["crash_speed"] = float(speed_km_h)
+            self.last_crash_history = list(self.episode_history)
+            
+            # Phạt va chạm theo vận tốc: tốc độ càng cao phạt càng nặng (-10đ đến -30đ)
+            speed_ratio = float(np.clip(speed_km_h / 120.0, 0.0, 1.0))
+            macro_reward = -10.0 - 20.0 * (speed_ratio ** 2)
+            
+        elif is_stalled:
+            terminated = True
+            info["termination_reason"] = "stalled"
+            info["crash_distance"] = float(current_s)
+            info["crash_speed"] = float(speed_km_h)
+            macro_reward = 0.0
+            
+        elif arrive_dest:
+            self.total_finishes += 1
+            self.last_crash_history = []
+            lap_time = float((self.current_step - self.lap_start_step) * self.dt)
+            
+            # Thưởng cán đích cơ bản (100đ) + Thưởng mốc thời gian sạch bậc thang
+            r_finish = 100.0
+            if lap_time < 120.0:
+                time_bonus = 60.0
+            elif lap_time < 140.0:
+                time_bonus = 50.0
+            elif lap_time < 160.0:
+                time_bonus = 40.0
+            elif lap_time < 180.0:
+                time_bonus = 30.0
+            elif lap_time < 200.0:
+                time_bonus = 20.0
+            else:
+                time_bonus = 10.0
+            macro_reward = r_finish + time_bonus
+            
+            if lap_time < self.best_lap_time:
+                self.best_lap_time = lap_time
+                
+            info["lap_completed"] = True
+            info["completed_lap_number"] = int(self.current_lap)
+            info["completed_lap_time"] = float(lap_time)
+            info["lap_time"] = float(lap_time)
+            
+            if self.current_lap >= self.max_laps:
+                self.lap_completed = True
+                terminated = True
+                info["termination_reason"] = "lap_completed"
+                info["arrive_dest"] = True
+            else:
+                # Chuyển sang Lap tiếp theo trong chế độ đua liên tục nhiều lap
+                self.telemetry.last_completed_lap_data = list(self.telemetry.current_lap_data)
+                self.telemetry.reset()
+                self.current_lap += 1
+                self.lap_start_step = self.current_step
+                self.current_track_idx = 0
+                self.last_s = current_s - self.circuit_length
+                if hasattr(vehicle, "navigation") and vehicle.navigation is not None:
+                    vehicle.navigation.reset(vehicle)
+                
+        total_reward = micro_reward + macro_reward
+        total_reward = micro_reward + macro_reward
+
+==================================================
+BRANCH: feature/oop-clean-physics-40d
+        # --- HÀM THƯỞNG CHUẨN HÓA THỂ THAO GT3 (MARKOVIAN REWARD) ---
+        # a. Thưởng tiến độ dọc tim đường Frenet s
+        prev_s = float(self.last_s)
+        delta_s = current_s - prev_s
+        if delta_s < -0.5 * self.circuit_length:
+            # Wrap-around qua vạch đích từ cuối vòng về đầu vòng
+            delta_s += self.circuit_length
+        self.last_s = current_s
+        r_progress = 0.05 * max(0.0, float(delta_s))
+
+        # b. Phạt rung lắc đánh lái (Steering Smoothness Regularization từ feature/clean-111s-optimal-ghost)
+        r_steer_smooth = -0.10 * float(delta_steer ** 2)
+
+        # c. Bỏ phạt lệch tim đường để xe tự do mở góc cua Out-In-Out và chém Apex
+        r_center = 0.0
+
+        # d. Phạt đứng yên / quay mòng mòng tại chỗ (< 10 km/h)
+        r_idle = -0.15 if speed_km_h < 10.0 else 0.0
+        
+        # Hàm thưởng vi mô thuần túy Markov:
+        micro_reward = r_progress + r_steer_smooth + r_idle
+        macro_reward = 0.0
+        
+        self.last_action = np.array(action, dtype=np.float32)
+        
+        # Kiểm tra hoàn thành vòng đua (cán đích) qua hàm kiểm tra vạch đích an toàn
+        arrive_dest = self._check_lap_completion(current_s=current_s, prev_s=prev_s)
+        self.last_pos = np.array(self.car.position[:2], dtype=np.float32)
+        
+        # Tiến trình hoàn thành vòng đua (cán đích đạt 100%)
+        progress_ratio = 1.0 if arrive_dest else float(np.clip(current_s / self.circuit_length, 0.0, 1.0))
+        
+        # --- TẦNG VĨ MÔ (Macro Reward) ---
+        if is_full_out or self.car.crash_vehicle or self.car.crash_object:
+            terminated = True
+            info["termination_reason"] = "crash_or_track_limit"
+            info["crash_distance"] = float(current_s)
+            info["crash_speed"] = float(speed_km_h)
+            self.last_crash_history = list(self.episode_history)
+            
+            # Phạt va chạm theo vận tốc: tốc độ càng cao phạt càng nặng (-10đ đến -30đ)
+            speed_ratio = float(np.clip(speed_km_h / 120.0, 0.0, 1.0))
+            macro_reward = -10.0 - 20.0 * (speed_ratio ** 2)
+            
+        elif is_stalled:
+            terminated = True
+            info["termination_reason"] = "stalled"
+            info["crash_distance"] = float(current_s)
+            info["crash_speed"] = float(speed_km_h)
+            macro_reward = 0.0
+            
+        elif arrive_dest:
+            self.total_finishes += 1
+            self.last_crash_history = []
+            lap_time = float((self.current_step - self.lap_start_step) * self.dt)
+            
+            # Thưởng cán đích cơ bản (50đ) + Thưởng mốc thời gian lũy thừa bậc 3 (Cubic Time Bonus)
+            r_finish = 50.0
+            eta = float(np.clip((180.0 - lap_time) / 90.0, 0.0, 1.0))
+            time_bonus = 100.0 * float(eta ** 3)
+            macro_reward = r_finish + time_bonus
+            
+            if lap_time < self.best_lap_time:
+                self.best_lap_time = lap_time
+                
+            info["lap_completed"] = True
+            info["completed_lap_number"] = int(self.current_lap)
+            info["completed_lap_time"] = float(lap_time)
+            info["lap_time"] = float(lap_time)
+            
+            if self.current_lap >= self.max_laps:
+                self.lap_completed = True
+                terminated = True
+                info["termination_reason"] = "lap_completed"
+                info["arrive_dest"] = True
+            else:
+                # Chuyển sang Lap tiếp theo trong chế độ đua liên tục nhiều lap
+                self.telemetry.last_completed_lap_data = list(self.telemetry.current_lap_data)
+                self.telemetry.reset()
+                self.current_lap += 1
+                self.lap_start_step = self.current_step
+                self.current_track_idx = 0
+                self.last_s = current_s - self.circuit_length
+                if hasattr(vehicle, "navigation") and vehicle.navigation is not None:
+                    vehicle.navigation.reset(vehicle)
+                
+        total_reward = micro_reward + macro_reward
+        total_reward = micro_reward + macro_reward

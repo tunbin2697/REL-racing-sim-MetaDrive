@@ -1,6 +1,6 @@
 # Nghiên cứu liên quan: RL đua xe (GT Sophy, Fuchs et al.) và so sánh với dự án
 
-> **Tạo**: 30/10/2026. Dùng cho phần "Nghiên cứu liên quan" và "Hạn chế" của báo cáo, và làm cơ sở cho D30–D33 trong `scratch/plan.md`.
+> **Tạo**: 30/10/2026. Dùng cho phần "Nghiên cứu liên quan" và "Hạn chế" của báo cáo, và làm cơ sở cho D30–D33 trong `plan/plan.md`.
 > **Nguồn đã đọc trực tiếp**:
 > - Wurman et al., *Outracing champion Gran Turismo drivers with deep reinforcement learning*, Nature 602, 223–228 (2022). [PDF](https://www.cs.utexas.edu/~pstone/Papers/bib2html-links/nature22.pdf) · [bib](https://www.cs.utexas.edu/~pstone/Papers/bib2html/b2hd-nature22.html)
 > - Fuchs, Song, Kaufmann, Scaramuzza, Dürr, *Super-Human Performance in Gran Turismo Sport Using Deep Reinforcement Learning*, IEEE RA-L / ICRA 2021. [arXiv 2008.07971](https://arxiv.org/html/2008.07971v2)
@@ -109,7 +109,7 @@
 | Mistake learning | D32, WI-20, WI-23 | Không đổi obs nên resume được |
 | Histogram lap time, tỉ lệ vòng sạch, độ bền nhiễu obs/trễ action, speed trace | D33, WI-21 | Chỉ cần eval |
 | Pedal 1 trục, ra ngoài đường thì phạt ∝ v² và chạy tiếp, mistake learning từ đầu run | **D35**, P2-single v2 và P2-line (`--action-mode combined --offtrack-mode penalty --spawn-mode mistake`) | Train lại từ đầu; v1 (setup cũ) giữ làm mốc so sánh |
-| SAC/QR-SAC, obs lốp, lookahead theo thời gian, episode cố định thời gian | Hướng phát triển (`scratch/plan.md` mục D) | Cần viết lại vòng lặp train hoặc đổi obs |
+| SAC/QR-SAC, obs lốp, lookahead theo thời gian, episode cố định thời gian | Hướng phát triển (`plan/plan.md` mục D) | Cần viết lại vòng lặp train hoặc đổi obs |
 
 ---
 

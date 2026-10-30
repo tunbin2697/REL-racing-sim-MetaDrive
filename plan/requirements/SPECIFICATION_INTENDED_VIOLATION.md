@@ -2,7 +2,7 @@
 ## (Technical Report: Intended Specification Violations & Scientific Rationale)
 
 > **Nhánh Git**: `feature/oop-clean-physics-40d`  
-> **Tài liệu gốc đối chiếu**: [PROJECT_SPECIFICATION.md](file:///c:/Users/tunbi/Project/school/REL%20Assignment/PROJECT_SPECIFICATION.md)  
+> **Tài liệu gốc đối chiếu**: [PROJECT_SPECIFICATION.md](file:///c:/Users/tunbi/Project/school/REL%20Assignment/plan/requirements/PROJECT_SPECIFICATION.md)  
 > **Phiên bản cập nhật**: v4.0 (40D Observation Space, Pure Bullet Physics OOP, Steering Smoothness Penalty, Longitudinal MPC Optimal Benchmark & Strict Checkpoint Guard)  
 > **Trạng thái**: Hoàn thiện Tác tử Đơn 40D trên nền Vật lý Bullet nguyên bản của MetaDrive & Xe bóng ma đối chứng (Single Agent 40D with MPC Optimal Ghost Car)
 
