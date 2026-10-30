@@ -1,6 +1,6 @@
 # Vấn đề còn mở cần quyết định
 
-> Đi kèm `scratch/plan.md` v11.1. Mỗi mục ghi rõ loại:
+> Đi kèm `scratch/plan.md` v11.2. Mỗi mục ghi rõ loại:
 > - **[Chốt ngay]**: có thể quyết định ngay bây giờ.
 > - **[Chờ kết quả]**: cần có output trước rồi mới quyết định.
 >
@@ -56,6 +56,27 @@ Phương án cắt giảm nếu trễ, theo thứ tự cắt:
 - Load checkpoint lệch dim thì báo lỗi rõ ràng (D26).
 - Chuẩn hóa obs map lớn theo nguyên tắc giữ dải giá trị (D23).
 
+### P9. Lịch máy cho D2 tối → D4 sau khi mở lại ablation (D30)
+Máy chỉ chạy thoải mái 1 run train mỗi lúc (khoảng 220 FPS ở map full). Các việc cần máy:
+
+| Việc | Thời lượng ước tính | Phụ thuộc |
+| :-- | :-- | :-- |
+| P2-single chạy nốt 4.04M → 6M | ~2.5h | Đang chạy |
+| WI-22 P2-line 6M | ~7.5h | WI-19 qua review và smoke |
+| WI-23 fine-tune spawn mistake 1M | ~1.3h | P2-single xong 6M, WI-20 qua review |
+| WI-16 P2-multi | ~9h | WI-15 (chưa port) |
+| WI-21 eval mở rộng (20 ep × nhiều cấu hình × 3 nhánh) | ~1h | Checkpoint 6M của hai nhánh |
+
+Tổng lớn hơn quỹ máy còn lại trước buổi bảo vệ.
+
+- **Đề xuất của trợ lý**:
+  - Tối D2: P2-line.
+  - Sáng D3: WI-23, sau đó WI-21.
+  - **P2-multi hạ thành tùy chọn.** Nếu không kịp thì demo đua nhiều xe bằng nhánh `feature/multicar-selfplay` sẵn có, và ghi P2-multi vào hướng phát triển.
+  - Lý do: ablation 3 nhánh trả lời một câu hỏi rõ ràng, có bằng chứng cho báo cáo. P2-multi còn phụ thuộc port WI-15 chưa làm, rủi ro cao nhất.
+- **Phương án khác**: chạy song song P2-line và P2-multi. Trước khi chọn, phải đo FPS khi chạy 2 tiến trình cùng lúc. Nếu FPS mỗi run giảm dưới ~150 thì không lợi.
+- **Mặc định nếu không chốt**: theo đề xuất của trợ lý.
+
 ### P5. Pool đối thủ: tỉ lệ learner/snapshot và tần suất lưu
 - **Đề xuất**: 3 learner + 3 snapshot; lưu snapshot mỗi 250k mẫu; pool tối đa 5.
 - Trước khi pool có snapshot đầu tiên, các xe snapshot dùng chính checkpoint warm-start (P2-single best).
@@ -84,7 +105,9 @@ Phương án cắt giảm nếu trễ, theo thứ tự cắt:
 | R9 | P2-multi warm-start từ checkpoint nào | Eval P2-single | Sáng D3 |
 | R10 | `--total-samples` của P2-multi | FPS lúc smoke test 6 xe | D3 |
 | R11 | Model nào dùng để demo | Toàn bộ eval | Sáng D4 |
-| R12 | P2-single có cần can thiệp giữa chừng không (σ kẹt trần 0.5 hoặc σ lái về sàn sớm; tỉ lệ phanh thấp kéo dài như I6) | σ từng chiều + drive trace ở mốc 2M | Sáng D3 |
+| R12 | P2-single có cần can thiệp giữa chừng không (σ kẹt trần 0.5 hoặc σ lái về sàn sớm; tỉ lệ phanh thấp kéo dài như I6) | σ từng chiều + drive trace ở mốc 2M | ✅ Đã kiểm tra ở 3.5M (F17): σ pedal kẹt trần, pedal giật. Người dùng chọn **chạy tiếp không đổi** tới 6M; can thiệp bằng WI-23 (spawn), không đổi trần σ |
+| R13 | Nhánh line có thật sự dùng feature line không | Sai lệch v* và lệch line trung bình giảm dần theo eval (WI-22) | D3 |
+| R14 | Spawn mistake có làm hết crash lặp lại không | Phân bố vị trí crash trước và sau WI-23 (WI-21, bin 50 m) | D3 |
 
 ---
 

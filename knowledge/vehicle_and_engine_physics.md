@@ -278,3 +278,16 @@ Ví dụ: với dx/70, mốc lookahead 130m và 200m luôn bị kẹp ở 1.5; v
    cưỡng bức với bám 0.9 G; Phase 2 cân bằng hơn với bám 1.56 G nhưng nhạy hơn khi phanh trong cua.
 4. Ghost là tham chiếu giải tích dựa trên mô hình chất điểm, không phải giới hạn tối ưu (mục 7).
 5. Các số "GT3 thật" ở cột tham chiếu là ước lượng, chưa trích nguồn.
+6. **Layout map không phải 1:1 về hình học.**
+   - `scripts/silverstone_blocks.json` gồm 23 block (18 cua là cung tròn, 5 đoạn thẳng). Cua mang tên các cua thật, nhưng **bán kính là đoán tay** (25–95 m ở map half).
+   - `solve_silverstone_layout.py` chỉ tối ưu độ dài và góc để vòng đua khép kín.
+   - Map full là map half **nhân đều ×2.075**. Hệ quả:
+     - cua chậm bị phóng to, ví dụ The Loop thành r ≈ 52 m, Village thành r ≈ 62 m, nên chạy nhanh hơn thực tế;
+     - giữa các block không có đoạn chuyển tiếp độ cong (clothoid).
+   - **Độ rộng đường thì gần đúng.** Map dùng 3 làn × 4.8 m = 14.4 m đều cả vòng. Các nguồn MotoGP/Tech3 ghi Silverstone rộng khoảng 15 m; Honda ghi 17 m, có thể là khu vực grid. Xe MetaDrive rộng ~1.85 m so với GT3 thật ~2.0 m, nên tỉ lệ xe/đường khá sát.
+   - Người dùng quyết định không dựng lại map từ centerline thật (30/10). Trong báo cáo gọi đây là "layout xấp xỉ theo topology Silverstone".
+7. **Ảnh hưởng của mô hình xe lên profile v\* map full.**
+   - Không có cản gió: đoạn thẳng phẳng lì ở limiter 260 km/h.
+   - Không có downforce: cua nhanh chậm hơn xe thật.
+   - Phanh trần ~1.65 G, không tăng theo tốc độ: vùng phanh từ 260 km/h dài, 150 m cho 250 → 0.
+   - T\* 124.0s gần với lap GT3 thật, nhưng đây là **các sai số bù trừ nhau**, không chứng minh mô hình đúng.

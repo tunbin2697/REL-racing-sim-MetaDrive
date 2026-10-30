@@ -15,8 +15,6 @@ import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 from metadrive import MetaDriveEnv
-from metadrive.constants import TerrainProperty
-TerrainProperty.map_region_size = 2048
 
 from metadrive.envs.marl_envs.marl_racing_env import RacingMapManager
 from game_env.silverstone_map import SilverstoneMapManager
@@ -146,6 +144,9 @@ class MetaRacingEnv(gym.Env):
             "physics_world_step_size": 0.02,
             "decision_repeat": 5,
             "cull_lanes_outside_map": False,
+            # Vùng vẽ mặt đường lên terrain (m). MetaDrive mặc định 1024 và ghi đè TerrainProperty khi khởi tạo,
+            # nên phải đặt qua config. Map full ~1700x1600 m cần 2048 (tối đa MetaDrive cho phép).
+            "map_region_size": 2048,
             "map_type": "silverstone",
             "map_config": {
                 "lane_num": self.preset.lane_num,

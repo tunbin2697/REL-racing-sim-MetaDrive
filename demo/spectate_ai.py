@@ -171,10 +171,19 @@ def main():
             obs, reward, terminated, truncated, info = env.step(action)
             
             speed_kmh = info.get("speed_km_h", info.get("speed_kmh", 0.0))
+            # route_completion của env là tiến độ cả lượt đua (chia cho max_laps); HUD hiện thêm tiến độ vòng hiện tại
             comp = info.get("route_completion", 0.0) * 100.0
-            # Lựa chọn action hiển thị dựa trên xe camera đang theo dõi
+            n_laps = max(1, int(info.get("max_laps", args.laps)))
+            cur_lap_idx = max(1, int(info.get("current_lap", 1)))
+            lap_comp = float(np.clip(comp * n_laps - 100.0 * (cur_lap_idx - 1), 0.0, 100.0))
+            # Lựa chọn action/tốc độ hiển thị dựa trên xe camera đang theo dõi
             g_act = ghost_car.last_action if ghost_car is not None else None
-            if camera_controller is not None and getattr(camera_controller, "target_name", "main") == "ghost" and g_act is not None:
+            viewing_ghost = bool(
+                camera_controller is not None
+                and getattr(camera_controller, "target_name", "main") == "ghost"
+                and ghost_car is not None and ghost_car.active
+            )
+            if viewing_ghost and g_act is not None:
                 g_steer = g_act[0]
                 g_thr = 0.5 * (float(g_act[1]) + 1.0)
                 g_brk = 0.5 * (float(g_act[2]) + 1.0)
@@ -216,8 +225,8 @@ def main():
                 "Delta Bar": f"[{delta_color.upper()}] {delta_str}",
                 "Current Lap": f"{info.get('lap_time', 0.0):.2f}s",
                 "Best Lap": f"{info.get('best_lap_time', 0.0):.2f}s",
-                "Speed": f"{speed_kmh:.1f} km/h",
-                "Completion": f"{comp:.1f}%",
+                "Speed": f"[GHOST] {ghost_car.speed_km_h:.1f} km/h" if viewing_ghost and ghost_car is not None else f"[MAIN] {speed_kmh:.1f} km/h",
+                "Completion (Main)": f"Lap {lap_comp:.1f}% | Race {comp:.1f}%" if n_laps > 1 else f"{comp:.1f}%",
                 "Action": action_str,
             }
             
@@ -249,7 +258,7 @@ def main():
                     if bench:
                         print(f"   >> Benchmark: MAE Racing Line = {bench.get('racing_line_mae_m', 0.0):.2f}m | Apex Acc = {bench.get('apex_cutting_accuracy_pct', 0.0):.1f}% | Best Lap Diff = {bench.get('lap_time_diff_s', 0.0):+.2f}s")
                 else:
-                    print(f"💥 [KẾT THÚC] Lượt đua {lap_count} dừng tại step {step} (Lap {cur_lap_display}/{max_laps_display}): Lý do = {reason} (Completion: {comp:.1f}%)")
+                    print(f"💥 [KẾT THÚC] Lượt đua {lap_count} dừng tại step {step} (Lap {cur_lap_display}/{max_laps_display}): Lý do = {reason} (Lap: {lap_comp:.1f}% | Race: {comp:.1f}%)")
                     
                 lap_count += 1
                 step = 0

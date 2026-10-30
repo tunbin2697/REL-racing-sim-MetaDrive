@@ -319,6 +319,91 @@ Hệ quả kèm theo khi chuyển sang 1:1:
 
 ---
 
+## F17. P2-single giữa run: pedal giật, tự giới hạn ~150 km/h, crash ở tốc độ thấp hơn v*
+
+### Hiện tượng [Đã kiểm chứng: `logs/p2_single`, checkpoint 3.5M, 30/10]
+
+**Xu hướng eval** (trung bình theo cửa sổ 250k step):
+
+| Đoạn | Completion TB | Crash rate | Entropy |
+| :-- | :-- | :-- | :-- |
+| 0–0.5M | 10–12% | 1.00 | 1.4 → 1.15 |
+| 1.0–1.5M | 30–39% | 0.84–0.96 | 0.7 |
+| 2.5–3.0M | ~52% | 0.71–0.74 | 0.55 |
+| 3.6–3.8M | 52% | 0.74 | 0.54 |
+
+- Chỉ có **một** eval sạch, ở 1.515M (218s). Đó là mẫu may, không phải đỉnh rồi tụt.
+- **Sim không tất định.** Cùng seed, cùng policy deterministic, 3 lần chạy crash ở 2092 m, 376 m và 1945 m. Vì vậy 5 episode eval chỉ là một mẫu nhiễu.
+
+**σ:**
+- σ lái xuống sàn (0.105).
+- σ ga/phanh nằm ở **trần −0.7 (σ ≈ 0.44–0.48) suốt 3.8M step**, giống F14. Entropy bonus tính trên Gaussian trước tanh nên chiều pedal bão hòa được "cho không" entropy. Trần D19 đang quyết định σ pedal, không phải quá trình học.
+
+**Pedal deterministic dao động chu kỳ 2 bước:**
+- Trên đoạn thẳng 900–1500 m (v* = 260 km/h), net pedal là `0.7, −0.1, 0.2, −0.3, 0.3, 0.0, …`.
+- Trung bình chỉ 0.1–0.2; 30–36% số bước là phanh thật.
+- Xe tự giới hạn ở **140–160 km/h trên mọi đoạn thẳng**.
+
+**Crash phần lớn không do quá tốc:**
+- 1945 m: xe ~136 km/h, v* ~110–129.
+- 3258 m: xe 121–149 km/h, v* 151–177.
+- 376 m: xe 143–158 km/h, v* 157–196.
+- Nghĩa là xe đã chậm hơn v* mà vẫn văng. Nguyên nhân là line/lái cộng với tải dồn trước–sau liên tục do pedal giật. GT3RealCar có μ trước 1.55 < μ sau 1.80, nên đặc biệt nhạy với kiểu dồn tải này.
+
+**Giả thuyết đã loại:**
+- Giả thuyết: nhiễu pedal lúc train làm xe chậm hơn lúc eval, qua mapping bất đối xứng `thr·(1−brk)−brk` có ngưỡng `brk > 0.05`.
+- Kết quả: net pedal chỉ lệch ~0.02 (~7%), không đủ giải thích.
+
+### Cơ chế [Suy luận]
+1. Pedal 2 trục có ngưỡng → dư thừa và không trơn. GT Sophy và Fuchs đều gộp thành 1 trục (`knowledge/related_work_racing_rl.md`).
+2. Kết thúc episode khi ra ngoài đường → agent ít thấy phần sau các điểm crash lặp lại, và học cách chạy dè dặt.
+3. Lượng dữ liệu ít hơn GT Sophy khoảng 270 lần, lại dùng PPO.
+
+### Quyết định
+- Người dùng chạy tiếp tới 6M, không đổi thông số.
+- Can thiệp sau 6M bằng spawn học từ lỗi (D32, WI-23).
+- Mục 1–3 ở trên ghi vào hướng phát triển, vì phải train lại từ đầu.
+
+---
+
+## F18. Map full chỉ vẽ ~42% mặt đường khi render
+
+### Hiện tượng [Đã kiểm chứng 30/10]
+Khi demo map full, minimap đủ cả vòng nhưng mặt đường 3D chỉ hiện ở một số đoạn.
+
+### Cơ chế [Mã nguồn + đo]
+- `TerrainProperty.map_region_size = 2048` đặt ở đầu `racing_env.py` **không có tác dụng**. `BaseEnv.__init__` ghi đè bằng `config["map_region_size"]`, mặc định 1024 (`metadrive/envs/base_env.py:335`).
+- Mặt đường chỉ được vẽ lên terrain trong khung 1024 m quanh tâm map. Map full có kích thước 1697 × 1598 m, nên phần ngoài khung bị mất.
+- Diện tích đường được vẽ đo được: ~35.800 m² so với ~86.000 m² đủ vòng.
+- Map half (807 × 761 m) vừa khung, nên trước đây không lộ lỗi.
+
+### Bản sửa
+- Đặt `"map_region_size": 2048` trong config env và bỏ dòng gán class attribute.
+- Train không đổi, vì terrain semantics chỉ tính khi render.
+- Đánh đổi: độ phân giải vạch kẻ giảm từ 22 xuống 11 px/m.
+
+---
+
+## F19. Hai lần đọc nhầm khi demo: thiếu cờ xe/map và HUD không ghi rõ xe nào
+
+### Hiện tượng [Đã kiểm chứng 30/10]
+
+**Lần 1: xe optimal kẹt 120 km/h.**
+- 120 km/h là trần của `GT3RaceCar`, xe mặc định của `spectate_ai.py` khi không truyền `--vehicle gt3_real`.
+- Dấu vết: file `scripts/silverstone_full_gt3_racecar_optimal_profile.npz` được sinh ra.
+- Chạy đúng cờ thì xe optimal lên 260 km/h và về đích 128.6s, cả khi chạy headless lẫn có render.
+
+**Lần 2: "ghost giữ 120 km/h" khi chạy cùng PPO.**
+- Đo trực tiếp, ghost vẫn đạt 260 km/h.
+- Dòng `Speed` trên HUD luôn là tốc độ xe PPO (~120 km/h trên đoạn thẳng, khớp F17), kể cả khi camera theo ghost. Chỉ dòng `Action` là đổi sang ghost.
+- Ngoài ra, `Completion` là tiến độ cả lượt đua (chia cho `max_laps`), nên chạy 2 vòng thì xong vòng 1 hiện 50%. Đây là thiết kế của env, eval và train đều dựa trên nó.
+
+### Bản sửa
+- HUD ghi `[MAIN]`/`[GHOST]` cho dòng Speed theo xe đang được theo dõi. Completion hiện `Lap x% | Race y%` khi chạy nhiều vòng. Env không đổi.
+- D34 lưu `map`/`vehicle`/`obs_mode` vào checkpoint để demo và eval tự lấy, tránh lặp lại lần 1.
+
+---
+
 ## Tổng hợp insight Phase 1 → quyết định Phase 2
 
 | # | Insight | Áp dụng cho Phase 2 |
@@ -335,6 +420,9 @@ Hệ quả kèm theo khi chuyển sang 1:1:
 | I10 | Quan sát demo: P1 không vượt quá khoảng 100 km/h, vào cua nhẹ và phanh nhẹ hơn bản 111s, có 1–2 chỗ giật lái gây drift. **Độ mượt tay lái thấp hơn của P1 là ảo giác thống kê**, do agent không tấn công cua chứ không phải lái khéo hơn | Khi báo cáo, so độ mượt tay lái phải chuẩn hóa theo tốc độ hoặc theo cua |
 | I11 | Phạt lắc tay lái `−0.1·Δ²` lớn nhất chỉ khoảng −0.003/bước (do giới hạn tốc độ xoay 0.18), so với tiến độ khoảng 0.15/bước, nên giật lái gần như miễn phí (cả ở bản 111s). Reward tiến độ tính theo hình chiếu lên tim đường thưởng nhẹ cho việc ở phía trong cua ($v\cdot R/(R-lat)$) | Ghi là giới hạn; chưa sửa vì chưa có bằng chứng giật lái gây crash |
 | I12 | **Bản 111s nhanh hơn ghost** (eval 111.4s so với T* 112.6s), và vẫn chạy hết vòng trong env hiện tại với luật 4 bánh (115.1s, xuất phát đứng) | Trong báo cáo gọi ghost là **"tham chiếu giải tích"**, không gọi là cận trên. Lý do bị vượt: các bậc $a_{lat}$ khớp tay thận trọng và giới hạn lệch ngang ±4.05m. Cần đo thêm vòng flying của bản 111s trong env hiện tại. Phân tích sai số mô hình đầy đủ: `knowledge/vehicle_and_engine_physics.md` §7 |
+| I13 | F17: P2-single σ pedal kẹt trần −0.7 suốt run; pedal deterministic giật chu kỳ 2 bước; xe tự giới hạn ~150 km/h trên đoạn thẳng có v* 260; crash ở tốc độ **thấp hơn** v* | Chạy tiếp tới 6M; sau đó fine-tune bằng spawn học từ lỗi (D32, WI-23). Pedal 1 trục và bỏ kết thúc episode để vào hướng phát triển |
+| I14 | Sim không tất định: cùng seed, cùng policy deterministic vẫn crash ở các vị trí khác nhau | Eval cuối dùng 20 episode, báo cáo tỉ lệ vòng sạch và độ lệch chuẩn lap time (D33) |
+| I15 | GT Sophy và Fuchs đều là RL thuần, chỉ dùng hình học đường, không dùng racing line; cả hai không kết thúc episode khi ra ngoài đường và dùng pedal 1 trục | Nhánh PPO thuần là cách làm chuẩn; nhánh PPO + line là biến thể có prior (D30, D31). Xem `knowledge/related_work_racing_rl.md` |
 
 ---
 
