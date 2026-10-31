@@ -78,6 +78,8 @@
 
 ## 3. So sánh với dự án
 
+> Bảng dưới so với **Phase 2** (map 1:1), đã đóng băng. Kết quả chính của đồ án là `ref_111s` trên map half: PPO, pedal 2 trục, kết thúc khi ra ngoài đường, 4M step (~111 giờ lái), 2 seed. Xem dòng "Dự án hơn ở đâu".
+
 | | GT Sophy | Fuchs 2021 | Dự án (P2-single) |
 | :-- | :-- | :-- | :-- |
 | Thuật toán | QR-SAC | SAC | PPO |
@@ -94,7 +96,7 @@
 
 ### Dự án hơn ở đâu
 - Có mốc đối chứng vật lý (T\*, ghost) và metric định lượng về line, cua, độ bám. Hai bài kia không có, vì mốc của họ là người.
-- Bản 111s (map half) nhanh hơn ghost (119.5s) và sát T\* (112.59s). Tương tự "vượt AI có sẵn" của họ, nhưng mốc là mô hình giải tích chứ không phải người (I12).
+- `ref_111s` (map half), eval dưới luật 4 bánh: 114.8 / 109.4s (đứng / flying) so với ghost đã hiệu chỉnh 118.2 / 112.8s; seed 43 cũng nhanh hơn ghost (F24). Tương tự "vượt AI có sẵn" của họ, nhưng mốc là bộ điều khiển dựa trên mô hình giải tích, đã được làm mạnh nhất có thể, chứ không phải người.
 
 ### Dự án kém ở đâu, và liên hệ với triệu chứng P2 (F17)
 1. **Kết thúc episode khi ra ngoài đường.** Mỗi lỗi mất hết phần còn lại của vòng, nên agent ít gặp nửa sau map và học cách chạy dè dặt. Cả hai bài đều phạt rồi cho chạy tiếp.

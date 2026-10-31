@@ -1,7 +1,8 @@
-# Nhật ký chẩn đoán & phát hiện kỹ thuật (phục vụ báo cáo và ablation)
+# Nhật ký chẩn đoán và phát hiện kỹ thuật
 
-> **Tạo**: 29/10/2026
-> **Phạm vi**: các nhánh sau bản 111s (`ee99f9d`) → `2055469` (42D) → `0180988` (40D) → working tree hiện tại (35D), và nhánh `origin/feature/multicar-selfplay` (`7ab74a5`).
+> **Tạo**: 29/10/2026 · **Cập nhật**: 31/10/2026 (F1–F24, I1–I20; dự án đã đóng kế hoạch, xem `plan/plan.md`)
+> **Phạm vi**: từ bản `ref_111s` (`ee99f9d`, trong file này còn gọi là "bản 111s") qua các nhánh 42D (`2055469`), 40D (`0180988`), Phase 1, Phase 2 (map 1:1), tới nhánh `feature/111s-honest-anchor`; cộng các nhánh team `origin/feature/multicar-selfplay` (`7ab74a5`) và `origin/feature/f1-downforce`.
+> **Đọc nhanh cho báo cáo**: F1, F2, F13, F14 (sửa PPO); F16 (bug ma sát); F20, F23 (giật lái); F24 (kết quả chính). Phần Phase 2 (F17–F22) là "mở rộng đã thử".
 > **Quy ước nhãn**:
 > - **[Đã kiểm chứng]**: có bằng chứng trực tiếp từ checkpoint, log hoặc code.
 > - **[Suy luận]**: tính toán từ code và số liệu, chưa đo trực tiếp.
@@ -360,9 +361,8 @@ Hệ quả kèm theo khi chuyển sang 1:1:
 3. Lượng dữ liệu ít hơn GT Sophy khoảng 270 lần, lại dùng PPO.
 
 ### Quyết định
-- Người dùng chạy tiếp tới 6M, không đổi thông số.
-- Can thiệp sau 6M bằng spawn học từ lỗi (D32, WI-23).
-- Mục 1–3 ở trên ghi vào hướng phát triển, vì phải train lại từ đầu.
+- Lúc đó: chạy tiếp tới 6M, rồi can thiệp bằng spawn học từ lỗi (D32, WI-23).
+- **Thực tế (cập nhật 31/10)**: run dừng ở 4.54M và được lưu trữ làm P2-single v1 (R12). Thay vì chạy tiếp, người dùng dựng lại P2 theo GT Sophy/Fuchs (D35: pedal 1 trục, phạt ra ngoài đường thay vì kết thúc, học từ lỗi ngay từ đầu), tức là chính các mục 1–3 ở trên.
 
 ---
 
@@ -423,7 +423,9 @@ Khi demo map full, minimap đủ cả vòng nhưng mặt đường 3D chỉ hi�
 - **Drift là khác biệt thật, do tốc độ và vật lý xe**: cùng biên độ giật lái, nhiễu gia tốc ngang ∝ v²·δ, nên ở tốc độ gấp đôi lớn gấp ~4 lần. Xe P2 vào cua 150–200 km/h ngay sát trần bám, mỗi lần giật lái là mất bám. Xe F1 nhánh team chạy chậm trên map nhỏ, có downforce ∝ v², lò xo cứng (60000 N), `roll_influence` 0.2, và vẫn dính F16 (μ trước 0.9 < sau 1.35, understeer mạnh) nên đuôi không văng.
 - **"Không học racing line" phần lớn là do nhìn và do thước đo**: Line MAE / nửa bề rộng đường là 0.55 (P2) so với 0.53 (F1). Apex Acc thấp hơn vì ngưỡng 2.2 m cố định trên map lớn gấp đôi.
 
-### Hướng xử lý (chưa làm)
+### Hướng xử lý (đã đóng 31/10: Phase 2 đóng băng, D40)
+> Mục 1 sau đó bị bác bỏ: cùng loại ràng buộc này đã được thử ở `a79aee7` và không bỏ được bang-bang (F23). Mục 2 được ghi thành gợi ý cho team multicar (`plan/team_handoff_multicar.md` §4.2).
+
 1. Giới hạn tốc độ xoay vô lăng giảm theo tốc độ xe (obs/action không đổi, fine-tune được).
 2. Phạt Δlái² mạnh hơn khoảng 20 lần và thêm phạt Δpedal² (đổi reward, resume theo D22).
 3. Downforce (đổi vật lý, phải hiệu chỉnh lại envelope/T*/ghost): không kịp.
@@ -463,7 +465,7 @@ Từ `p2_line/best_agent.pt` (1.74M), 200k step, `--line-reward-lat 0.03 --line-
 
 ## F22. Agent có cắt cua qua phần ngoài đường không (chế độ offtrack penalty)
 
-**[Đã kiểm chứng 31/10, 3 vòng deterministic mỗi model, script `cut_check.py` trong scratch]** Với mỗi lần cả 4 bánh rời mặt nhựa: phía trong/ngoài cua, cung tim đường bị bỏ qua so với quãng xe đi thật, thời gian lợi ước tính.
+**[Đã kiểm chứng 31/10, 3 vòng deterministic mỗi model, `scripts/analysis/cut_check.py`]** Với mỗi lần cả 4 bánh rời mặt nhựa: phía trong/ngoài cua, cung tim đường bị bỏ qua so với quãng xe đi thật, thời gian lợi ước tính.
 
 | Model | Số lần ra ngoài | Phía trong cua | Lợi lớn nhất 1 lần | Tổng lợi / 3 vòng |
 | :-- | :-- | :-- | :-- | :-- |
@@ -536,7 +538,9 @@ Từ `p2_line/best_agent.pt` (1.74M), 200k step, `--line-reward-lat 0.03 --line-
 
 ---
 
-## Tổng hợp insight Phase 1 → quyết định Phase 2
+## Tổng hợp insight
+
+> Cột "Áp dụng" ghi quyết định tại thời điểm đó. Trạng thái cuối: I13 đã thay bằng D35; I16–I19 đã chuyển thành gợi ý cho team sau khi Phase 2 đóng băng (D40).
 
 | # | Insight | Áp dụng cho Phase 2 |
 | :-- | :--- | :--- |
@@ -563,30 +567,16 @@ Từ `p2_line/best_agent.pt` (1.74M), 200k step, `--line-reward-lat 0.03 --line-
 
 ---
 
-## Ma trận ablation đề xuất
+## Ma trận ablation Phase 1 (đã đóng)
 
-Cùng seed, mỗi run 500k step. Nếu đủ thời gian, chạy 2–3 seed. Metric theo dõi:
-- σ từng chiều theo thời gian
-- completion, crash_rate
-- best lap
+Đề xuất ban đầu (29/10): chạy A0–A6 trên map half, mỗi run 500k step, đổi từng bản vá PPO một. **Thực tế đã chạy**:
 
-| ID | Cấu hình | Câu hỏi trả lời |
-| :-- | :--- | :--- |
-| A0 | Code trước vá (log sẵn có: 42D, hiện tại) | Baseline lỗi. Lưu ý obs khác nhau nên không so sánh sạch |
-| A1 | A0 + projection logstd (F1) | F1 có đủ để chống kẹt σ không? |
-| A2 | A1 + ACTION_BOUND (F2) | Tác động của việc log_prob khớp nhau |
-| A3 | A2 + bias phanh −1.6 (F3) | Tốc độ học giai đoạn đầu |
-| A4 | A3 + time penalty 0.01 (F7) | Hiệu ứng lên lap time |
-| A5 | A4 với thưởng về đích hàm mũ thay cho η³ (F6) | Độ dốc tín hiệu lap time |
-| A6 | A5 + sector bonus K=10, thay thế bonus ở đích (F6, F11) | Credit assignment cục bộ |
+| ID | Cấu hình | Trạng thái | Run tương ứng (`knowledge/ablation_inventory.md`) |
+| :-- | :-- | :-- | :-- |
+| A0 | Trước các bản vá PPO | Đã có | R8 (`run_a0_legacy`, 3.38M, 0 vòng sạch) |
+| A1 | A0 + projection logstd (F1) | Không chạy riêng; 1M đầu của P1-main dùng thay | R11 |
+| A2–A4 | Thêm lần lượt F2, F3, time penalty | Bỏ, không đủ thời gian | – |
+| A5 | Đủ các bản vá, thưởng về đích hàm mũ | Đã chạy (P1-main, dừng ở 2.66M) | R11 |
+| A6 | A5 + sector bonus | Bỏ | – |
 
-**Lịch thực tế (plan v7.1)**:
-- P1-main = A5, chạy 4M step.
-- A0 = P1-main với `--no-logstd-projection`, chạy 1M step.
-- A1 lấy từ 1M step đầu của P1-main, nên không cần chạy riêng.
-- P1-sector = A6.
-- Các run A2–A4 bỏ qua vì không đủ thời gian.
-
-Ưu tiên nếu thiếu thời gian:
-- A0 so với A4: lỗi so với bản vá đầy đủ.
-- A1 so với A0: bằng chứng cô lập cho F1, đây là phát hiện mạnh nhất.
+So sánh dùng được cho báo cáo: A0 so với A5 (R8 so với R11, khác nhiều biến; ghi rõ). Các ablation sau đó (map 1:1, racing line, `r_center`, seed) ở `knowledge/ablation_inventory.md` §2.

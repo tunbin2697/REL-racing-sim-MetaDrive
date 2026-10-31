@@ -1,4 +1,7 @@
 # BÁO CÁO PHÂN TÍCH TOÀN DIỆN HỆ THỐNG RACING RL
+
+> **Trạng thái (31/10/2026)**: **lịch sử**, phân tích thô từ giai đoạn đầu (agent kẹt 30–60%). Các lỗi PPO nêu ở đây đã được xử lý và ghi lại có kiểm chứng ở `knowledge/rl_debugging_findings.md` (F1, F2, F13). Các file khác trong `raw_analysis/` là diff và trích xuất thô giữa các nhánh, dùng làm bằng chứng gốc.
+
 **Chẩn đoán nguyên nhân agent kẹt ở ngưỡng 30%–60% map và vận tốc không bứt phá qua 60 km/h**
 
 ---

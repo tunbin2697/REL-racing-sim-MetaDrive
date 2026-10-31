@@ -1,5 +1,7 @@
 # 📑 BÁO CÁO PHÂN TÍCH CHUYÊN SÂU: SPECIFICATIONS REPORT SILVERSTONE GP & XE ĐUA FIA GT3
 
+> **Trạng thái (31/10/2026)**: **lịch sử**, đánh giá ngày 29/10 về tài liệu số liệu thật. Nhiều nhận định đã được đo lại và sửa ở `knowledge/vehicle_and_engine_physics.md` §8.1 và §9 (ví dụ lập luận Froude, góc lái cần thiết). Không trích file này vào báo cáo.
+
 > **Tài liệu đối chiếu**: [knowledge/silverstone_gt3_rl_specs.md](file:///c:/Users/tunbi/Project/school/REL%20Assignment/knowledge/silverstone_gt3_rl_specs.md)  
 > **Thời điểm lập**: 29/10/2026  
 > **Người thực hiện**: Antigravity Assistant  

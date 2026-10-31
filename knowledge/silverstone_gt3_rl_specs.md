@@ -1,5 +1,7 @@
 # Thông Số Thực Tế Đường Đua Silverstone GP & Xe Đua FIA GT3 Cho Mô Phỏng Reinforcement Learning
 
+> **Trạng thái (31/10/2026)**: tài liệu **tham khảo số liệu thật** (đường Silverstone thật, xe GT3 thật), viết 29/10 để dựng map 1:1 (Phase 2). Phase 2 đã đóng băng. Các số ở đây là số đời thật, **không** phải thông số của sim; thông số sim và giới hạn xem `knowledge/vehicle_and_engine_physics.md` (§5, §10). Nguồn trích chưa được kiểm từng cái.
+
 Tài liệu này tổng hợp đầy đủ số liệu hình học, động học của đường đua [Silverstone Grand Prix Circuit](https://en.wikipedia.org/wiki/Silverstone_Circuit) (layout Arena hiện đại từ 2011 đến nay) cùng thông số kỹ thuật thực tế của dòng xe đua [FIA Group GT3](https://en.wikipedia.org/wiki/Group_GT3) để phục vụ việc dựng môi trường mô phỏng (Environment) và mô hình động lực học phương tiện (Vehicle Dynamics Model) trong đồ án Reinforcement Learning (RL).
 
 ## 1. Thông Số Tổng Quan Đường Đua Silverstone Grand Prix Circuit

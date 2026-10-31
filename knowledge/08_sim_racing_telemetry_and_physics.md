@@ -1,5 +1,7 @@
 # MODULE 8: VẬT LÝ SIM RACING, HỆ THỐNG TELEMETRY & TỐI ƯU HÓA HÀM THƯỞNG TRONG METADRIVE
 
+> **Trạng thái (31/10/2026)**: ghi chú nền về sim racing và telemetry. Phần vật lý MetaDrive đã được đo lại; khi mâu thuẫn, `knowledge/vehicle_and_engine_physics.md` là nguồn đúng.
+
 > **Mục tiêu chuyên sâu**: Kết nối giữa nguyên lý vật lý thể thao tốc độ (Sim Racing Telemetry) và nền tảng toán học của Học tăng cường (Reinforcement Learning - REL), cung cấp cơ sở lý thuyết chuẩn mực phục vụ việc thiết kế hàm thưởng, giám sát hiệu năng vi mô và lập báo cáo học thuật.
 
 ---

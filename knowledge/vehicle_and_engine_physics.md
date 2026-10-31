@@ -194,7 +194,8 @@ một lý do agent Phase 1 không bị xoay khi phanh trễ [Suy luận].
 ### 6.4. Ghost car (`OptimalRacingAgent`), R8
 | Map | Vòng 1 (xuất phát đứng) | Vòng 2 (flying) | T* |
 | :-- | :-- | :-- | :-- |
-| half | 119.5 s | | 112.59 s |
+| half, legacy v22 (`gt3`) | 119.5 s | 114.2 s | 112.59 s |
+| **half, envelope v23 (`gt3_anchor`, D41)** | **118.2 s** | **112.8 s** | **110.62 s** |
 | full | 128.6 s | **124.9 s** | 124.03 s |
 
 - Ghost map full chạy 2 vòng không crash. 28% số bước có 1–3 bánh lấn vạch do racing line sát mép (thiết kế
@@ -208,6 +209,16 @@ một lý do agent Phase 1 không bị xoay khi phanh trễ [Suy luận].
   3. Mapping bàn đạp phanh theo `envelope_a_brake`; giới hạn gia tốc MPC theo envelope; góc lái tối đa lấy từ xe.
 - `OptimalRacingAgent.from_benchmark()` dùng chung cho ghost và `spectate_ai --agent optimal`, nên luôn bám đúng
   profile của map đang chạy.
+
+### 6.5. Ghost map half hiệu chỉnh (`gt3_anchor`, D41, 31/10) [Đo]
+- Mục đích: mốc so sánh công bằng cho `ref_111s`. Ghost legacy dùng phanh 6.2 m/s² (xe phanh được ~18 m/s²) và bám
+  1.04–1.2 G ở cua nhanh (trần đo được ~0.90 G), lệch ~6% so với T\* của chính nó.
+- `gt3_anchor` = vật lý `GT3RaceCar` không đổi (kể cả F16) + envelope, nên dùng pipeline v23 như map full.
+- Envelope chọn bằng quét 33 cấu hình: bám ngang 0.81–1.10 G × phanh 12/15/17 m/s² (tăng tốc 3.09 m/s² đo được),
+  biên ngang racing line 4.05/4.5/4.9 m. Chọn cấu hình **nhanh nhất mà ghost vẫn chạy sạch cả 2 vòng**:
+  0.95 G (9.32 m/s²) / 15.0 / 3.09, biên 4.05 m. Từ 1.00 G ghost văng ở cùng một cua (s ≈ 2390 m); nới biên không giúp.
+- Cache: `scripts/silverstone_half_gt3_racecar_anchor_optimal_profile.npz`. Cache profile khóa theo bề rộng đường
+  từ 31/10, nên đổi số làn sẽ tự tính lại racing line.
 
 ---
 
@@ -226,8 +237,12 @@ một lý do agent Phase 1 không bị xoay khi phanh trễ [Suy luận].
   nên $T_{opt}^{half} \le 111.4$s, một cận chặt hơn ghost. $T^*$ (tích phân profile) và lap time ghost chạy thật
   là hai con số khác nhau; chỉ con số chạy thật mới là cận hợp lệ. Báo cáo nên gọi ghost là **"quỹ đạo tham chiếu
   giải tích khả thi"**.
-- Lý do bản 111s nhanh hơn ghost map half [Suy luận]: biên lệch ngang ±4.05m thận trọng; các hệ số legacy lệch
-  khỏi vật lý thật (mục 6.2); ghost bám profile không hoàn hảo. Cần đo thêm vòng flying của bản 111s.
+- **Kết quả sau khi làm ghost mạnh nhất có thể (§6.5, F24)** [Đo]: dưới luật 4 bánh, `ref_111s` chạy 114.8 / 109.4s
+  (đứng / flying, 18/20 sạch), seed 43 chạy 115.2 / 110.0s (19/20), ghost hiệu chỉnh 118.2 / 112.8s. Vòng flying của
+  agent nhanh hơn cả T\* của mọi envelope mà ghost chạy được (thấp nhất 110.30s).
+- Nguồn chênh [Suy luận]: mô hình chất điểm dùng bám ngang ổn định không đổi; agent dùng được bám tức thời cao hơn
+  (a_lat p95 0.99 G, max 1.21 G, F23) và các hiệu ứng động học mà mô hình bỏ qua. Ghost cũng chỉ là một bộ điều
+  khiển cụ thể (MPC dọc + pure pursuit).
 - Đề xuất phân tích cho báo cáo: phân rã khoảng chênh 111s − ghost theo bề rộng đường dùng, a_y đỉnh từng cua,
   điểm phanh, góc trượt.
 

@@ -112,7 +112,7 @@ Cách nhanh nhất là port 4 file này sang nhánh làm việc mới, cho dùng
 | Góc trượt β p95 | như trên | ≤ 4° (`ref_111s`: 3.5°) |
 | Số xe về đích, số lần chạm mỗi cuộc đua | Bảng eval của khung multicar | Không tệ hơn `multicar_best.pt` (28/36 về đích, 43 lần chạm) |
 
-Cách đếm các chỉ số lái giống F20 trong `knowledge/rl_debugging_findings.md`: đổi dấu pedal (bỏ vùng |pedal| < 0.05), đổi chiều của Δlái, β = atan2(v_y, |v_x|) khi tốc độ > 40 km/h.
+Cách đếm các chỉ số lái: `scripts/analysis/drive_style.py` (viết cho env 1 xe; với multicar, chép hàm đếm sang và áp cho từng xe). Định nghĩa: đổi dấu pedal (bỏ vùng |pedal| < 0.05), đổi chiều của Δlái, β = atan2(v_y, |v_x|) khi tốc độ > 40 km/h. Đo `ref_111s` để có mốc: `python scripts/analysis/drive_style.py --model models/ref_111s/best_agent.pt --map silverstone --vehicle gt3_anchor --ghost`.
 
 ## 7. Lịch gợi ý (2–3 ngày)
 

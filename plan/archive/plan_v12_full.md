@@ -1,4 +1,7 @@
-# KẾ HOẠCH THEO WORK ITEM
+# KẾ HOẠCH THEO WORK ITEM (ĐÃ ĐÓNG 31/10/2026)
+
+> **ĐÓNG**: kế hoạch này không còn được cập nhật. Trạng thái hiện tại và việc còn lại ở `plan/plan.md`. File giữ lại vì sổ quyết định D1–D41 và lý luận của từng work item được các tài liệu khác trích dẫn. Các đường dẫn `plan/plan.md`, `plan/plan_notices.md`, `plan/remain_problems_need_decision.md`, `plan/team_multicar_brief.md` trong file này là vị trí cũ; nay lần lượt là `plan/archive/plan_v12_full.md`, `plan/archive/plan_notices.md`, `plan/archive/remain_problems_need_decision.md`, `plan/team_handoff_multicar.md`.
+> **Kết quả cuối**: D41 và `knowledge/rl_debugging_findings.md` F24. Các WI chưa làm ở bảng C được ghi rõ là không làm.
 
 > **Vị trí**: `plan/plan.md` · **Phiên bản**: v12.0 (31/10/2026).
 > **v12.0 so với v11.3**: dừng ablation. **Mục tiêu Phase 2 đổi thành demo** (D37): một xe đua đẹp trên map 1:1 và một bản multicar. Setup P2-demo do trợ lý chốt (D38): fine-tune v2 best với `r_center` + phạt mượt lái/pedal; multicar làm trên khung có sẵn của team (D39). Ghi nhận kết quả P2-line (F21), thử r_racingline (F21, D36 tạm gác), kiểm tra cắt cua (F22), phong cách lái 111s và lý do ràng buộc vật lý không chống được bang-bang (F23). WI mới: WI-24 → WI-27. Paper bổ sung: `knowledge/related_work_racing_rl.md` §5.
@@ -172,27 +175,27 @@ Nguồn: `game_env/benchmark.py` (commit `0180988`), T* = 112.6s, `profile_versi
 | :-- | :--- | :--- |
 | 00–04 | Bảo toàn bằng chứng, vá PPO, reward, train script, smoke test | ✅ Xong (commit `e0738e8`, F13 fix `958c11f`) |
 | 05 | P1-main | ⏹ Đã dừng ở 2,662,400 step (kẹt 46%) |
-| P1C | Đóng Phase 1: eval, drive trace, biểu đồ | ⏳ Làm được ngay |
+| P1C | Đóng Phase 1: eval, drive trace, biểu đồ | ❌ Không làm. Drive trace P1 đã có ở F15; kết quả P1 được dùng như bối cảnh, không phải kết quả chính |
 | 10–13 | Map preset, `GT3RealCar`, obs/reward theo preset, benchmark hai map + ghost, D19 | ✅ Xong. R8 đạt: ghost map full 128.6s / flying 124.9s (T* 124.03s) |
-| 12b | Sửa render map full + HUD demo | ✅ Trợ lý đã sửa (chưa commit): `map_region_size` 2048 qua config env (F18); HUD tách tốc độ main/ghost và completion vòng/lượt (F19) |
+| 12b | Sửa render map full + HUD demo | ✅ Đã sửa và commit (`11807e4`): `map_region_size` 2048 qua config env (F18); HUD tách tốc độ main/ghost và completion vòng/lượt (F19) |
 | 14 | P2-single v1 (setup cũ) | 🗄 Lưu trữ ở 4.54M (`e72ee80`), không train tiếp. Chẩn đoán ở F17 |
 | 14b | **P2-single v2** (setup D35) | ⏹ Dừng ở 3.32M (người dùng chốt, nhường máy cho P2-line). Best sạch 143.4s @2.56M; chẩn đoán lái ở F20 |
 | 15 | ~~Port multicar sang map lớn~~ | ➡ Chuyển sang hướng phát triển (D39) |
 | 16 | ~~P2-multi trên map 1:1~~ | ➡ Thay bằng WI-26 (D39) |
 | 19 | Obs racing line (`--obs-mode line`) + metadata checkpoint (D30, D31, D34) | ✅ Code xong, trợ lý review 30/10: smoke qua (pure khớp bit-for-bit, dựng lại line sai số 0.0001 m, nạp nhầm dim báo lỗi rõ). Obs line tốn thêm ~6% thời gian mỗi bước |
 | 20 | Spawn học từ lỗi (`--spawn-mode mistake`, D32) | ✅ Code xong, trợ lý review 30/10: snapshot đặt đúng vị trí/hướng/tốc độ (sai số 0), segment +50 không tính finish, curriculum → reset chạy thông. Smoke train 4096 bước (`line` + `mistake`) chạy thông, metadata đúng |
-| 21 | Eval mở rộng + sửa FPS sau resume (D33) | ✅ Code xong; trợ lý sửa 2 lỗi trong `plot_eval_report.py` (`env.last_long`, `bench.s_grid` không tồn tại; sai đường dẫn npz) và thêm `evaluate.py --agent optimal` cho nhánh ghost. Đã chạy thử cả 3 biểu đồ |
-| 22 | P2-line: train nhánh PPO + line (setup D35) | ⏹ Dừng ở 2.66M. Eval sạch đầu tiên 1.147M, best sạch 153.7s @1.74M, chậm dần sau 2M (F21). Chưa commit `models/p2_line`, `logs/p2_line` |
+| 21 | Eval mở rộng + sửa FPS sau resume (D33) | ✅ Code xong; trợ lý sửa 2 lỗi trong `plot_eval_report.py` (`env.last_long`, `bench.s_grid` không tồn tại; sai đường dẫn npz) và thêm `evaluate.py --agent optimal` cho nhánh ghost. Đã chạy thử cả 3 biểu đồ. **Bộ eval đầy đủ (nhiễu/trễ cho 3 nhánh P2) chưa từng chạy**; không cần nữa sau D40 |
+| 22 | P2-line: train nhánh PPO + line (setup D35) | ⏹ Dừng ở 2.66M. Eval sạch đầu tiên 1.147M, best sạch 153.7s @1.74M, chậm dần sau 2M (F21). Đã commit ở `6df6ba9` |
 | 22b | Thử r_racingline 200k (D36) | ✅ Xong, artifact đã xóa. Không đủ tốt, tạm gác (F21) |
-| 24 | Phạt mượt lái/pedal (D38) | 💤 Không cần cho nhánh chính sau D40 (team tự thêm trong multicar). `--center-coef` và `--line-reward-*` đã code (chưa commit) |
-| 25 | P2-demo-single (D38) | 💤 Tùy chọn sau D40 (map full đóng băng) |
-| 26 | P2-demo-multi trên nhánh team (D39, D40) | ⏳ Team làm theo `plan/team_multicar_brief.md` (tự thêm cờ phạt mượt trong `multicar_env.py`) |
-| 29 | Fine-tune 111s trên env chặt (4 bánh), cờ khớp 111s (D41) | ⏳ Người dùng chạy qua đêm 31/10 nếu muốn, `models/111s_ft_strict` |
-| 28 | Lặp lại 111s với seed khác (độ tin cậy của kết quả chính) | ⏳ Người dùng chạy qua đêm 31/10, xem WI-28 |
-| 27 | Script đo phong cách lái | ⏳ Trợ lý làm được ngay (chỉ đọc model, không train) |
+| 24 | Phạt mượt lái/pedal (D38) | ❌ Không làm trên nhánh chính sau D40; chuyển thành gợi ý cho team (`plan/team_handoff_multicar.md` §4.2). `--center-coef` và `--line-reward-*` đã commit (`6df6ba9`) |
+| 25 | P2-demo-single (D38) | ❌ Không làm (map full đóng băng, D40) |
+| 26 | P2-demo-multi trên nhánh team (D39, D40) | ➡ Giao team, theo dõi ở `plan/plan.md` và `plan/team_handoff_multicar.md` |
+| 29 | Fine-tune 111s trên env chặt (4 bánh), cờ khớp 111s (D41) | ✅ Chạy đêm 31/10: nhanh hơn nhưng 8/20 sạch, không dùng (F24, R16) |
+| 28 | Lặp lại 111s với seed khác (độ tin cậy của kết quả chính) | ✅ Seed 43: 19/20 sạch, vẫn nhanh hơn ghost (F24, R15) |
+| 27 | Script đo phong cách lái | ✅ `scripts/analysis/drive_style.py` (kèm `cut_check.py`, `ghost_envelope_sweep.py`) |
 | 23 | ~~Fine-tune P2-single với spawn mistake~~ | ❌ Bỏ: spawn mistake đã dùng từ đầu trong P2-single v2 (D35) |
-| 17 | Báo cáo | Làm liên tục |
-| 18 | Eval cuối, demo, đóng băng | D4 |
+| 17 | Báo cáo | ➡ Chuyển sang `plan/plan.md` §4 và thư mục `report/` |
+| 18 | Eval cuối, demo, đóng băng | ✅ Eval cuối là D41 (`logs/anchor/`); demo 1 xe = `ref_111s` + ghost hiệu chỉnh |
 
 ---
 
