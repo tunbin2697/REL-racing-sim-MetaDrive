@@ -340,15 +340,20 @@ class MetaRacingEnv(gym.Env):
         action_applied=None,
         delta_steer: float = 0.0,
         on_runoff: bool = False,
+        state=None,
     ) -> np.ndarray:
         """
         Xây dựng vector quan sát 35 chiều (Compact Racing State) - Chuẩn hội tụ ổn định:
         - 10 chiều Ego Kinematics & Controls
         - 5 chiều Track Limits & Progress (dist_left, dist_right, runoff, progress, current_kappa)
         - 20 chiều Lookahead Horizon (5 waypoints x 4 values) tại [10, 20, 35, 50, 70]m
+        state: đối tượng giữ trạng thái riêng của từng xe (current_track_idx, last_action); mặc định là chính env
+          (đơn tác tử). Môi trường nhiều xe truyền trạng thái của từng xe.
         """
+        if state is None:
+            state = self
         if action_applied is None:
-            action_applied = self.last_action
+            action_applied = state.last_action
             
         pos = np.array(vehicle.position[:2], dtype=np.float32)
         heading = float(vehicle.heading_theta)
@@ -356,8 +361,8 @@ class MetaRacingEnv(gym.Env):
         speed_m_s = float(np.linalg.norm(vel))
         
         # Tìm vị trí tim đường hiện tại
-        idx, current_s = self._get_track_s(pos, self.current_track_idx)
-        self.current_track_idx = idx
+        idx, current_s = self._get_track_s(pos, state.current_track_idx)
+        state.current_track_idx = idx
         track_pt = self.track_xy[idx]
         track_heading = float(self.track_theta[idx])
         track_curvature = float(self.track_kappa[idx])
@@ -390,12 +395,12 @@ class MetaRacingEnv(gym.Env):
         yaw_rate = float(getattr(vehicle, "yaw_rate", 0.0))
         
         # Xử lý chân ga/phanh bước trước hỗ trợ cả 2D và 3D
-        if len(self.last_action) >= 3:
-            t = 0.5 * (float(self.last_action[1]) + 1.0)
-            b = 0.5 * (float(self.last_action[2]) + 1.0)
+        if len(state.last_action) >= 3:
+            t = 0.5 * (float(state.last_action[1]) + 1.0)
+            b = 0.5 * (float(state.last_action[2]) + 1.0)
             last_pedal = t * (1.0 - b) - b if b > 0.05 else t
         else:
-            last_pedal = float(self.last_action[1])
+            last_pedal = float(state.last_action[1])
             
         cur_steer = float(action_applied[0])
         
@@ -406,7 +411,7 @@ class MetaRacingEnv(gym.Env):
             float(np.clip(vy / self.preset.vy_norm, -1.5, 1.5)),                 # 3. Vận tốc trượt ngang
             float(np.clip(yaw_rate / 3.14159, -2.0, 2.0)),                       # 4. Yaw rate
             float(cur_steer),                                                    # 5. Góc lái hiện tại
-            float(self.last_action[0]),                                          # 6. Góc lái bước trước
+            float(state.last_action[0]),                                         # 6. Góc lái bước trước
             float(np.clip(last_pedal, -1.0, 1.0)),                               # 7. Ga/phanh bước trước
             float(cos_dh),                                                       # 8. Cos góc lệch hướng
             float(sin_dh),                                                       # 9. Sin góc lệch hướng
@@ -573,7 +578,7 @@ class MetaRacingEnv(gym.Env):
         info["is_segment_start"] = bool(self.is_segment_start)
         return obs, info
 
-    def check_track_limits_and_apply_runoff(self):
+    def check_track_limits_and_apply_runoff(self, state=None, vehicle_contact_is_out: bool = True):
         """
         Quản lý lề Runoff & Giới hạn đường đua (Track Limits) chuẩn thể thao FIA 4 bánh:
         - Tim đường thực tế nằm ở giữa các làn (center_lat).
@@ -583,9 +588,14 @@ class MetaRacingEnv(gym.Env):
           + Vòng chạy HOÀN TOÀN HỢP LỆ nếu còn ít nhất 1 bánh xe trên mặt nhựa (wheels_on_track >= 1).
           + Bật cờ lấn lề (on_runoff = True) khi có từ 1 đến 3 bánh rơi khỏi mặt nhựa (> half_width).
           + Xử thua (is_full_out = True -> terminated) khi CẢ 4 BÁNH đều hoàn toàn rơi khỏi mặt nhựa (wheels_on_track == 0).
-          + Hoặc xe bị lật / va chạm đối thủ (is_airborne_or_flipped, crash_vehicle, crash_object).
+          + Hoặc xe bị lật / va chạm vật thể (is_airborne_or_flipped, crash_object) và va chạm xe khác nếu vehicle_contact_is_out.
+        state: trạng thái riêng từng xe (car, current_track_idx); mặc định là chính env (đơn tác tử).
+        vehicle_contact_is_out: đơn tác tử coi va chạm xe là bị loại; đua nhiều xe chỉ phạt va chạm ở hàm thưởng.
         """
-        wheels = self.car.get_wheel_positions()
+        if state is None:
+            state = self
+        car = state.car
+        wheels = car.get_wheel_positions()
         if not wheels:
             return False, False
             
@@ -594,7 +604,7 @@ class MetaRacingEnv(gym.Env):
         
         wheels_on_track = 0
         for w_pos in wheels:
-            idx, _ = self._get_track_s(w_pos, self.current_track_idx)
+            idx, _ = self._get_track_s(w_pos, state.current_track_idx)
             dist_to_center = float(np.linalg.norm(w_pos - self.track_xy[idx]))
             # Mép trong lốp xe gần tim đường hơn tâm bánh xe 0.15m
             dist_inner_edge = max(0.0, dist_to_center - tire_half_width)
@@ -603,19 +613,20 @@ class MetaRacingEnv(gym.Env):
                 
         is_full_out = False
         on_runoff = False
-        is_airborne_or_flipped = self.car.is_airborne_or_flipped()
+        is_airborne_or_flipped = car.is_airborne_or_flipped()
+        crash_vehicle = bool(car.crash_vehicle and vehicle_contact_is_out)
         # D35: tách lỗi cứng (lật, va chạm) khỏi trường hợp chỉ 4 bánh ra ngoài mặt nhựa
         self.last_hard_fail = bool(
-            is_airborne_or_flipped or self.car.crash_object or self.car.crash_vehicle or self.car.crash_sidewalk
+            is_airborne_or_flipped or car.crash_object or crash_vehicle or car.crash_sidewalk
         )
         self.last_all_wheels_off = bool(wheels_on_track == 0)
         
         if (
             wheels_on_track == 0
             or is_airborne_or_flipped
-            or self.car.crash_object
-            or self.car.crash_vehicle
-            or self.car.crash_sidewalk
+            or car.crash_object
+            or crash_vehicle
+            or car.crash_sidewalk
         ):
             is_full_out = True
         elif wheels_on_track < 4:

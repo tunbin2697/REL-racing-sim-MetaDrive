@@ -3,6 +3,7 @@ Cấu hình chuẩn hóa hình học và tham số môi trường theo sa bàn (
 Hỗ trợ cả hai chế độ:
 - 'silverstone_half' (mặc định / Phase 1): sa bàn thu nhỏ bán phần (2 làn 9.0m, L ≈ 2838.7m)
 - 'silverstone_full' (Phase 2): sa bàn kích thước thật 1:1 (3 làn 14.4m, L ≈ 5891m, length_scale = 2.075)
+- 'silverstone_half_3lane' (demo nhiều xe): map half nới thành 3 làn x 4.5m = 13.5m
 """
 
 from dataclasses import dataclass, field
@@ -84,6 +85,27 @@ TRACK_PRESETS: Dict[str, TrackPreset] = {
         logstd_max=[0.0, -0.7, -0.7],  # D19: khống chế sigma ga/phanh <= 0.5
         opponent_range=124.5,          # 60.0 * 2.075 = 124.5
     ),
+    # Demo nhiều xe (team_handoff_multicar §5.2): map half nới thành 3 làn x 4.5m = 13.5m, hình học tim đường giữ nguyên.
+    # Khoảng cách ngang chuẩn hóa theo nửa bề rộng mới (6.75m); các hệ số khác giữ như 'silverstone_half'.
+    "silverstone_half_3lane": TrackPreset(
+        name="silverstone_half_3lane",
+        length_scale=1.0,
+        lane_num=3,
+        lane_width=4.5,
+        lookahead_m=[10.0, 20.0, 35.0, 50.0, 70.0],
+        lookahead_dx_norm=70.0,
+        lookahead_dy_norm=30.0,
+        kappa_norm=50.0,
+        v_norm=40.0,
+        vy_norm=20.0,
+        lat_norm=6.75,
+        progress_coef=0.05,
+        finish_T0=180.0,
+        finish_tau=25.0,
+        time_scale=1.0,
+        logstd_max=[0.0, 0.0, 0.0],
+        opponent_range=60.0,
+    ),
 }
 
 
@@ -101,6 +123,8 @@ def get_track_preset(name: Optional[str] = None) -> TrackPreset:
         return TRACK_PRESETS["silverstone_half"]
     elif key in ["silverstone_full", "full", "1:1"]:
         return TRACK_PRESETS["silverstone_full"]
+    elif key in ["silverstone_half_3lane", "half_3lane", "3lane"]:
+        return TRACK_PRESETS["silverstone_half_3lane"]
     else:
         import warnings
         warnings.warn(f"Map preset '{name}' khong nam trong danh muc. Tu dong fallback ve 'silverstone_half'.")
