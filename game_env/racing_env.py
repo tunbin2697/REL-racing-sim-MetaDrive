@@ -492,7 +492,7 @@ class MetaRacingEnv(gym.Env):
 
         # c. Phạt lệch tim đường (Racing Line Centering): khuyến khích đi trong lòng đường, tránh bám mép cỏ
         lat_offset_val = float(obs[9]) * 4.5  # Khôi phục từ ego_state lat_offset / 4.5
-        r_center = -0.04 * float((lat_offset_val / 4.5) ** 2)
+        r_center = 0.0  # ABLATION 31/10: bỏ phạt lệch tim đường (gốc: -0.04 * (lat/4.5)^2), mọi thứ khác giữ nguyên ee99f9d
 
         # d. Phạt đứng yên / quay mòng mòng tại chỗ (< 10 km/h)
         r_idle = -0.15 if speed_km_h < 10.0 else 0.0
