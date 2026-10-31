@@ -1,7 +1,7 @@
 # Bàn giao: demo đua nhiều xe
 
 > **Người đọc**: các bạn trong team phụ trách multicar · **Cập nhật**: 31/10/2026
-> **Nhánh xuất phát**: `feature/111s-honest-anchor`. Mỗi bạn tạo nhánh làm việc riêng từ đây (ví dụ `feature/multicar-demo-<tên>`), **không** commit thẳng lên nhánh xuất phát.
+> **Nhánh xuất phát**: `feature/111s-honest-anchor` (nhánh neo, dùng cho báo cáo; không sửa code trên đó). Mỗi bạn tạo nhánh làm việc riêng từ đây (ví dụ `exp/multicar-demo-<tên>`), **không** commit thẳng lên nhánh neo. Quy ước nhánh: `plan/plan.md` §4.
 > **Liên hệ**: thay đổi nào ngoài phạm vi ở §3 thì hỏi chủ dự án trước khi làm.
 
 ---

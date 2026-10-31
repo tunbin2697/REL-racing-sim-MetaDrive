@@ -30,7 +30,7 @@
 | R-S1 | Các commit 06/10 trên `experiment/120kmh-braking-dynamics` (thời RacingMap, trước R2): `c1904fa` lọc EMA tay lái + phạt mượt, `4a1dae1` sửa thiên lệch rẽ phải trong micro reward | RacingMap | Xe mặc định | 35D? / 2D | – | Không có metrics riêng; là một phần chuỗi thử chống giật lái mà người dùng mô tả (F23) | `git show c1904fa`, `git show 4a1dae1` |
 | **R15** | `ee99f9d` lặp lại, **seed 43** (worktree `../REL_111s_seed43`) | như R3 | như R3 | như R3 | 4.0M | Học chậm hơn R3: eval sạch đầu tiên 0.90M, 26 eval sạch. Best, eval dưới luật 4 bánh: 115.2 ± 0.4 / 110.0 ± 0.7s, 19/20 sạch (F24) | `models/ref_111s_seed43/`, `logs/anchor/seed43_training_metrics.json`, `logs/anchor/eval_overnight_seed43_best.json` |
 | **R16** | Fine-tune R3 trên env `feature/111s-honest-anchor` (luật 4 bánh), cờ reward khớp R3 trừ thưởng về đích (hàm mũ thay bậc thang) và phạt đứng yên | Silverstone half, luật 4 bánh | `gt3_anchor` (= vật lý GT3RaceCar) | 35D / 3D | 1.0M | Best (~0.5M): 113.6 / 109.0s nhưng 8/20 sạch; last 1/20. Không dùng (F24) | `models/ref_111s_ft_strict/` (local, không commit), `logs/anchor/ft_strict_training_metrics.json`, `logs/anchor/eval_overnight_ft_*.json` |
-| **R17** | `ee99f9d` **bỏ `r_center`** (sửa 1 dòng), seed 42 và 43 (worktree `../REL_111s_nocenter`) | như R3 | như R3 | như R3, `r_center = 0` | 4.0M mỗi seed | **Đang chạy (31/10)**. Đối chứng: R3, R15 | `scripts/overnight/run_111s_no_rcenter.ps1`; kết quả sẽ ở `../REL_111s_nocenter/logs/nocenter_s{42,43}/` |
+| **R17** | `ee99f9d` **bỏ `r_center`** (sửa 1 dòng), seed 42 và 43 (worktree `../REL_111s_nocenter`) | như R3 | như R3 | như R3, `r_center = 0` | 4.0M mỗi seed | **Đang chạy (31/10)**. Đối chứng: R3, R15 | Nhánh **`exp/111s-no-rcenter`** (`33813f1`, launcher `scripts/overnight/run_111s_no_rcenter.ps1` trên nhánh đó); kết quả sẽ ở `../REL_111s_nocenter/logs/nocenter_s{42,43}/`, chép sang `logs/anchor/` khi xong |
 | R-F1 | `origin/feature/f1-downforce` (nhánh team) | Silverstone half | Xe F1 có downforce ∝ v², lò xo cứng; và một bản GT3 | – | – | Chỉ đo phong cách lái (F20): pedal đổi chiều 19.7 / 10.9 lần/100 bước, β p95 2.7° / 2.4°, chạy 87 / 67 km/h | Nhánh team |
 | G-half | Ghost giải tích, map half | Silverstone half | GT3RaceCar | — | — | T\* 112.59s (profile v22); ghost chạy thật 119.5s | `scripts/silverstone_optimal_profile.npz` |
 | **G-anchor** | Ghost map half hiệu chỉnh (`gt3_anchor`, D41) | Silverstone half | GT3RaceCar + envelope 0.95 G / 15.0 / 3.09 | – | – | T\* 110.62s; ghost 118.2 / 112.8s (đứng / flying), 3/3 sạch. Chọn từ quét 33 cấu hình | `scripts/silverstone_half_gt3_racecar_anchor_optimal_profile.npz`, `logs/anchor/eval_ghost_anchor.json` |
@@ -83,7 +83,18 @@ Các nhánh không có run riêng: `feature/oop-clean-physics-40d` local `63feaf
 
 ---
 
-## 3. Lưu ý khi dùng
+## 3. Lệnh tái lập các run 31/10
+
+Không run nào dưới đây cần sửa code, trừ R17 (nằm trên nhánh riêng).
+
+| Run | Code | Lệnh |
+| :-- | :-- | :-- |
+| R15 (seed 43) | `ee99f9d` (ví dụ `git worktree add --detach ../REL_111s_seed43 ee99f9d`) | `python training/train_racing.py --total-steps 4000000 --seed 43 --save-dir models/seed43 --log-dir logs/seed43` |
+| R16 (fine-tune luật 4 bánh) | `feature/111s-honest-anchor` @ `f4d8ef9` | `python training/train_racing.py --resume <bản sao models/ref_111s/best_agent.pt> --steps-to-run 1000000 --map silverstone --vehicle gt3_anchor --max-laps 1 --obs-mode pure --action-mode split --offtrack-mode terminate --spawn-mode grid --center-coef 0.04 --time-penalty 0 --no-logstd-projection --ent-coef 0.01 --lr 3e-4 --eval-freq 5 --eval-episodes 3 --save-dir models/ref_111s_ft_strict --log-dir logs/ref_111s_ft_strict` |
+| R17 (bỏ `r_center`) | Nhánh `exp/111s-no-rcenter` | `powershell -ExecutionPolicy Bypass -File scripts\overnight\run_111s_no_rcenter.ps1` (trên nhánh đó) |
+| Eval so sánh (D41) | `feature/111s-honest-anchor` | `python training/evaluate.py --model <checkpoint> --map silverstone --vehicle gt3_anchor --episodes 20 --laps 2 --save-json <file>` |
+
+## 4. Lưu ý khi dùng
 
 - **Lấy artifact từ commit cũ** mà không đổi nhánh: `git show <commit>:<path> > <file>` (ví dụ `git show ee99f9d:models/best_agent.pt > tmp.pt`). Checkpoint cũ cần code của đúng commit đó để chạy lại (obs/action khác), nên khi cần eval lại thì dùng `git worktree add ../wt_<id> <commit>`.
 - **Eval lại trong env hiện tại** chỉ làm được với checkpoint 35D/3D (R3, R11, R12). R3 đã được kiểm chứng chạy hết vòng.

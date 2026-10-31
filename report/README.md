@@ -1,7 +1,7 @@
 # Báo cáo đồ án: quy chuẩn viết và làm việc chung
 
 > **Người viết chính**: chủ dự án. Các bạn trong team viết phần được giao và gửi để duyệt.
-> **Chiến lược và tiến độ**: `plan/plan.md` §4. **Nguồn số liệu và lập luận**: `knowledge/` (xem §6 dưới đây).
+> **Chiến lược và tiến độ**: `plan/plan.md` §5. **Quy ước nhánh**: `plan/plan.md` §4. **Nguồn số liệu và lập luận**: `knowledge/` (xem §6 dưới đây).
 
 ---
 
@@ -81,7 +81,7 @@ Tóm tắt nội dung và cách các nguồn này liên quan tới dự án: `kn
 ## 5. Làm việc nhiều người
 
 1. **Mỗi chương một file** trong `report/sections/` (ví dụ `03_moi_truong.md`). Đầu file ghi người phụ trách và trạng thái: `nháp`, `chờ duyệt`, `đã duyệt`.
-2. **Làm trên nhánh riêng** (ví dụ `report/<tên>-<chương>`), gửi để chủ dự án duyệt trước khi gộp. Không sửa chương của người khác khi chưa trao đổi; góp ý bằng comment trong PR hoặc ghi chú `<!-- góp ý (tên): ... -->`.
+2. **Làm trên nhánh riêng** (ví dụ `report/<tên>-<chương>`) tạo từ nhánh neo `feature/111s-honest-anchor`, gửi PR để chủ dự án duyệt trước khi gộp. Không commit thẳng lên nhánh neo, và không sửa code trên nhánh báo cáo; thí nghiệm mới đi nhánh `exp/<tên>` (`plan/plan.md` §4). Không sửa chương của người khác khi chưa trao đổi; góp ý bằng comment trong PR hoặc ghi chú `<!-- góp ý (tên): ... -->`.
 3. **Chỗ chưa xong** đánh dấu `[TODO: ...]` hoặc `[CẦN SỐ: ...]` để dễ tìm. Bản nộp không còn đánh dấu nào.
 4. **Thêm ký hiệu hay thuật ngữ mới** thì cập nhật §2 trong cùng commit.
 5. **Số liệu mới** (ví dụ kết quả ablation bỏ `r_center`) chỉ đưa vào sau khi đã ghi vào `knowledge/` hoặc `logs/`, để báo cáo và tài liệu dự án không lệch nhau.

@@ -65,7 +65,7 @@ game_env/      racing_env.py (env đơn xe), vehicle.py (các xe), benchmark.py 
 training/      train_racing.py, evaluate.py, evaluator.py
 demo/          spectate_ai.py, play_vs_ai.py
 scripts/       calibrate_vehicle.py, drive_trace.py, plot_*.py, solve_silverstone_layout.py,
-               tests/ (smoke test), overnight/ (lệnh chạy dài), *_optimal_profile.npz (cache profile)
+               analysis/ (đo phong cách lái, cắt cua, quét envelope), tests/, *_optimal_profile.npz
 models/        ref_111s/ (kết quả chính), ref_111s_seed43/, p1_main/, p2_*/, legacy_*/ (các run cũ)
 logs/          anchor/ (số liệu so sánh chính), metrics của từng run
 knowledge/     phân tích dự án (xem mục 6) và ghi chú môn học (01–08)
@@ -77,7 +77,7 @@ report/        báo cáo (đang viết)
 
 | File | Nội dung |
 | :-- | :-- |
-| [`plan/plan.md`](plan/plan.md) | Trạng thái dự án, việc còn lại, chiến lược viết báo cáo |
+| [`plan/plan.md`](plan/plan.md) | Trạng thái dự án, việc còn lại, quy ước nhánh, chiến lược viết báo cáo |
 | [`plan/team_handoff_multicar.md`](plan/team_handoff_multicar.md) | Bàn giao demo nhiều xe |
 | [`report/README.md`](report/README.md) | Quy chuẩn viết báo cáo |
 | [`knowledge/rl_debugging_findings.md`](knowledge/rl_debugging_findings.md) | Các phát hiện F1–F24 |

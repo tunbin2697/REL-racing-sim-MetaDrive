@@ -1,7 +1,7 @@
 # Trạng thái dự án và việc còn lại
 
 > **Cập nhật**: 31/10/2026 · **Nhánh phát triển chính**: `feature/111s-honest-anchor`
-> Kế hoạch theo work item **đã đóng**. Sổ quyết định D1–D41 và lý luận từng work item: `plan/archive/plan_v12_full.md` (các tài liệu trong `knowledge/` nhắc "plan/plan.md Dxx" là nói tới file đó).
+> Kế hoạch theo work item **đã đóng**. Quy ước nhánh: §4. Sổ quyết định D1–D41 và lý luận từng work item: `plan/archive/plan_v12_full.md` (các tài liệu trong `knowledge/` nhắc "plan/plan.md Dxx" là nói tới file đó).
 
 ---
 
@@ -32,12 +32,24 @@ So sánh (D41, F24): cùng env, luật **4 bánh** (không kerb ảo), cùng v�
 
 | Việc | Ai | Trạng thái |
 | :-- | :-- | :-- |
-| Ablation bỏ `r_center` (R17, 2 seed) | Chủ dự án chạy, trợ lý phân tích | ▶ `scripts/overnight/run_111s_no_rcenter.ps1`; kết quả vào F24/A13 |
+| Ablation bỏ `r_center` (R17, 2 seed) | Chủ dự án chạy, trợ lý phân tích | ▶ Nhánh `exp/111s-no-rcenter`, worktree `../REL_111s_nocenter`; kết quả chép vào `logs/anchor/`, F24, A13 |
 | Demo 1 xe | Chủ dự án | ✅ `python demo/spectate_ai.py --model models/ref_111s/best_agent.pt --map silverstone --vehicle gt3_anchor --ghost` |
 | Demo nhiều xe | Team | ⏳ `plan/team_handoff_multicar.md` |
-| Báo cáo | Chủ dự án (viết chính) + team | ⏳ §4 |
+| Báo cáo | Chủ dự án (viết chính) + team | ⏳ §5 |
 
-## 4. Chiến lược viết báo cáo
+## 4. Quy ước nhánh
+
+| Nhánh | Dùng cho | Ai commit |
+| :-- | :-- | :-- |
+| `feature/111s-honest-anchor` (**nhánh neo**) | Tài liệu, `report/`, kết quả đã chốt (`logs/anchor/`, model tham chiếu), công cụ phân tích chỉ đọc (`scripts/analysis/`) | Chỉ chủ dự án; team gửi PR |
+| `exp/<tên>` | Thí nghiệm có sửa code, kèm launcher. Ví dụ `exp/111s-no-rcenter` | Người làm thí nghiệm |
+| `report/<tên>-<chương>` | Viết từng chương báo cáo | Người được giao chương |
+| Nhánh làm việc của team multicar | Demo nhiều xe (`plan/team_handoff_multicar.md`) | Team |
+| `feature/clean-111s-optimal-ghost` (`ee99f9d`) | Nguồn gốc `ref_111s` | Chỉ đọc |
+
+Thí nghiệm có kết quả dùng cho báo cáo: **chỉ chép log và số liệu** sang nhánh neo (`logs/anchor/`, cập nhật `knowledge/`), không gộp code thí nghiệm. Thí nghiệm không sửa code (chỉ đổi cờ hoặc seed) thì không cần nhánh; ghi lệnh tái lập vào `knowledge/ablation_inventory.md` §3.
+
+## 5. Chiến lược viết báo cáo
 
 **Nơi viết**: thư mục [`report/`](../report/README.md). Quy chuẩn viết, bảng ký hiệu, danh mục nguồn và cách làm nhiều người ở `report/README.md`.
 
@@ -68,7 +80,7 @@ So sánh (D41, F24): cùng env, luật **4 bánh** (không kerb ảo), cùng v�
 
 **Phân công gợi ý**: chủ dự án viết 1, 6, 7, 9 và duyệt toàn bộ; team nhận 2, 3, 8 sau khi xong demo nhiều xe; chương 4, 5 ai rảnh trước thì nhận.
 
-## 5. Bản đồ tài liệu
+## 6. Bản đồ tài liệu
 
 | File | Nội dung |
 | :-- | :-- |
