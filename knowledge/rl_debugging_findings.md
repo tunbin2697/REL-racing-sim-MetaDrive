@@ -522,6 +522,12 @@ Từ `p2_line/best_agent.pt` (1.74M), 200k step, `--line-reward-lat 0.03 --line-
 | Ghost legacy (v22) | 119.5s | 114.2s | 112.59s | 2/2 |
 | **Ghost hiệu chỉnh** (`gt3_anchor`: 0.95 G / 15.0 / 3.09, biên 4.05 m) | **118.2s** | **112.8s** | 110.62s | 3/3 |
 | **111s** (20 episode × 2 vòng) | **114.8 ± 0.4s** | **109.4 ± 0.5s** | – | 18/20 (văng ở 2637 m, 364 m) |
+| 111s **seed 43** (lặp lại công thức `ee99f9d`, 4M step), 20 × 2 | 115.2 ± 0.4s | 110.0 ± 0.7s | – | 19/20 (văng ở 2758 m) |
+| 111s fine-tune 1M trên luật 4 bánh (`best`, khoảng 0.5M), 20 × 2 | 113.6 ± 0.4s | 109.0 ± 0.2s | – | **8/20** (văng tập trung ở 1735–1807 m) |
+
+### Lặp lại và fine-tune [Đã kiểm chứng sáng 31/10]
+- **Seed 43** (cùng code và mặc định của `ee99f9d`): học chậm hơn bản gốc (eval sạch đầu tiên 0.90M so với 0.73M; 26 so với 72 eval sạch trong 4M; completion TB cửa sổ cuối ~61% so với 84%). Nhưng best của nó, eval dưới luật 4 bánh, **vẫn nhanh hơn ghost hiệu chỉnh** (115.2 / 110.0s so với 118.2 / 112.8s) và sạch 19/20. Kết luận chính **không phụ thuộc seed may mắn**, dù tốc độ hội tụ có phụ thuộc seed.
+- **Fine-tune trên luật 4 bánh**: nhanh hơn một chút (113.6 / 109.0s) nhưng mất ổn định (8/20 sạch, văng lặp lại ở 1735–1807 m); `last` còn tệ hơn (1/20). Không dùng; `ref_111s` gốc giữ làm neo.
 
 ### Diễn giải
 - 111s nhanh hơn ghost tốt nhất khoảng 3.4s ở cả hai vòng (~3%), và vòng flying nhanh hơn cả T\* của mọi envelope mà ghost chạy được (T\* thấp nhất còn chạy được: 110.30s ở 0.95 G / 17).

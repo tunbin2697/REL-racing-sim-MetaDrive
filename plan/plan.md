@@ -16,10 +16,12 @@ So sánh liêm chính (D41, F24): cùng env, cùng luật **4 bánh** (không ke
 | :-- | :-- | :-- | :-- |
 | Ghost hiệu chỉnh (`gt3_anchor`), T\* 110.62s | 118.2s | 112.8s | 3/3 |
 | `ref_111s`, 20 episode × 2 vòng | **114.8 ± 0.4s** | **109.4 ± 0.5s** | 18/20 |
+| Lặp lại với seed 43 (`models/ref_111s_seed43/`), 20 × 2 | 115.2 ± 0.4s | 110.0 ± 0.7s | 19/20 |
+| Fine-tune trên luật 4 bánh (không dùng) | 113.6 ± 0.4s | 109.0 ± 0.2s | 8/20 |
 
 Luận điểm cho báo cáo: trong cùng simulator và cùng luật, policy RL nhanh hơn bộ điều khiển dựa trên mô hình đã hiệu chỉnh khoảng 3%, và vòng flying nhanh hơn cả T\* của mọi envelope mà ghost chạy được. RL thắng vì tối ưu trực tiếp simulator thay vì mô hình đơn giản hóa của nó; cũng vì thế nó khai thác được các điểm lỏng của simulator. Viết cả hai mặt (F23, F24, `knowledge/vehicle_and_engine_physics.md` §7).
 
-Hạn chế phải nêu: xe còn bug F16 ở cả hai bên; `ref_111s` có `r_center` và được train dưới luật kerb ảo; 1 seed; ghost là một bộ điều khiển cụ thể (MPC dọc + pure pursuit).
+Hạn chế phải nêu: xe còn bug F16 ở cả hai bên; `ref_111s` có `r_center` và được train dưới luật kerb ảo; 2 seed (seed 43 học chậm hơn nhưng vẫn vượt ghost); ghost là một bộ điều khiển cụ thể (MPC dọc + pure pursuit).
 
 ## 2. Phase 2 (map 1:1) – đóng băng
 
@@ -30,8 +32,8 @@ Các run P2 (v1, v2, line, thử r_racingline) giữ làm chương "mở rộng 
 | Việc | Ai | Ghi chú |
 | :-- | :-- | :-- |
 | Demo 1 xe | Chủ dự án | `python demo/spectate_ai.py --model models/ref_111s/best_agent.pt --map silverstone --vehicle gt3_anchor --ghost` |
-| Fine-tune `ref_111s` trên env chặt (tùy chọn) | Chủ dự án | Model gốc vẫn là neo; bản fine-tune chỉ dùng nếu tốt hơn rõ |
-| Lặp lại `ref_111s` với seed khác (tùy chọn) | Chủ dự án | Kiểm tra kết quả có phụ thuộc seed không |
+| ~~Fine-tune `ref_111s` trên env chặt~~ | ✅ 31/10 | Nhanh hơn nhưng 8/20 sạch → không dùng (F24) |
+| ~~Lặp lại `ref_111s` với seed 43~~ | ✅ 31/10 | 19/20 sạch, vẫn vượt ghost (F24) |
 | **Demo nhiều xe** | Team | `plan/team_handoff_multicar.md` |
 | Báo cáo | Chủ dự án | Khung nội dung: `plan/archive/plan_v12_full.md` WI-17 |
 
