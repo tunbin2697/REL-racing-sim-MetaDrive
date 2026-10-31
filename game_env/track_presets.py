@@ -2,6 +2,7 @@
 Cấu hình chuẩn hóa hình học và tham số môi trường theo sa bàn (Track Presets)
 Hỗ trợ cả hai chế độ:
 - 'silverstone_half' (mặc định / Phase 1): sa bàn thu nhỏ bán phần (2 làn 9.0m, L ≈ 2838.7m)
+- 'silverstone_half_3lane' (Demo multicar): sa bàn bán phần mở rộng 3 làn (3 làn 13.5m, L ≈ 2838.7m)
 - 'silverstone_full' (Phase 2): sa bàn kích thước thật 1:1 (3 làn 14.4m, L ≈ 5891m, length_scale = 2.075)
 """
 
@@ -65,6 +66,25 @@ TRACK_PRESETS: Dict[str, TrackPreset] = {
         logstd_max=[0.0, 0.0, 0.0],
         opponent_range=60.0,
     ),
+    "silverstone_half_3lane": TrackPreset(
+        name="silverstone_half_3lane",
+        length_scale=1.0,
+        lane_num=3,
+        lane_width=4.5,
+        lookahead_m=[10.0, 20.0, 35.0, 50.0, 70.0],
+        lookahead_dx_norm=70.0,
+        lookahead_dy_norm=30.0,
+        kappa_norm=50.0,
+        v_norm=40.0,
+        vy_norm=20.0,
+        lat_norm=6.75,     # half_width = 0.5 * 3 * 4.5 = 6.75m
+        progress_coef=0.05,
+        finish_T0=180.0,
+        finish_tau=25.0,
+        time_scale=1.0,
+        logstd_max=[0.0, 0.0, 0.0],
+        opponent_range=60.0,
+    ),
     "silverstone_full": TrackPreset(
         name="silverstone_full",
         length_scale=2.075,
@@ -92,6 +112,7 @@ def get_track_preset(name: Optional[str] = None) -> TrackPreset:
     Truy xuất TrackPreset tương ứng theo tên định danh.
     Hỗ trợ alias:
     - None, 'silverstone', 'silverstone_half', 'half' -> preset 'silverstone_half'
+    - 'silverstone_half_3lane', 'half_3lane', '3lane' -> preset 'silverstone_half_3lane'
     - 'silverstone_full', 'full', '1:1' -> preset 'silverstone_full'
     """
     if name is None:
@@ -99,10 +120,11 @@ def get_track_preset(name: Optional[str] = None) -> TrackPreset:
     key = str(name).strip().lower()
     if key in ["silverstone", "silverstone_half", "half"]:
         return TRACK_PRESETS["silverstone_half"]
+    elif key in ["silverstone_half_3lane", "half_3lane", "3lane"]:
+        return TRACK_PRESETS["silverstone_half_3lane"]
     elif key in ["silverstone_full", "full", "1:1"]:
         return TRACK_PRESETS["silverstone_full"]
     else:
         import warnings
         warnings.warn(f"Map preset '{name}' khong nam trong danh muc. Tu dong fallback ve 'silverstone_half'.")
         return TRACK_PRESETS["silverstone_half"]
-
