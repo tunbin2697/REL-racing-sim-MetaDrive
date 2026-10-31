@@ -34,8 +34,8 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Human vs AI 3D Racing Benchmark")
     parser.add_argument("--model", type=str, default="models/best_agent.pt", help="Đường dẫn file weights của AI")
     parser.add_argument("--opponent", "--ai-type", dest="opponent", type=str, default="ppo", choices=["ppo", "optimal"], help="Loại đối thủ AI: 'ppo' (mô hình RL PPO) hoặc 'optimal' (Ghost / Benchmark Optimal Agent)")
-    parser.add_argument("--map", type=str, default="O", help="Bản đồ đua ('O' cho oval track hoặc 'S', 'C', '3')")
-    parser.add_argument("--vehicle", type=str, default="gt3", choices=["gt3", "sedan"], help="Loại xe đua ('gt3' hoặc 'sedan')")
+    parser.add_argument("--map", type=str, default="silverstone", choices=["silverstone", "silverstone_half", "silverstone_full"], help="Bản đồ đua ('silverstone', 'silverstone_half', 'silverstone_full')")
+    parser.add_argument("--vehicle", type=str, default="gt3", choices=["gt3", "gt3_anchor", "gt3_real", "sedan"], help="Loại xe đua ('gt3', 'gt3_anchor', 'gt3_real', hoặc 'sedan')")
     parser.add_argument("--seed", type=int, default=42, help="Bản đồ ngẫu nhiên")
     return parser.parse_args()
 
@@ -47,32 +47,41 @@ def main():
     print(">> KHOI DONG GIAI DUA 3D: HUMAN VS AI (REINFORCEMENT LEARNING)")
     print("=" * 70)
     print("Quy tắc điều khiển:")
-    print("  - [W] / [Mũi tên Lên]: Tăng ga (Throttle)")
-    print("  - [S] / [Mũi tên Xuống]: Thắng / Lùi (Brake / Reverse)")
-    print("  - [A] / [Mũi tên Trái]: Rẽ trái (Steer Left)")
-    print("  - [D] / [Mũi tên Phải]: Rẽ phải (Steer Right)")
-    print("  - [C]: Chuyển góc nhìn camera theo dõi Xe Người hoặc Xe AI")
-    print("  - [B]: Góc nhìn toàn cảnh từ trên cao (Bird-eye View)")
-    print("  - [R]: Reset lại vòng đua mới")
-    print("  - [Esc]: Thoát trận đấu")
+    print("  [TAY CẦM XBOX]:")
+    print("    - [Cần Analog Trái]: Bẻ lái mượt mà (Steering)")
+    print("    - [Cò Phải RT] / [Nút A]: Tăng ga tuyến tính (Throttle)")
+    print("    - [Cò Trái LT] / [Nút B, X]: Thắng tuyến tính (Brake)")
+    print("  [BÀN PHÍM]:")
+    print("    - [W] / [Mũi tên Lên]: Tăng ga (Throttle)")
+    print("    - [S] / [Mũi tên Xuống]: Thắng / Lùi (Brake / Reverse)")
+    print("    - [A] / [Mũi tên Trái]: Rẽ trái (Steer Left)")
+    print("    - [D] / [Mũi tên Phải]: Rẽ phải (Steer Right)")
+    print("  [HỆ THỐNG]:")
+    print("    - [C]: Chuyển góc nhìn camera theo dõi Xe Người hoặc Xe AI")
+    print("    - [B]: Góc nhìn toàn cảnh từ trên cao (Bird-eye View)")
+    print("    - [R]: Reset lại vòng đua mới")
+    print("    - [Esc]: Thoát trận đấu")
     print("=" * 70)
 
-    # Tự động phát hiện state_dim từ checkpoint
+    # Tự động phát hiện state_dim và action_dim từ checkpoint
     ckpt_dim = 35
+    ckpt_act_dim = 3
     if os.path.exists(args.model):
         try:
             import torch
             ckpt = torch.load(args.model, map_location="cpu")
             ckpt_dim = int(ckpt.get("state_dim", 35))
+            ckpt_act_dim = int(ckpt.get("action_dim", 3))
         except Exception:
             ckpt_dim = 35
+            ckpt_act_dim = 3
 
     ai_agent = None
     opt_agent = None
     if args.opponent == "ppo":
-        ai_agent = PPOAgent(state_dim=ckpt_dim, action_dim=2)
+        ai_agent = PPOAgent(state_dim=ckpt_dim, action_dim=ckpt_act_dim)
         if os.path.exists(args.model):
-            print(f">> Đang nạp mô hình AI từ: {args.model} (State Dim: {ckpt_dim})")
+            print(f">> Đang nạp mô hình AI từ: {args.model} (State Dim: {ckpt_dim}, Action Dim: {ckpt_act_dim})")
             ai_agent.load(args.model)
             print(">> Nạp trọng số AI thành công!")
         else:
@@ -104,6 +113,8 @@ def main():
             )
         
         opp_name = "Optimal Benchmark Agent (Ghost)" if args.opponent == "optimal" else "PPO RL Agent"
+        ctrl_mode = "TAY CẦM XBOX" if (racing_env.gamepad_controller and racing_env.gamepad_controller.connected) else "BÀN PHÍM (W-A-S-D)"
+        print(f">> Thiết bị điều khiển của Bạn: [{ctrl_mode}]")
         print(f">> Gán vai trò xe: [Player (Xanh): {player_id}] vs [{opp_name} (Đỏ): {ai_id}]")
         print(">> Hãy click vào cửa sổ game 3D để bắt đầu đua!")
 

@@ -11,15 +11,33 @@ import numpy as np
 from metadrive.envs.marl_envs import MultiAgentMetaDrive
 from metadrive.envs.marl_envs.marl_racing_env import RacingMapManager
 from metadrive.policy.manual_control_policy import KeyboardController
+from game_env.gamepad import XboxGamepadController
+from game_env.silverstone_map import SilverstoneMapManager
+from game_env.track_presets import get_track_preset
 from game_env.telemetry import TelemetryTracker
 from game_env.vehicle import GT3RaceCar
 
 
 class MultiAgentRacingMetaDrive(MultiAgentMetaDrive):
-    """Môi trường đa tác tử nạp trực tiếp RacingMapManager (12 blocks circuit khép kín)"""
+    """Môi trường đa tác tử hỗ trợ SilverstoneMapManager hoặc RacingMapManager"""
+    @classmethod
+    def default_config(cls):
+        config = super(MultiAgentRacingMetaDrive, cls).default_config()
+        if "map_config" in config and hasattr(config["map_config"], "update"):
+            config["map_config"].update({"length_scale": 1.0}, allow_add_new_key=True)
+        config.update({
+            "map_type": "silverstone",
+            "show_fps": True,
+        }, allow_add_new_key=True)
+        return config
+
     def setup_engine(self):
         super().setup_engine()
-        self.engine.update_manager("map_manager", RacingMapManager())
+        map_type = str(self.config.get("map_type", "silverstone")).lower()
+        if map_type in ["silverstone", "silverstone_half", "silverstone_full", "half", "full"]:
+            self.engine.update_manager("map_manager", SilverstoneMapManager())
+        else:
+            self.engine.update_manager("map_manager", RacingMapManager())
 
 
 class MultiAgentRacingEnv:
@@ -39,18 +57,27 @@ class MultiAgentRacingEnv:
         self.start_seed = start_seed
         self.dt = 0.02
         self.keyboard_controller = None
+        self.gamepad_controller = None
         
         from game_env.vehicle import GT3RaceCar
         self.car_player = vehicle if vehicle is not None else GT3RaceCar()
-        self.car_ai = GT3RaceCar()
+        self.car_ai = vehicle.clone() if hasattr(vehicle, "clone") else GT3RaceCar()
         
         # Telemetry trackers cho cả Player và AI
         self.telemetry_player = TelemetryTracker()
         self.telemetry_ai = TelemetryTracker()
         
+        map_name = str(map_config if isinstance(map_config, str) else "silverstone").lower()
+        if map_name not in ["silverstone", "silverstone_half", "silverstone_full"]:
+            map_name = "silverstone"
+        preset = get_track_preset(map_name)
+        self.preset = preset
+        self.circuit_length = float(getattr(preset, "circuit_length", 2852.3))
+
         map_cfg = {
-            "lane_num": 2,
-            "lane_width": 4.5,
+            "lane_num": preset.lane_num,
+            "lane_width": preset.lane_width,
+            "length_scale": preset.length_scale,
         }
         if isinstance(map_config, dict):
             map_cfg.update(map_config)
@@ -68,6 +95,7 @@ class MultiAgentRacingEnv:
             "physics_world_step_size": self.dt,
             "show_fps": True,
             "show_logo": False,
+            "map_type": map_name,
             "map_config": map_cfg,
             
             # Tắt ép bám tâm làn và phạt đè vạch
@@ -268,8 +296,11 @@ class MultiAgentRacingEnv:
         self._init_circuit_polyline()
         self.last_ai_action = [0.0, 0.0]
         
-        if self.use_render and self.keyboard_controller is None:
-            self.keyboard_controller = KeyboardController(pygame_control=False)
+        if self.use_render:
+            if self.keyboard_controller is None:
+                self.keyboard_controller = KeyboardController(pygame_control=False)
+            if self.gamepad_controller is None and XboxGamepadController.is_available():
+                self.gamepad_controller = XboxGamepadController()
             
         # Gắn kết cấu hình động lực học GT3 cho cả 2 xe
         if "agent0" in self.vehicles:
@@ -283,9 +314,20 @@ class MultiAgentRacingEnv:
         return obs, info
 
     def get_player_action(self, player_vehicle):
-        """Lấy hành động từ bàn phím người chơi (W, A, S, D)"""
+        """
+        Lấy hành động điều khiển người chơi:
+        - Ưu tiên tay cầm Xbox nếu đang kết nối và có thao tác.
+        - Tự động fallback bàn phím (W-A-S-D).
+        """
+        if self.gamepad_controller is not None and self.gamepad_controller.connected:
+            gp_act = self.gamepad_controller.process_input(player_vehicle)
+            # Nếu người chơi đang gạt cần hoặc bấm cò/nút trên gamepad
+            if abs(gp_act[0]) > 0.05 or abs(gp_act[1]) > 0.05:
+                return gp_act
+
         if self.keyboard_controller is not None:
             return self.keyboard_controller.process_input(player_vehicle)
+
         return [0.0, 0.0]
 
     def step(self, actions):
@@ -294,27 +336,29 @@ class MultiAgentRacingEnv:
         actions: dict gồm {'agent0': action0, 'agent1': action1}
         """
         self.current_step += 1
-        processed_actions = dict(actions)
-        if "agent0" in actions:
-            processed_actions["agent0"] = self.car_player.process_action(actions["agent0"])
-        if "agent1" in actions:
-            processed_actions["agent1"] = self.car_ai.process_action(actions["agent1"])
-            self.last_ai_action = list(processed_actions["agent1"])
+        processed_actions = {}
+        for aid, act in actions.items():
+            car = self.car_player if aid == "agent0" else self.car_ai
+            res = car.process_action(act)
+            act_applied = res[0] if isinstance(res, (tuple, list)) else res
+            processed_actions[aid] = np.asarray(act_applied, dtype=np.float32)[:2]
+            if aid == "agent1":
+                self.last_ai_action = list(processed_actions[aid])
             
         obs, rewards, terminations, truncations, infos = self.env.step(processed_actions)
         current_time = self.current_step * self.dt
         
         # Cập nhật Telemetry cho cả 2 xe
         for aid, tracker in [("agent0", self.telemetry_player), ("agent1", self.telemetry_ai)]:
-            if aid in self.vehicles and aid in actions and aid in infos:
+            if aid in self.vehicles and aid in processed_actions and aid in infos:
                 v = self.vehicles[aid]
-                act = actions[aid]
+                act = processed_actions[aid]
                 sample = tracker.log_step(
                     current_time=current_time,
                     position=v.position,
                     velocity=v.velocity,
-                    steering=act[0],
-                    throttle_brake=act[1],
+                    steering=float(act[0]),
+                    throttle_brake=float(act[1]),
                     dt=self.dt,
                 )
                 infos[aid]["speed_km_h"] = sample["speed_km_h"]
