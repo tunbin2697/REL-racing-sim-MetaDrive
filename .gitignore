@@ -42,7 +42,7 @@ main_index_*.png
 !models/best_agent.pt
 !plots/learning_curves.png
 
-scratch/
+scratch/*
 runs/
 logs/*_prev_run.json
 

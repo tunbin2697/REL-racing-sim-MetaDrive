@@ -1,5 +1,7 @@
 # BỘ KNOWLEDGE BASE MÔN REL (REINFORCEMENT LEARNING) - FPT UNIVERSITY
 
+> **Lưu ý**: file này là mục lục **ghi chú môn học** (`01`–`08`). Tài liệu phân tích của dự án: `rl_debugging_findings.md`, `vehicle_and_engine_physics.md`, `related_work_racing_rl.md`, `ablation_inventory.md`; tổng quan ở `README.md` gốc và `plan/plan.md`.
+
 > **Mục tiêu**: Hệ thống hóa toàn bộ kiến thức lý thuyết từ 38 bài giảng (slide `0. Course Introduction` đến `3.12` và `6. Review course`) kết hợp cẩm nang thực chiến chuyên sâu phục vụ hoàn thành xuất sắc 3 bài Assignment lớn của môn học.
 
 ---

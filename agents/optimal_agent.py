@@ -117,12 +117,17 @@ class OptimalRacingAgent:
         max_steer_rad: float = 0.349,  # 20.0 độ chuẩn GT3
         max_brk_pedal: float = 0.95,   # Khai thác 95% hành trình phanh thể thao chuẩn GT3
         use_mpc: bool = True,          # Bật bộ điều khiển Longitudinal MPC
+        v_norm: float = 40.0,
+        max_speed_kmh: float = 120.0,
+        vehicle_cfg: Optional[Any] = None,
     ):
         self.k_lat = float(k_lat)
         self.k_head = float(k_head)
         self.max_steer_rad = float(max_steer_rad)
         self.max_brk_pedal = float(max_brk_pedal)
         self.use_mpc = bool(use_mpc)
+        self.v_norm = float(v_norm)
+        self.max_speed_kmh = float(max_speed_kmh)
         
         if custom_track_xy is not None:
             self.optimal_line_xy = np.array(custom_track_xy, dtype=np.float32)
@@ -140,9 +145,9 @@ class OptimalRacingAgent:
                 for kp in self.optimal_line_kappa:
                     k_abs = abs(float(kp))
                     if k_abs > 0.005:
-                        v_c = min(110.0, np.sqrt((1.35 * 9.81) / k_abs) * 3.6 * 0.90)
+                        v_c = min(self.max_speed_kmh, np.sqrt((1.65 * 9.81) / k_abs) * 3.6 * 0.90)
                     else:
-                        v_c = 120.0
+                        v_c = self.max_speed_kmh
                     safe_speeds.append(v_c)
                 self.optimal_speed_kmh = np.array(safe_speeds, dtype=np.float32)
                 
@@ -177,14 +182,40 @@ class OptimalRacingAgent:
         self.filtered_brake = 0.0
         self.last_a_opt = 0.0
         self.mu = 1.35
+        # Giới hạn gia tốc của MPC: envelope đo trên Bullet nếu xe có (WI-11), ngược lại giữ hệ số legacy
+        mpc_brake = float(getattr(vehicle_cfg, "envelope_a_brake", None) or 6.5)
+        mpc_engine = float(getattr(vehicle_cfg, "envelope_a_engine", None) or 3.5)
+        # Trần bám ngang thực (envelope lấy 90%): dùng cho vòng tròn ma sát theo a_y ước lượng thay vì theo góc lái.
+        # None (xe map nhỏ) = giữ luật legacy theo góc lái.
+        env_lat = getattr(vehicle_cfg, "envelope_a_lat", None)
+        self.a_lat_limit = float(env_lat) / 0.9 if env_lat else None
+        self.full_brake_decel = mpc_brake if env_lat else 12.0
         if self.use_mpc:
             self.mpc = LongitudinalRacingMPC(
                 horizon=15,
                 dt=0.10,
-                max_brake_acc=6.5,
-                max_engine_acc=3.5,
+                max_brake_acc=mpc_brake,
+                max_engine_acc=mpc_engine,
                 mu=self.mu,
             )
+
+    @classmethod
+    def from_benchmark(cls, bench: Any, vehicle_cfg: Optional[Any] = None, v_norm: float = 40.0, **kwargs) -> "OptimalRacingAgent":
+        """Tạo tác tử bám đúng racing line + speed profile của RacingBenchmarkEngine thuộc map đang chạy"""
+        max_spd = float(getattr(vehicle_cfg, "max_speed_km_h", 120.0))
+        if vehicle_cfg is not None:
+            kwargs.setdefault("max_steer_rad", float(np.radians(vehicle_cfg.max_steering_deg)))
+        agent = cls(
+            custom_track_xy=bench.optimal_line_xy,
+            custom_track_kappa=bench.optimal_line_kappa,
+            custom_speed_kmh=bench.optimal_speed_kmh,
+            v_norm=v_norm,
+            max_speed_kmh=max_spd,
+            vehicle_cfg=vehicle_cfg,
+            **kwargs,
+        )
+        agent.theoretical_best_lap_time = float(bench.theoretical_best_lap_time)
+        return agent
 
     def reset(self):
         """Khởi tạo lại trạng thái của Agent khi bắt đầu vòng đua mới"""
@@ -219,7 +250,7 @@ class OptimalRacingAgent:
             th_curr = float(heading)
             v_curr_kmh = float(speed_km_h)
         elif obs is not None and len(obs) >= 14:
-            v_curr_kmh = float(obs[0] * 40.0 * 3.6)
+            v_curr_kmh = float(obs[0] * self.v_norm * 3.6)
             p_curr = self.optimal_line_xy[self.last_hint_idx]
             th_curr = self.optimal_headings[self.last_hint_idx]
         else:
@@ -238,7 +269,7 @@ class OptimalRacingAgent:
         ds = max(0.5, self.circuit_length / self.num_points)
         self.step_count += 1
         
-        is_grid_launch = bool(self.step_count <= 60 and v_curr_kmh < 85.0)
+        is_grid_launch = bool(self.step_count <= 60 and v_curr_kmh < (0.7 * self.max_speed_kmh))
         p_near = self.optimal_line_xy[idx_near]
         lat_err = float(np.linalg.norm(p_curr - p_near))
         k_near = abs(float(self.optimal_line_kappa[idx_near]))
@@ -251,7 +282,8 @@ class OptimalRacingAgent:
         else:
             raw_ld = max(5.5, 4.8 + 0.115 * v_curr_kmh)
             curv_damping = 1.0 + 11.5 * k_eff
-            L_d = float(np.clip(raw_ld / curv_damping, 4.8, 19.0))
+            max_ld = float(19.0 * max(1.0, self.max_speed_kmh / 120.0))
+            L_d = float(np.clip(raw_ld / curv_damping, 4.8, max_ld))
         
         lookahead_steps = max(1, int(round(L_d / ds)))
         idx_target = (idx_near + lookahead_steps) % self.num_points
@@ -284,18 +316,29 @@ class OptimalRacingAgent:
         # Khi profile phía trước đang giảm tốc về đáy Apex (v_ahead_8 < v_target_kmh) và xe vẫn đang nhanh hơn
         # tốc độ đáy cua phía trước (v_curr_kmh > v_min_ahead + 2.0), khóa trần gia tốc a_opt <= 0.0
         # để xe chỉ nhả phanh trôi mượt vào Apex chứ TUYỆT ĐỐI KHÔNG nhồi ga giữa vùng phanh!
-        ahead_scan_idx = (idx_near + np.arange(1, 36)) % self.num_points
+        scale_map = float(self.circuit_length / 2851.8) if self.circuit_length > 3000.0 else 1.0
+        scan_len = max(36, int(round(36 * scale_map)))
+        ahead_step = max(8, int(round(8 * scale_map)))
+        ahead_scan_idx = (idx_near + np.arange(1, scan_len)) % self.num_points
         v_min_ahead_kmh = float(np.min(self.optimal_speed_kmh[ahead_scan_idx]))
-        v_ahead_8_kmh = float(self.optimal_speed_kmh[(idx_near + 8) % self.num_points])
+        v_ahead_8_kmh = float(self.optimal_speed_kmh[(idx_near + ahead_step) % self.num_points])
         in_braking_zone = bool((v_ahead_8_kmh < v_target_kmh - 0.4) and (v_curr_kmh > v_min_ahead_kmh + 2.0))
 
         # Trail-Braking & Traction Control qua Elip ma sát Kamm (Friction Circle):
         steer_mag = abs(steer_norm)
-        avail_long_grip = float(np.sqrt(max(0.12, 1.0 - min(0.88, (0.88 * steer_mag) ** 2))))
+        if self.a_lat_limit is not None:
+            # Tải ngang ước lượng theo độ cong quỹ đạo: ở tốc độ cao đỉnh bám chỉ cần góc lái ~0.05
+            grip_use = float(min(1.0, (v_curr_ms ** 2) * max(k_near, k_ahead) / self.a_lat_limit))
+        else:
+            grip_use = steer_mag
+        if self.a_lat_limit is not None:
+            avail_long_grip = float(np.sqrt(max(0.05, 1.0 - min(0.9975, grip_use ** 2))))  # elip chặt
+        else:
+            avail_long_grip = float(np.sqrt(max(0.12, 1.0 - min(0.88, (0.88 * grip_use) ** 2))))
         if v_curr_kmh < 25.0 or is_grid_launch:
             traction_factor = 1.0
         else:
-            traction_factor = float(np.clip(1.0 - 0.50 * (steer_mag ** 1.5), 0.45, 1.0))
+            traction_factor = float(np.clip(1.0 - 0.50 * (grip_use ** 1.5), 0.45, 1.0))
 
         # Lực ga cân bằng tĩnh (Equilibrium Maintenance Throttle tại a_x = 0):
         # Trên đường thẳng (steer_mag = 0), lực cản lăn của Bullet rất nhỏ (~0.12 m/s^2) nên chỉ cần 7% ga.
@@ -306,6 +349,22 @@ class OptimalRacingAgent:
             target_brake = 0.0
             target_throttle = 1.0
             self.last_a_opt = 3.5
+        elif self.a_lat_limit is not None:
+            # Xe có envelope đo được: bám profile bằng preview. Gia tốc cần để đạt tốc độ profile tại điểm cách
+            # d phía trước (a = (v_pv^2 - v^2) / 2d) + khâu P sửa sai lệch hiện tại. Profile đã tuân thủ elip Kamm
+            # nên bám đúng profile là khả thi; MPC legacy thả trôi khi lệch nhỏ nên vào cua quá tốc độ.
+            d_pv = max(6.0, 0.35 * v_curr_ms)
+            idx_pv = (idx_near + max(1, int(round(d_pv / ds)))) % self.num_points
+            v_pv = float(self.optimal_speed_kmh[idx_pv]) / 3.6
+            a_cmd = (v_pv ** 2 - v_curr_ms ** 2) / (2.0 * d_pv) + 0.8 * (v_target_ms - v_curr_ms)
+            self.last_a_opt = a_cmd
+            if a_cmd >= 0.0:
+                thr_factor = float(np.clip(a_cmd / self.mpc.max_engine, 0.0, 1.0))
+                target_throttle = float(maint_thr + thr_factor * (1.0 - maint_thr)) * traction_factor
+                target_brake = 0.0
+            else:
+                target_throttle = 0.0
+                target_brake = float(np.clip(-a_cmd / self.full_brake_decel, 0.0, 1.0) * self.max_brk_pedal)
         elif self.use_mpc:
             indices_fut = []
             idx_cursor = idx_near
@@ -329,8 +388,8 @@ class OptimalRacingAgent:
             # - Khi a_opt < -0.38: đóng ga 0.0 và chia theo đúng hiệu suất phanh cực đại thực tế của Bullet (12.0 m/s^2)
             #   để lực phanh êm, đúng điểm và không bao giờ bị hãm quá đà!
             coast_band = 0.38
-            full_brake_decel = 12.0
-            is_top_speed_cruise = bool(v_target_kmh >= 118.5 and v_curr_kmh <= 121.5)
+            full_brake_decel = self.full_brake_decel
+            is_top_speed_cruise = bool(v_target_kmh >= (self.max_speed_kmh - 1.5) and v_curr_kmh <= (self.max_speed_kmh + 1.5))
             if a_opt >= 0.0:
                 thr_factor = float(np.clip(a_opt / self.mpc.max_engine, 0.0, 1.0))
                 target_throttle = float(maint_thr + thr_factor * (1.0 - maint_thr)) * traction_factor

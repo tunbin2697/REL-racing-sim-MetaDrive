@@ -1,0 +1,582 @@
+# Nhật ký chẩn đoán và phát hiện kỹ thuật
+
+> **Tạo**: 29/10/2026 · **Cập nhật**: 31/10/2026 (F1–F24, I1–I20; dự án đã đóng kế hoạch, xem `plan/plan.md`)
+> **Phạm vi**: từ bản `ref_111s` (`ee99f9d`, trong file này còn gọi là "bản 111s") qua các nhánh 42D (`2055469`), 40D (`0180988`), Phase 1, Phase 2 (map 1:1), tới nhánh `feature/111s-honest-anchor`; cộng các nhánh team `origin/feature/multicar-selfplay` (`7ab74a5`) và `origin/feature/f1-downforce`.
+> **Đọc nhanh cho báo cáo**: F1, F2, F13, F14 (sửa PPO); F16 (bug ma sát); F20, F23 (giật lái); F24 (kết quả chính). Phần Phase 2 (F17–F22) là "mở rộng đã thử".
+> **Quy ước nhãn**:
+> - **[Đã kiểm chứng]**: có bằng chứng trực tiếp từ checkpoint, log hoặc code.
+> - **[Suy luận]**: tính toán từ code và số liệu, chưa đo trực tiếp.
+> - **[Giả thuyết]**: cần thí nghiệm để xác nhận.
+
+---
+
+## F1. σ khám phá bị đóng băng ở biên clamp (actor_logstd freeze)
+
+### Hiện tượng [Đã kiểm chứng]
+Giá trị `actor_logstd` đọc trực tiếp từ checkpoint, theo thứ tự [steer, throttle, brake]:
+
+| Checkpoint | logstd | Trạng thái |
+| :--- | :--- | :--- |
+| 111s (`ee99f9d:models/best_agent.pt`) | [−1.952, −0.881, −0.437] | Trong biên |
+| 42D 4M (`2055469:models/last_agent.pt`) | [0.002, 0.000, 0.002] | Cả 3 chiều kẹt trần |
+| Hiện tại `agent_step_500k.pt` | [−1.461, 0.001, −0.199] | Throttle kẹt trần |
+| Hiện tại `agent_step_3000k.pt`, `best`, `last` | [−2.301, 0.001, 0.001] | Steer kẹt sàn; ga, phanh kẹt trần |
+| Multicar (`7ab74a5:models/best_agent.pt`) | [−2.300, −1.871, −1.687] | Trong biên (đã có projection) |
+
+Entropy trong log khớp chính xác với giá trị lý thuyết. Entropy của Gaussian 3 chiều là $\sum_i (\tfrac12\ln 2\pi e + \log\sigma_i) = 4.257 + \sum_i \log\sigma_i$:
+- 42D: $\sum\log\sigma \approx 0$ → **4.26**, hằng số suốt phần cuối log.
+- Hiện tại: $-2.3 + 0 + 0$ → **1.96**, hằng số suốt phần cuối log.
+- 111s: 1.40–1.49, có dao động, tức không kẹt.
+
+### Cơ chế [Đã kiểm chứng từ code]
+1. `networks.py` kẹp logstd bằng `torch.clamp(self.actor_logstd, min=-2.3, max=0.0)` ngay trong forward. Tham số gốc `actor_logstd` thì không bị ràng buộc.
+2. Khi tham số gốc vượt ra ngoài [−2.3, 0], đạo hàm của clamp bằng 0. Mọi gradient đều mất, gồm cả policy gradient lẫn entropy bonus.
+3. Không còn lực nào kéo tham số trở lại, nên nó **kẹt vĩnh viễn**. Phần vượt quá biên rất nhỏ (0.001 trong checkpoint) đến từ đuôi momentum của Adam sau khi gradient đã về 0.
+
+### Vì sao ga/phanh trôi lên trần [Giả thuyết]
+Entropy bonus (`ent_coef` = 0.005–0.01) tạo một lực đẩy logstd đi lên không đổi. Nếu nhiễu ở bàn đạp không bị phạt đủ mạnh trong advantage, lực đẩy này thắng và logstd chạm trần. Chưa rõ vì sao run 111s không gặp hiện tượng này. Có thể do episode 1 vòng cùng thưởng bậc thang tạo tín hiệu ga/phanh mạnh hơn, cũng có thể chỉ là ngẫu nhiên.
+
+### Hệ quả [Suy luận]
+- Phanh: $brk = \tfrac12(\tanh u + 1)$, deadband 0.05, nên phanh bật khi $u > \operatorname{atanh}(-0.9) = -1.472$.
+- Với $\sigma_{brake} = 1$ và mean ≈ bias ≈ −0.96: $P(u > -1.472) = P(z > -0.51) \approx$ **70%** số bước rollout có phanh ngẫu nhiên.
+  - Con số này lấy bias làm đại diện cho mean. Mean thật thay đổi theo state.
+- Policy học trên dữ liệu mà ga/phanh chủ yếu là nhiễu, nên không học được điểm phanh. Điều này nhất quán với crash_rate ≈ 1.0 và completion ≈ 20% trong `logs/training_metrics.json`.
+- Eval dùng mean (deterministic), nên σ không trực tiếp làm hỏng eval. Nhưng bản thân mean đã được học dưới nhiễu.
+
+### Bản vá
+Lấy từ nhánh multicar:
+```python
+self.actor_optimizer.step()
+with torch.no_grad():
+    self.ac.actor_logstd.clamp_(self.ac.LOGSTD_MIN, self.ac.LOGSTD_MAX)
+```
+Áp dụng cả trong `load()`. Kiểm chứng: checkpoint của nhánh multicar có logstd nằm trong biên.
+
+### Bài học cho báo cáo
+- **Entropy tổng che mất lỗi**: cần log σ cho **từng chiều** hành động.
+- Không resume từ checkpoint đã kẹt. Projection lúc load chỉ kéo σ về đúng biên, không kéo về giá trị khỏe.
+
+### Cách tái hiện
+```python
+import torch
+c = torch.load("models/last_agent.pt", map_location="cpu", weights_only=False)
+sd = c.get("model_state_dict", c)
+print(sd["actor_logstd"])
+```
+
+---
+
+## F2. log_prob lệch nhau giữa rollout và update (Squashed Gaussian mismatch)
+
+### Hiện tượng [Đã kiểm chứng từ code `0180988`]
+- **Lúc rollout**: `u = clamp(rsample, ±5)`, `action = tanh(u)`. Action có thể đạt 0.99991.
+- **Lúc update**: `action = clamp(action, ±0.999)`, `u = atanh(action)`, nên |u| ≤ 3.80.
+- Khi |u| > 3.8 (hành động bão hòa), log_prob tính lúc update khác log_prob đã lưu lúc rollout. Ratio PPO vì thế bị lệch một cách hệ thống.
+
+### Mức độ [Suy luận]
+- Tác động nhỏ khi mean nằm gần 0.
+- Tác động đáng kể khi policy học được kiểu đạp hết ga trên đường thẳng (mean của u lớn), hoặc khi σ kẹt ở trần như F1.
+
+### Bản vá
+Lấy từ nhánh multicar: định nghĩa `ACTION_BOUND = 0.999` và **luôn** áp `clamp → atanh` cho cả hai đường, rollout lẫn update.
+
+---
+
+## F3. Bias phanh −0.8 gây rê phanh thường trực
+
+### Hiện tượng [Suy luận từ code]
+- Bias −0.8: $\tanh(-0.8) = -0.664$, nên brk = 0.168. Giá trị này lớn hơn deadband 0.05, nên mean policy lúc khởi tạo luôn kéo phanh khoảng 17%.
+- Bias −1.6: brk = 0.039, nằm dưới deadband.
+- Với σ_init ≈ 0.45 (logstd −0.8): $P(u > -1.472) = P(z > 0.285) \approx 39\%$ số bước vẫn có phanh khi sample. Như vậy vẫn còn khám phá phanh, nhưng mean không còn rê phanh.
+
+---
+
+## F4. Resume bỏ qua `--lr`
+
+**[Đã kiểm chứng từ code]**: `Adam.load_state_dict` khôi phục cả `lr` lưu trong checkpoint, nên giá trị `--lr` truyền qua CLI không có tác dụng.
+
+**Bản vá** (nhánh multicar): gọi `agent.set_lr(args.lr)` sau `agent.load()`.
+
+---
+
+## F5. Evaluator cắt vòng chậm
+
+**[Đã kiểm chứng từ code]**: giới hạn `max_eval_steps_per_lap = 1500` tương đương 150s mỗi vòng. Vòng chậm hơn 150s bị cắt và tính là không hoàn thành, làm đường cong học giai đoạn đầu trông tệ hơn thực tế.
+
+**Bản vá** (nhánh multicar): tăng lên 3000.
+
+---
+
+## F6. Thưởng về đích η³ phẳng ở vùng agent đang chạy
+
+**[Suy luận]**: $R = 50 + 100\eta^3$ với $\eta = \text{clip}((180 - T)/90, 0, 1)$.
+
+| T (s) | Bonus | Độ dốc (điểm/s) |
+| :-- | :-- | :-- |
+| 160 | 1.1 | 0.05 |
+| 146 | 5.4 | 0.16 |
+| 120 | 29.6 | 0.99 |
+| 111 | 45.2 | 1.31 |
+
+Ở vùng 140–180s, chạy nhanh hơn gần như không được thưởng thêm. Để so sánh:
+- Bậc thang của bản 111s: +50 nếu dưới 140s, giảm 10 điểm mỗi 20s.
+- Tuyến tính 100·η: độ dốc đều 1.11 điểm/s.
+
+**[Giả thuyết]**: dạng η³ làm chậm giai đoạn đầu của quá trình tối ưu lap time.
+
+---
+
+## F7. Độ lớn của time penalty
+
+**[Suy luận]**:
+- Reward tiến độ là $0.05\Delta s = 0.005v$ mỗi bước, tức 0.15/bước ở 30 m/s, tổng khoảng 142/vòng.
+- $r_{time} = -0.01$/bước, khoảng 7% reward tiến độ, khoảng −11/vòng.
+- Tổng phạt tương lai có chiết khấu tối đa là $0.01/(1-\gamma)$: bằng 1 với γ = 0.99, bằng 2 với γ = 0.995. Con số này nhỏ hơn nhiều so với phạt crash (−10 đến −30), nên **không tạo động cơ tự sát**.
+- Hiệu ứng tăng tốc dự kiến nhỏ.
+
+---
+
+## F8. Kết quả một xe trên nhánh multicar
+
+**[Đã kiểm chứng từ log]**: các run `run_v5` đến `run_v8b` (mỗi run ≤ 1M step, đã có bản vá F1 và F2) đạt best lap khoảng **146s**, crash_rate cao.
+
+Nhánh này còn cho thấy một hiện tượng ngược lại: σ cả 3 chiều sập gần sàn. Entropy của v7 là −2.62, tương ứng Σlogσ ≈ −6.88 ≈ 3 × (−2.3). Projection chống được việc kẹt nhưng không chống được việc sập. Như vậy:
+- Bản vá F1 và F2 là **cần nhưng chưa đủ**.
+- Bản 111s cần 4M step để đạt kết quả.
+
+---
+
+## F9. Các biến thay đổi giữa bản 111s và hiện tại (biến gây nhiễu)
+
+| Hạng mục | 111s (`ee99f9d`) | Hiện tại |
+| :--- | :--- | :--- |
+| logstd max | 0.5 | 0.0 (commit) / 0.5 (working tree) |
+| Episode | 1 vòng, standing | 2 vòng, standing |
+| Thưởng về đích | 100 + bậc thang | 50 + 100η³ |
+| Phạt stall | 0 | −15 |
+| `r_center` | −0.04·(lat/4.5)² | Bỏ |
+| Track limit | 4 góc thân xe | 4 bánh xe |
+| Obs | 35D | 35D (giữa chừng từng là 42D và 40D) |
+
+---
+
+## F10. Các khẳng định vật lý trong tài liệu specs cần sửa
+
+Đã chuyển sang `knowledge/vehicle_and_engine_physics.md` §8.1 (Froude) và §9 (bảng sửa khẳng định cũ).
+
+---
+
+## F11. Reward hiện tại tương đương "delta time so với ghost 2 m/s"; vì sao không cộng thêm delta time
+
+### Delta time viết dưới dạng reward từng bước [Suy luận]
+Gọi $t_{ref}(s)$ là thời điểm ghost tham chiếu đi tới vị trí $s$. Delta là $\delta_t = t_{now} - t_{ref}(s_t)$. Reward từng bước:
+
+$$r_t = -(\delta_t - \delta_{t-1}) = \underbrace{t_{ref}(s_t) - t_{ref}(s_{t-1})}_{\approx\,\Delta s / v_{ref}(s)} - \Delta t$$
+
+Ba hệ quả:
+- **Tổng không chiết khấu triệt tiêu theo kiểu telescoping**: $\sum r_t = T_{ref} - T_{lap}$. Tổng này tuyến tính chính xác theo lap time.
+- **Số hạng $\Delta s/v_{ref}(s)$ là potential-based shaping** (Ng et al. 1999) với $\Phi(s) = t_{ref}(s)$. Về lý thuyết nó không đổi policy tối ưu, chỉ đổi cách phân bổ credit giữa các bước.
+- **Số hạng $-\Delta t$ chính là time penalty.**
+
+### Reward hiện tại là một trường hợp riêng [Suy luận]
+So khớp $k(\Delta s/v_g - \Delta t)$ với $0.05\Delta s - 0.01$ (bước 0.1s):
+- Từ số hạng thời gian: $k = 0.1$.
+- Từ số hạng quãng đường: $v_g = 2$ m/s (7.2 km/h).
+
+Vậy reward tiến độ cộng time penalty 0.01 chính là **delta time so với một ghost chạy 7.2 km/h**. Xe hầu như luôn "nhanh hơn" ghost, nên áp lực thời gian gần như bằng 0. Cũng cần để ý: nếu không có time penalty thì reward tiến độ **cộng dồn không chiết khấu là hằng số $0.05L$**, tức không chứa tín hiệu lap time nào. Tín hiệu đó chỉ xuất hiện nhờ chiết khấu γ.
+
+### Hệ quả nếu cộng chồng các thành phần trùng nhau [Suy luận]
+- **Đếm trùng mục tiêu "nhanh"**: tiến độ, time, delta và `r_idle` cùng đẩy về một hướng. Trọng số thực của mục tiêu này bằng tổng các thành phần, lấn át phạt crash và phạt lắc tay lái, nên agent liều hơn và khó tune.
+- **Ablation không quy được nguyên nhân** cho riêng thành phần nào.
+- **Có thể sinh cực trị cục bộ** ở những state mà các thành phần ngược dấu nhau.
+- Trong RL không có vấn đề "không xác định được hệ số" như đa cộng tuyến trong hồi quy, vì agent chỉ tối ưu tổng.
+
+Nguyên tắc rút ra: delta time phải **thay thế** reward tiến độ cộng time penalty, không được cộng thêm vào.
+
+### Delta time chỉ có giá trị khi $v_{ref}(s)$ thay đổi theo vị trí
+Khi đó mỗi giây có giá như nhau ở mọi chỗ trên đường, và credit được gán ngay tại khúc cua tạo ra nó. Các lựa chọn nguồn tham chiếu:
+
+| Nguồn tham chiếu | Đánh giá |
+| :--- | :--- |
+| Optimal profile | **Cấm** (rò rỉ dữ liệu) |
+| $\sqrt{a_y/\kappa}$ tính tay | Vùng xám, gần như là Pass 1 của benchmark |
+| Best lap của chính agent | Hợp lệ, nhưng non-stationary. Cần tham chiếu dự phòng. Khi agent chạy sát best thì reward trung bình về 0, động lực sống sót biến mất |
+
+**Quyết định**: không triển khai trong Phase 1. Chọn sector bonus hàm mũ thay thế (plan #11). Ghi delta time vào "Hướng phát triển".
+
+---
+
+## F12. Lý do nén map còn 1:2 dựa trên một phép tính sai
+
+**[Suy luận]**: `knowledge/specs_report_analysis.md` viết rằng map 5.89 km chạy ở 100 km/h sẽ cần "gần 4,000 bước (400s)". Tính lại thì: 5,891 m / 27.8 m/s ≈ **212 s, tức khoảng 2,100 bước**. Con số trong tài liệu bị **gấp đôi**.
+
+| Kịch bản trên map 1:1 | Bước / vòng |
+| :--- | :--- |
+| Nhịp GT3 (lap khoảng 160s, không có khí động học) | khoảng 1,600 |
+| Agent ở giai đoạn đầu, khoảng 60 km/h | khoảng 3,500 |
+| Map 1:2 hiện tại, lap 111s (để đối chiếu) | khoảng 1,110 |
+
+Như vậy chi phí thật của map 1:1 là khoảng ×1.44 số bước mỗi vòng so với map 1:2, không phải ×3–4. Đây là cơ sở để chọn hướng Y (plan v9).
+
+Hệ quả kèm theo khi chuyển sang 1:1:
+- Lookahead phải đủ dài để bao quãng phanh khoảng 180m.
+- `v/40` trong obs bị kẹp ở 216 km/h.
+- `horizon` và cap step của evaluator phải nhân theo scale.
+
+---
+
+## F13. Ratio PPO nổ tới NaN sau bản vá F2 (hành động bão hòa sâu)
+
+### Hiện tượng [Đã kiểm chứng: run P1-main, commit `e0738e8`]
+- Trước khi nổ, run hoạt động tốt:
+  - σ = [0.21, 0.91, 0.23], dao động trong biên, tức F1 đã được khắc phục.
+  - Vòng sạch đầu tiên 143s; best 141.4s tại step 1,372,160.
+- Diễn biến:
+  - Step 1,382,400: policy loss = **1.3·10¹⁰**, value loss vẫn ≈ 1.
+  - Step 1,392,640: policy loss = 1.2·10⁶; eval crash tại mét 913, completion còn 16%.
+  - Update tiếp theo: `actor_mean` ra NaN, chương trình dừng với `ValueError` của `Normal(loc=nan)`.
+
+### Cơ chế [Đã kiểm chứng bằng TEST 4D]
+- Bản vá F2 kẹp action về ±0.999, sau đó tính log_prob tại $u = \operatorname{atanh}(\pm0.999) = \pm3.8$ cho **cả rollout lẫn update**. Hai đường đã khớp nhau, nhưng giá trị đó là mật độ tại **điểm bị kẹp**, không phải tại điểm thực sự được sample.
+- Agent học cách không phanh trên phần lớn đường đua, nên mean của chiều brake bị đẩy sâu vào vùng bão hòa (khoảng −5). Khi đó điểm −3.8 nằm cách mean khoảng 12σ (σ_brake ≈ 0.1–0.23), tức ở rất xa trong đuôi phân phối.
+- Log-density ở đuôi thay đổi rất nhanh theo mean. Chỉ cần mean dịch thêm 1σ về phía biên:
+  $$\Delta\log p = \frac{(12\sigma)^2 - (11\sigma)^2}{2\sigma^2} = 11.5 \;\Rightarrow\; r \approx 10^5$$
+  TEST 4D đo được: đường cũ cho max ratio = **1.08·10⁵**, đường mới chỉ **10**.
+- Clip của PPO không chặn được trường hợp này. Với advantage < 0, số hạng $r\cdot A$ không có cận trên, nên loss nổ, gradient nổ và trọng số thành NaN.
+- Vì sao code trước F2 không nổ: log_prob lúc rollout được tính tại $u$ đã sample (gần mean), còn lúc update lại tính tại 3.8 (ở đuôi). Do đó $r \to 0$: gradient bị **triệt tiêu** chứ không bùng nổ. Bản vá F2 làm hai đường khớp nhau nhưng đã chọn sai điểm để khớp.
+
+### Bản vá
+- **Lưu $u$ trước tanh vào buffer rollout** (`raw_us`) và tính lại log_prob tại đúng $u$ đó khi update. Cách này khớp tuyệt đối và dùng **mật độ thật**.
+- Jacobian tính bằng công thức ổn định số học: $\log(1-\tanh^2u) = 2(\log 2 - u - \text{softplus}(-2u))$.
+- Đường `action=` (u = atanh(clamp(action))) chỉ giữ lại cho evaluator và demo.
+- Lưới an toàn:
+  - kẹp `log_ratio` trong ±20;
+  - bỏ qua minibatch actor nếu loss không hữu hạn, đồng thời ghi lại số minibatch bị bỏ (`skipped_actor_updates`) và in cảnh báo `[NaN GUARD]`.
+
+### Bài học cho báo cáo
+- Một bản vá "làm hai đường khớp nhau" vẫn có thể sai nếu chọn sai điểm để khớp. Test chỉ kiểm tra sự khớp nhau (TEST 1B) không phát hiện được lỗi này. Cần test đo trực tiếp cơ chế (TEST 4D: dịch mean và so sánh ratio).
+- **Resume**: tiếp tục từ `best_agent.pt` (step 1.37M, lưu trước khi nổ). Metrics có mốc `resume_marks` ghi kèm commit mới. Đoạn 0 → 1.37M vẫn là bằng chứng hợp lệ cho F1.
+
+---
+
+## F14. σ ga/phanh kẹt trần dù đã có projection (entropy trên Gaussian trước tanh)
+
+### Hiện tượng [Đã kiểm chứng: `logs/p1_main`, checkpoint]
+- **Lần 1**: σ_throttle chạm 1.0 ở khoảng 370k step và nằm ở đó tới 1.37M; σ_brake ở 1.0 trong đoạn 330k–700k.
+- **Lần 2**: sau khi resume F13 (1.39M), σ_brake tăng đều từ 0.22 lên 1.0 ở khoảng 1.8M và kẹt ở đó. Checkpoint lúc ấy có logstd = [−1.57, **0, 0**].
+- Tỉ lệ eval sạch (crash 0%, completion ≥ 98%) giảm dần:
+
+| Đoạn step | Tỉ lệ eval sạch |
+| :--- | :--- |
+| 1.40–1.69M | 48% |
+| 1.69–2.00M | 30% |
+| 2.00–2.20M | **0%** |
+
+- Apex accuracy giảm từ khoảng 75% xuống khoảng 45%.
+
+### Cơ chế [Suy luận]
+- Entropy của Gaussian trước tanh là $\sum \log\sigma + c$. Bonus `ent_coef` đẩy σ đi lên với một lực **không đổi**, ở mọi state.
+- **Ở vùng bão hòa**: đạp hết ga trên đoạn thẳng có $\mu_u \gg 0$, không phanh có $\mu_u \ll 0$. Lúc đó nhiễu trong $u$ hầu như không làm đổi hành động (tanh phẳng), nên policy gradient **không phạt** σ. Entropy thắng, σ lên trần.
+- **Ở vùng phanh** (mean gần ngưỡng deadband): σ = 1 khiến phanh trong rollout gần như ngẫu nhiên. Agent không học được điểm phanh, nên crash ngày càng nhiều.
+- Khác với F1: lần này gradient vẫn còn sống (có projection), chỉ là entropy thắng. Lỗi gần giống F1 nhưng nhẹ hơn.
+
+### Can thiệp và kết quả [Đã kiểm chứng]
+- **Resume lần 2** tại 2.31M từ `best_agent` (khoảng 1.86M): `--ent-coef 0.001`, đồng thời reset logstd ga/phanh về −1.0 (σ 0.37), giữ nguyên σ lái.
+- **σ ga/phanh**: giảm dần 0.36 → 0.27, tức policy gradient điều khiển được σ trở lại.
+- **σ lái**: **sập về sàn 0.10 trong khoảng 150k step**. Đây là tác dụng phụ của ent 0.001.
+- **Best lap sạch**: 130.5s → **125.6s** (ở khoảng 2.45M). Tỉ lệ eval sạch phục hồi lên 27% trong đoạn 2.40–2.51M.
+
+### Bài học
+- `ent_coef` = 0.01 cố định làm σ ga/phanh kẹt trần.
+- `ent_coef` = 0.001 cố định làm σ lái sập về sàn.
+- Hai chiều hành động cần **chế độ khám phá khác nhau**, nên Phase 2 dùng `LOGSTD_MAX` theo từng chiều, cộng với entropy decay (D19).
+
+---
+
+## F15. Thói quen lái: chậm vì thả trôi, không phải vì lạng lách
+
+**[Đã kiểm chứng: 1 vòng deterministic, xuất phát đứng, map nhỏ]** Script tham chiếu: `scripts/drive_trace.py`.
+
+| Checkpoint | Lap | TB / max km/h | Full ga | Thả trôi | Có phanh | Đảo lái /100 bước |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| P1 khoảng 1.55M | 137.2s | 73.8 / 94.6 | 12% | 59% | 17% | 30.8 |
+| P1 best khoảng 1.86M | 133.9s | 75.9 / 102.1 | 19% | 50% | 15% | 34.1 |
+| P1 best khoảng 2.45M | 130.1s | 78.1 / 102.4 | 22% | 48% | 16% | 36.1 |
+| P1 2500k | crash ở 21.7s | 60.3 / 100.1 | 56% | 24% | 10% | 35.5 |
+| **111s best** | **115.1s** | **88.4 / 121.1** | **73%** | **1%** | **32%** | **38.9** |
+
+- **Lạng lách không phải nguyên nhân**: agent 111s còn đảo lái nhiều hơn. *Lưu ý (I10)*: chỉ số đảo lái thấp hơn của P1 một phần là do P1 chạy chậm và không tấn công cua, nên không được diễn giải thành "P1 lái mượt hơn".
+- Agent P1 **giảm tốc bằng nhả ga thay vì phanh**, và chưa bao giờ lên được trần 120 km/h. Theo thời gian nó đạp ga nhiều dần lên (12% → 22% → 56%), nhưng phanh vẫn ít (10–17%, so với 32% ở 111s). Vì vậy khi bạo ga hơn thì nó crash ở cua đầu, đúng kiểu crash "khoảng 5% vòng" thấy trong eval.
+- **Giả thuyết (chưa chứng minh)**:
+  1. 1.37M step đầu học với estimator bị lỗi F13 cho đúng hành động đạp hết ga.
+  2. F14 khiến phanh trong rollout là nhiễu.
+  3. Bias −1.6 làm agent ít khám phá phanh.
+
+---
+
+## F16. Ma sát cầu trước chưa bao giờ được áp; xe chổng đuôi khi phanh mạnh
+
+**[Đã kiểm chứng 30/10]** Cầu trước luôn có μ = 0.9 do `attach_agent` ghi ma sát qua list bánh lỗi thời (cả bản 111s và Phase 1); phanh > ~1.7 G làm xe chổng đuôi. Toàn bộ phân tích, số đo và cách xử lý: `knowledge/vehicle_and_engine_physics.md` §2.1, §4, §5.
+
+---
+
+## F17. P2-single giữa run: pedal giật, tự giới hạn ~150 km/h, crash ở tốc độ thấp hơn v*
+
+### Hiện tượng [Đã kiểm chứng: `logs/p2_single`, checkpoint 3.5M, 30/10]
+
+**Xu hướng eval** (trung bình theo cửa sổ 250k step):
+
+| Đoạn | Completion TB | Crash rate | Entropy |
+| :-- | :-- | :-- | :-- |
+| 0–0.5M | 10–12% | 1.00 | 1.4 → 1.15 |
+| 1.0–1.5M | 30–39% | 0.84–0.96 | 0.7 |
+| 2.5–3.0M | ~52% | 0.71–0.74 | 0.55 |
+| 3.6–3.8M | 52% | 0.74 | 0.54 |
+
+- Chỉ có **một** eval sạch, ở 1.515M (218s). Đó là mẫu may, không phải đỉnh rồi tụt.
+- **Sim không tất định.** Cùng seed, cùng policy deterministic, 3 lần chạy crash ở 2092 m, 376 m và 1945 m. Vì vậy 5 episode eval chỉ là một mẫu nhiễu.
+
+**σ:**
+- σ lái xuống sàn (0.105).
+- σ ga/phanh nằm ở **trần −0.7 (σ ≈ 0.44–0.48) suốt 3.8M step**, giống F14. Entropy bonus tính trên Gaussian trước tanh nên chiều pedal bão hòa được "cho không" entropy. Trần D19 đang quyết định σ pedal, không phải quá trình học.
+
+**Pedal deterministic dao động chu kỳ 2 bước:**
+- Trên đoạn thẳng 900–1500 m (v* = 260 km/h), net pedal là `0.7, −0.1, 0.2, −0.3, 0.3, 0.0, …`.
+- Trung bình chỉ 0.1–0.2; 30–36% số bước là phanh thật.
+- Xe tự giới hạn ở **140–160 km/h trên mọi đoạn thẳng**.
+
+**Crash phần lớn không do quá tốc:**
+- 1945 m: xe ~136 km/h, v* ~110–129.
+- 3258 m: xe 121–149 km/h, v* 151–177.
+- 376 m: xe 143–158 km/h, v* 157–196.
+- Nghĩa là xe đã chậm hơn v* mà vẫn văng. Nguyên nhân là line/lái cộng với tải dồn trước–sau liên tục do pedal giật. GT3RealCar có μ trước 1.55 < μ sau 1.80, nên đặc biệt nhạy với kiểu dồn tải này.
+
+**Giả thuyết đã loại:**
+- Giả thuyết: nhiễu pedal lúc train làm xe chậm hơn lúc eval, qua mapping bất đối xứng `thr·(1−brk)−brk` có ngưỡng `brk > 0.05`.
+- Kết quả: net pedal chỉ lệch ~0.02 (~7%), không đủ giải thích.
+
+### Cơ chế [Suy luận]
+1. Pedal 2 trục có ngưỡng → dư thừa và không trơn. GT Sophy và Fuchs đều gộp thành 1 trục (`knowledge/related_work_racing_rl.md`).
+2. Kết thúc episode khi ra ngoài đường → agent ít thấy phần sau các điểm crash lặp lại, và học cách chạy dè dặt.
+3. Lượng dữ liệu ít hơn GT Sophy khoảng 270 lần, lại dùng PPO.
+
+### Quyết định
+- Lúc đó: chạy tiếp tới 6M, rồi can thiệp bằng spawn học từ lỗi (D32, WI-23).
+- **Thực tế (cập nhật 31/10)**: run dừng ở 4.54M và được lưu trữ làm P2-single v1 (R12). Thay vì chạy tiếp, người dùng dựng lại P2 theo GT Sophy/Fuchs (D35: pedal 1 trục, phạt ra ngoài đường thay vì kết thúc, học từ lỗi ngay từ đầu), tức là chính các mục 1–3 ở trên.
+
+---
+
+## F18. Map full chỉ vẽ ~42% mặt đường khi render
+
+### Hiện tượng [Đã kiểm chứng 30/10]
+Khi demo map full, minimap đủ cả vòng nhưng mặt đường 3D chỉ hiện ở một số đoạn.
+
+### Cơ chế [Mã nguồn + đo]
+- `TerrainProperty.map_region_size = 2048` đặt ở đầu `racing_env.py` **không có tác dụng**. `BaseEnv.__init__` ghi đè bằng `config["map_region_size"]`, mặc định 1024 (`metadrive/envs/base_env.py:335`).
+- Mặt đường chỉ được vẽ lên terrain trong khung 1024 m quanh tâm map. Map full có kích thước 1697 × 1598 m, nên phần ngoài khung bị mất.
+- Diện tích đường được vẽ đo được: ~35.800 m² so với ~86.000 m² đủ vòng.
+- Map half (807 × 761 m) vừa khung, nên trước đây không lộ lỗi.
+
+### Bản sửa
+- Đặt `"map_region_size": 2048` trong config env và bỏ dòng gán class attribute.
+- Train không đổi, vì terrain semantics chỉ tính khi render.
+- Đánh đổi: độ phân giải vạch kẻ giảm từ 22 xuống 11 px/m.
+
+---
+
+## F19. Hai lần đọc nhầm khi demo: thiếu cờ xe/map và HUD không ghi rõ xe nào
+
+### Hiện tượng [Đã kiểm chứng 30/10]
+
+**Lần 1: xe optimal kẹt 120 km/h.**
+- 120 km/h là trần của `GT3RaceCar`, xe mặc định của `spectate_ai.py` khi không truyền `--vehicle gt3_real`.
+- Dấu vết: file `scripts/silverstone_full_gt3_racecar_optimal_profile.npz` được sinh ra.
+- Chạy đúng cờ thì xe optimal lên 260 km/h và về đích 128.6s, cả khi chạy headless lẫn có render.
+
+**Lần 2: "ghost giữ 120 km/h" khi chạy cùng PPO.**
+- Đo trực tiếp, ghost vẫn đạt 260 km/h.
+- Dòng `Speed` trên HUD luôn là tốc độ xe PPO (~120 km/h trên đoạn thẳng, khớp F17), kể cả khi camera theo ghost. Chỉ dòng `Action` là đổi sang ghost.
+- Ngoài ra, `Completion` là tiến độ cả lượt đua (chia cho `max_laps`), nên chạy 2 vòng thì xong vòng 1 hiện 50%. Đây là thiết kế của env, eval và train đều dựa trên nó.
+
+### Bản sửa
+- HUD ghi `[MAIN]`/`[GHOST]` cho dòng Speed theo xe đang được theo dõi. Completion hiện `Lap x% | Race y%` khi chạy nhiều vòng. Env không đổi.
+- D34 lưu `map`/`vehicle`/`obs_mode` vào checkpoint để demo và eval tự lấy, tránh lặp lại lần 1.
+
+---
+
+## F20. P2 v2: pedal/lái vẫn giật, drift do tốc độ cao sát giới hạn bám (so với nhánh `feature/f1-downforce`)
+
+### Hiện tượng [Đã kiểm chứng 30/10, 1 vòng deterministic, mỗi model chạy trong code của nhánh nó]
+| | P2 v2 `best_agent` (map full) | F1 `f1_best` (nhánh team, map half) | GT3 `best_agent` (nhánh team) | Ghost |
+| :-- | :-- | :-- | :-- | :-- |
+| Tốc độ TB | 144 km/h | 87 km/h | 67 km/h | 163 km/h |
+| Pedal đổi ga↔phanh /100 bước | 20.3 | 19.7 | 10.9 | 0.5 |
+| Lái đổi chiều /100 bước; \|Δlái\| TB | 74; 0.121 | 64; 0.109 | 57; 0.116 | 14; 0.004 |
+| Góc trượt β p95 / max | **8.9° / 52.7°** | 2.7° / 8.7° | 2.4° / 7.4° | 0.6° / 1.3° |
+| % thời gian β > 5° | **8.1%** | 0.6% | 0.6% | 0% |
+| a_lat p95 | 1.65 G (> trần bám 1.56) | 1.18 G | 0.90 G | 1.44 G |
+
+Ở 3.0–3.3M (σ pedal 0.32 → 0.21), lap nhanh hơn (137–142s) nhưng eval 10 episode còn 0/10 sạch, 5/10 mất xe quanh 5374–5432 m.
+
+### Cơ chế [Suy luận]
+- **Giật pedal và lái là chung cho mọi model PPO của dự án**, kể cả nhánh F1: vòng dao động qua obs action bước trước, phạt −0.1·Δlái² quá nhỏ (I11), không có phạt Δpedal.
+- **Drift là khác biệt thật, do tốc độ và vật lý xe**: cùng biên độ giật lái, nhiễu gia tốc ngang ∝ v²·δ, nên ở tốc độ gấp đôi lớn gấp ~4 lần. Xe P2 vào cua 150–200 km/h ngay sát trần bám, mỗi lần giật lái là mất bám. Xe F1 nhánh team chạy chậm trên map nhỏ, có downforce ∝ v², lò xo cứng (60000 N), `roll_influence` 0.2, và vẫn dính F16 (μ trước 0.9 < sau 1.35, understeer mạnh) nên đuôi không văng.
+- **"Không học racing line" phần lớn là do nhìn và do thước đo**: Line MAE / nửa bề rộng đường là 0.55 (P2) so với 0.53 (F1). Apex Acc thấp hơn vì ngưỡng 2.2 m cố định trên map lớn gấp đôi.
+
+### Hướng xử lý (đã đóng 31/10: Phase 2 đóng băng, D40)
+> Mục 1 sau đó bị bác bỏ: cùng loại ràng buộc này đã được thử ở `a79aee7` và không bỏ được bang-bang (F23). Mục 2 được ghi thành gợi ý cho team multicar (`plan/team_handoff_multicar.md` §4.2).
+
+1. Giới hạn tốc độ xoay vô lăng giảm theo tốc độ xe (obs/action không đổi, fine-tune được).
+2. Phạt Δlái² mạnh hơn khoảng 20 lần và thêm phạt Δpedal² (đổi reward, resume theo D22).
+3. Downforce (đổi vật lý, phải hiệu chỉnh lại envelope/T*/ghost): không kịp.
+
+---
+
+## F21. P2-line (R14): sạch sớm hơn v2 nhưng chậm dần; fine-tune r_racingline 200k
+
+### P2-line so với P2-single v2 [Đã kiểm chứng từ log, eval 2 episode mỗi lần]
+| Cửa sổ | P2-line: về đích / sạch 2/2 / lap nhanh nhất | v2: về đích / sạch 2/2 / lap nhanh nhất |
+| :-- | :-- | :-- |
+| 0–0.25M | 2/13 · 0 · 160.2s | 0/13 · 0 · – |
+| 0.5–0.75M | 4/12 · 0 · 142.2s | 1/12 · 0 · 146.3s |
+| 0.75–1.0M | 8/12 · 0 · 138.6s | 3/12 · 0 · 140.4s |
+| 1.0–1.3M | 10/15 · 1 · 146.6s | 11/15 · 0 · 140.4s |
+
+- Eval sạch đầu tiên: **1.147M** (154.0s), so với 2.15M ở v2. Best sạch **153.7s @1.74M** (`models/p2_line/best_agent.pt`). Dừng ở 2.66M.
+- Sau 2.0M: sạch thường xuyên hơn nhưng lap 173–181s, tốc độ TB 144 → 115–120 km/h, lệch v\* 50 → 65 km/h, σ pedal 0.33 → 0.14. **[Suy luận]** Phạt off-track ∝ v² lớn hơn nhiều so với phạt thời gian 0.01/bước, nên khi σ co lại policy hội tụ về kiểu chạy chậm, an toàn.
+- Lệch v\* giảm nhanh ở đầu run (120 → 46 km/h trong 0.14M), lệch line chững ở 3.6–4.5 m: agent dùng v\* làm gợi ý điểm phanh, không bám profile.
+
+### Fine-tune r_racingline (D36) [Đã kiểm chứng, run tạm, đã xóa artifact]
+Từ `p2_line/best_agent.pt` (1.74M), 200k step, `--line-reward-lat 0.03 --line-reward-v 0.02`. Đối chứng: đoạn 1.74–1.94M của run gốc (cùng checkpoint, không r_line).
+
+| | Đối chứng | Fine-tune r_line |
+| :-- | :-- | :-- |
+| Eval về đích | 0/9 | 10/20 |
+| Sạch 1/2 · 2/2 | 0 · 0 | 3 · 0 |
+| Lap trung vị / min | 158.1 / 151.2s | 159.3 / 153.6s |
+| Lệch line | 4.38 m | 3.19 m (nửa sau) |
+| Lệch v\* | 59 km/h | 60 km/h |
+
+- Thành phần lệch line có tác dụng (bám sát hơn ~1.2 m, về đích đều hơn).
+- **Lỗi thiết kế**: thành phần tốc độ `min(1, (Δv/10 m/s)²)` bão hòa vì agent chậm hơn v\* ~17 m/s, nên phạt luôn ở trần −0.02 và không có gradient. Nếu làm lại: `min(4, (Δv/20 m/s)²)` hoặc dạng tuyến tính.
+- 3/3 vòng deterministic vẫn có ra ngoài đường (chủ yếu văng ra ngoài ở cụm s≈515–560 m). Kết luận: **không đủ tốt để đổi hướng**, D36 tạm gác.
+
+---
+
+## F22. Agent có cắt cua qua phần ngoài đường không (chế độ offtrack penalty)
+
+**[Đã kiểm chứng 31/10, 3 vòng deterministic mỗi model, `scripts/analysis/cut_check.py`]** Với mỗi lần cả 4 bánh rời mặt nhựa: phía trong/ngoài cua, cung tim đường bị bỏ qua so với quãng xe đi thật, thời gian lợi ước tính.
+
+| Model | Số lần ra ngoài | Phía trong cua | Lợi lớn nhất 1 lần | Tổng lợi / 3 vòng |
+| :-- | :-- | :-- | :-- | :-- |
+| v2 best (2.56M) | 5 | 4 | +0.49s (R≈74 m, ra quá mép 6.9 m, bỏ 11.7 m) | +0.55s |
+| v2 3.32M | 14 | 9 (cụm s≈470–830 m) | +0.42s | −1.34s |
+| Line best (1.74M) | 2 | 0 | – | −0.51s |
+| Line last (2.66M) | 6 | 0 | – | −1.85s |
+
+- Nhánh pure có thói quen cắt phía trong cua, nhưng chỉ 1–12 m mỗi lần; **không** có kiểu băng thẳng qua cua chữ U (bị chặn bởi giới hạn 25 m / 50 bước).
+- Theo reward thì cắt cua đang lỗ (ví dụ s=706: phạt off-track ≈ −6.6, mất tiến độ ≈ −2.1, lợi về đích ≈ +0.4, bớt phạt thời gian ≈ +0.3). **[Suy luận]** Đây là lỗi lái thiếu chính xác (vào apex quá sát), không phải khai thác reward.
+- Nhánh line không cắt cua lần nào, chỉ văng ra ngoài.
+- Hạn chế: phần ngoài mặt nhựa của MetaDrive chưa chắc có ma sát thấp hơn, nên cắt cua chỉ bị phạt qua reward, không bị phạt vật lý.
+
+---
+
+## F23. Vì sao bản 111s trông mượt; vì sao ràng buộc vật lý không sửa được bang-bang
+
+### Phong cách lái 111s so với P2 [Đã kiểm chứng 31/10, cùng script với F20, 1 vòng deterministic]
+| | 111s (map half, GT3RaceCar) | P2 v2 best (map full, GT3RealCar) | Ghost half |
+| :-- | :-- | :-- | :-- |
+| Lap / tốc độ TB | 115.1s / 88 km/h | 143.4s / 144 km/h | 119.5s / 84 km/h |
+| a_lat p95 | 0.99 G | 1.65 G (vượt trần bám 1.56) | 0.88 G |
+| Pedal đổi ga↔phanh /100 bước | **4.7** | 20.3 | 0.2 |
+| Lái đổi chiều /100 bước; \|Δlái\| | 60; 0.074 | 74; 0.121 | 16; 0.007 |
+| β p95 / max | 3.5° / 18° | 8.9° / 53° | 2.0° / 3.8° |
+
+- 111s **vẫn đảo lái 60 lần/100 bước**. Nó trông mượt chủ yếu vì chạy chậm, xa giới hạn bám (nhiễu gia tốc ngang ∝ v²·δ), xe understeer do F16, và map nhỏ. Pedal ổn định (4.7) là điểm 111s hơn thật; nguyên nhân chưa kiểm chứng (F14).
+- So với log train: 111s có eval sạch đầu tiên ở 0.73M và 72 eval sạch trong 4M; P1-main (cùng map, đổi 6 biến cùng lúc, F9) sạch đầu tiên ở 1.35M, best 130s.
+
+### Ràng buộc vật lý không sửa được bang-bang [Theo người dùng; commit đã xác nhận tồn tại, chưa đo lại]
+Đã thử: lọc EMA tay lái (`c1904fa`), `ExtendedVehiclePhysics` ở `a79aee7` (cản chà lốp khi đánh lái, góc lái tối đa giảm còn 50% và tốc độ xoay còn 75% ở tốc độ cao, quán tính ga/phanh bậc 1), slew rate 0.18. Kết quả theo người dùng: agent vẫn bang-bang; chỉ phạt `r_steer` trong reward có tác dụng.
+
+**[Suy luận]** Cơ chế:
+- Giới hạn tốc độ xoay hay góc lái chỉ thu hẹp không gian action; agent vẫn đánh kịch biên mới (111s: |Δlái| 0.074 dưới trần 0.18 mà vẫn đảo chiều 60/100).
+- Bộ lọc: obs chứa action bước trước nên agent học cách bù ngược bộ lọc.
+- Lap time gần như không phụ thuộc độ mượt, nên mục tiêu phẳng theo hướng "mượt". Chỉ khi đưa độ mượt vào reward thì mục tiêu mới đổi.
+- Phù hợp với Seyde et al. 2021 (bang-bang tự xuất hiện trong RL liên tục) và CAPS (Mysore et al. 2021, phạt chênh lệch action để có điều khiển mượt). Xem `knowledge/related_work_racing_rl.md` §5.
+
+### Phân biệt bang-bang hợp lý và chattering
+- Bang-bang ở quy mô vài giây (full ga trên đoạn thẳng, phanh mạnh ở vùng phanh) là nghiệm tối ưu thường gặp của bài toán thời gian ngắn nhất và giống tay đua thật. Ghost: 0.5 lần đổi /100 bước.
+- Chattering mỗi 0.2s (P2: 20 lần đổi pedal, 74 lần đảo lái /100 bước) là thứ cần bỏ.
+- Phạt Δ² phân biệt được hai loại nhờ độ lớn: với `--pedal-smooth-coef 0.05`, phanh kiểu tay đua (~20 lần đổi hết cỡ mỗi vòng) mất ~−4/vòng so với ~140 điểm tiến độ; chattering ~290 lần/vòng mất hàng chục điểm. Phạt bình phương còn làm nhả phanh dần rẻ hơn nhả đột ngột (gần kiểu trail braking).
+
+---
+
+## F24. Neo liêm chính: 111s nhanh hơn ghost đã hiệu chỉnh dưới luật chặt (D41)
+
+**[Đã kiểm chứng 31/10, nhánh `feature/111s-honest-anchor`]** Env: map half, luật 4 bánh (không kerb ảo), GT3RaceCar (vật lý của 111s, kể cả F16), trần 120 km/h. Số liệu: `logs/anchor/`.
+
+### Ghost: nâng cấp từ hệ số legacy lên envelope đo được
+- Ghost legacy (v22) dùng phanh 6.2 m/s² trong khi xe phanh được ~18 m/s², và bám 1.04–1.2 G ở cua nhanh trong khi trần đo được ~0.90 G. Lệch ~6% so với T\* của chính nó.
+- Quét 33 cấu hình envelope (bám ngang 0.81–1.10 G, phanh 12/15/17 m/s², tăng tốc 3.09 m/s² đo được; biên ngang racing line 4.05/4.5/4.9 m). Từ 1.00 G trở lên ghost văng ở cùng một cua (s≈2390 m); nới biên ngang không giúp.
+
+| Đối tượng | Vòng đứng | Vòng flying | T\* của mô hình | Sạch |
+| :-- | :-- | :-- | :-- | :-- |
+| Ghost legacy (v22) | 119.5s | 114.2s | 112.59s | 2/2 |
+| **Ghost hiệu chỉnh** (`gt3_anchor`: 0.95 G / 15.0 / 3.09, biên 4.05 m) | **118.2s** | **112.8s** | 110.62s | 3/3 |
+| **111s** (20 episode × 2 vòng) | **114.8 ± 0.4s** | **109.4 ± 0.5s** | – | 18/20 (văng ở 2637 m, 364 m) |
+| 111s **seed 43** (lặp lại công thức `ee99f9d`, 4M step), 20 × 2 | 115.2 ± 0.4s | 110.0 ± 0.7s | – | 19/20 (văng ở 2758 m) |
+| 111s fine-tune 1M trên luật 4 bánh (`best`, khoảng 0.5M), 20 × 2 | 113.6 ± 0.4s | 109.0 ± 0.2s | – | **8/20** (văng tập trung ở 1735–1807 m) |
+
+### Lặp lại và fine-tune [Đã kiểm chứng sáng 31/10]
+- **Seed 43** (cùng code và mặc định của `ee99f9d`): học chậm hơn bản gốc (eval sạch đầu tiên 0.90M so với 0.73M; 26 so với 72 eval sạch trong 4M; completion TB cửa sổ cuối ~61% so với 84%). Nhưng best của nó, eval dưới luật 4 bánh, **vẫn nhanh hơn ghost hiệu chỉnh** (115.2 / 110.0s so với 118.2 / 112.8s) và sạch 19/20. Kết luận chính **không phụ thuộc seed may mắn**, dù tốc độ hội tụ có phụ thuộc seed.
+- **Fine-tune trên luật 4 bánh**: nhanh hơn một chút (113.6 / 109.0s) nhưng mất ổn định (8/20 sạch, văng lặp lại ở 1735–1807 m); `last` còn tệ hơn (1/20). Không dùng; `ref_111s` gốc giữ làm neo.
+
+### Diễn giải
+- 111s nhanh hơn ghost tốt nhất khoảng 3.4s ở cả hai vòng (~3%), và vòng flying nhanh hơn cả T\* của mọi envelope mà ghost chạy được (T\* thấp nhất còn chạy được: 110.30s ở 0.95 G / 17).
+- **[Suy luận]** Nguồn chênh: mô hình chất điểm dùng bám ngang ổn định không đổi, còn agent dùng được bám tức thời cao hơn (a_lat p95 0.99 G, max 1.21 G ở F23) và các hiệu ứng động học mà mô hình bỏ qua. Đây là sai lệch mô hình–hệ thật (§7 file vật lý): RL tối ưu trực tiếp simulator.
+- Hạn chế còn lại: F16 có ở cả hai bên (công bằng nhưng xe chưa thật); ghost là một bộ điều khiển cụ thể (MPC dọc + pure pursuit), chưa phải mọi bộ điều khiển dựa trên mô hình; 111s được train dưới luật kerb ảo rồi eval dưới luật 4 bánh.
+
+---
+
+## Tổng hợp insight
+
+> Cột "Áp dụng" ghi quyết định tại thời điểm đó. Trạng thái cuối: I13 đã thay bằng D35; I16–I19 đã chuyển thành gợi ý cho team sau khi Phase 2 đóng băng (D40).
+
+| # | Insight | Áp dụng cho Phase 2 |
+| :-- | :--- | :--- |
+| I1 | F1: projection có hiệu quả. Lần đầu có vòng sạch ở khoảng 1.35M, trong khi run cũ chạy 3.38M không có vòng sạch nào | Giữ |
+| I2 | F13: log_prob tính tại $u$ đã sample | Giữ; smoke test bắt buộc có TEST 4D |
+| I3 | F14: σ ga/phanh kẹt trần khi ent = 0.01 | D19: `LOGSTD_MAX` theo từng chiều |
+| I4 | ent = 0.001 làm σ lái sập về sàn trong khoảng 150k | D19: entropy decay, không dùng 0.001 ngay từ đầu |
+| I5 | Lap time bị giới hạn bởi cách dùng ga/phanh | `scripts/drive_trace.py` là công cụ theo dõi chuẩn |
+| I6 | Phanh ít được khám phá | Theo dõi % phanh của P2; nếu thấp kéo dài thì xem lại bias |
+| I7 | Eval 3 episode gần như giống hệt nhau, kết quả nhảy giữa 0% và 100% | P2 dùng `--eval-episodes 5` |
+| I8 | P1 cần khoảng 2.5M step để xuống khoảng 126s; map 1:1 tốn khoảng ×1.44 số bước mỗi vòng | 6M cho P2-single là vừa đủ, không dư |
+| I9 | Sau resume lần 2 (ent 0.001), σ lái về sàn 0.10 và **eval crash ở đúng một chỗ (46%, khoảng mét 1306, khúc cua rộng) suốt 8 lần eval liên tiếp**; train không còn về đích. Value loss rất thấp (0.05–0.2) vì critic đã dự đoán đúng rằng sẽ crash ở đó, nên không còn tín hiệu khám phá. Ở một nhánh cũ, dùng decay lr/ent thì giai đoạn sau cũng gần như không cải thiện | Không decay; ent 0.01 cố định cộng với trần σ theo từng chiều; giảm entropy bằng fine-tune theo đoạn (D22) |
+| I10 | Quan sát demo: P1 không vượt quá khoảng 100 km/h, vào cua nhẹ và phanh nhẹ hơn bản 111s, có 1–2 chỗ giật lái gây drift. **Độ mượt tay lái thấp hơn của P1 là ảo giác thống kê**, do agent không tấn công cua chứ không phải lái khéo hơn | Khi báo cáo, so độ mượt tay lái phải chuẩn hóa theo tốc độ hoặc theo cua |
+| I11 | Phạt lắc tay lái `−0.1·Δ²` lớn nhất chỉ khoảng −0.003/bước (do giới hạn tốc độ xoay 0.18), so với tiến độ khoảng 0.15/bước, nên giật lái gần như miễn phí (cả ở bản 111s). Reward tiến độ tính theo hình chiếu lên tim đường thưởng nhẹ cho việc ở phía trong cua ($v\cdot R/(R-lat)$) | Ghi là giới hạn; chưa sửa vì chưa có bằng chứng giật lái gây crash |
+| I12 | **Bản 111s nhanh hơn ghost** (eval 111.4s so với T* 112.6s), và vẫn chạy hết vòng trong env hiện tại với luật 4 bánh (115.1s, xuất phát đứng) | Trong báo cáo gọi ghost là **"tham chiếu giải tích"**, không gọi là cận trên. Lý do bị vượt: các bậc $a_{lat}$ khớp tay thận trọng và giới hạn lệch ngang ±4.05m. Cần đo thêm vòng flying của bản 111s trong env hiện tại. Phân tích sai số mô hình đầy đủ: `knowledge/vehicle_and_engine_physics.md` §7 |
+| I13 | F17: P2-single σ pedal kẹt trần −0.7 suốt run; pedal deterministic giật chu kỳ 2 bước; xe tự giới hạn ~150 km/h trên đoạn thẳng có v* 260; crash ở tốc độ **thấp hơn** v* | Chạy tiếp tới 6M; sau đó fine-tune bằng spawn học từ lỗi (D32, WI-23). Pedal 1 trục và bỏ kết thúc episode để vào hướng phát triển |
+| I14 | Sim không tất định: cùng seed, cùng policy deterministic vẫn crash ở các vị trí khác nhau | Eval cuối dùng 20 episode, báo cáo tỉ lệ vòng sạch và độ lệch chuẩn lap time (D33) |
+| I15 | GT Sophy và Fuchs đều là RL thuần, chỉ dùng hình học đường, không dùng racing line; cả hai không kết thúc episode khi ra ngoài đường và dùng pedal 1 trục | Nhánh PPO thuần là cách làm chuẩn; nhánh PPO + line là biến thể có prior (D30, D31). Xem `knowledge/related_work_racing_rl.md` |
+| I16 | P2-line sạch sớm hơn v2 khoảng 1M step nhưng chậm dần về 175s sau 2M (F21) | Racing line trong obs giúp an toàn, không giúp nhanh; không dùng cho demo (D38) |
+| I17 | r_racingline: thành phần lệch line có tác dụng, thành phần tốc độ bão hòa nên vô hiệu (F21) | D36 tạm gác; công thức sửa ghi ở F21 |
+| I18 | Nhánh pure cắt phía trong cua 1–12 m mỗi lần, lỗ về reward; không có shortcut lớn (F22) | `r_center` (D38) dự kiến giảm thói quen này |
+| I19 | Ràng buộc vật lý (EMA, extended physics, slew rate) không bỏ được bang-bang; chỉ phạt trong reward có tác dụng (F23) | Dùng phạt Δlái² mạnh hơn và phạt Δpedal² kiểu CAPS (D38) |
+| I20 | Giả thuyết early apex: reward tiến độ kết hợp γ 0.99 (tầm nhìn ~10s) làm giảm giá trị lợi ích thoát cua trên đoạn thẳng phía sau [Suy luận, chưa đo] | Hướng phát triển: đo apex sớm/muộn so với ghost; γ 0.995–0.997 hoặc shaping thế năng chuẩn `coef·(γ·s' − s)` |
+
+---
+
+## Ma trận ablation Phase 1 (đã đóng)
+
+Đề xuất ban đầu (29/10): chạy A0–A6 trên map half, mỗi run 500k step, đổi từng bản vá PPO một. **Thực tế đã chạy**:
+
+| ID | Cấu hình | Trạng thái | Run tương ứng (`knowledge/ablation_inventory.md`) |
+| :-- | :-- | :-- | :-- |
+| A0 | Trước các bản vá PPO | Đã có | R8 (`run_a0_legacy`, 3.38M, 0 vòng sạch) |
+| A1 | A0 + projection logstd (F1) | Không chạy riêng; 1M đầu của P1-main dùng thay | R11 |
+| A2–A4 | Thêm lần lượt F2, F3, time penalty | Bỏ, không đủ thời gian | – |
+| A5 | Đủ các bản vá, thưởng về đích hàm mũ | Đã chạy (P1-main, dừng ở 2.66M) | R11 |
+| A6 | A5 + sector bonus | Bỏ | – |
+
+So sánh dùng được cho báo cáo: A0 so với A5 (R8 so với R11, khác nhiều biến; ghi rõ). Các ablation sau đó (map 1:1, racing line, `r_center`, seed) ở `knowledge/ablation_inventory.md` §2.

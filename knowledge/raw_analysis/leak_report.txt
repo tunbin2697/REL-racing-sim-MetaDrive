@@ -1,0 +1,33 @@
+=== CHECKING FOR OPTIMAL / BENCHMARK LEAKAGE IN MULTICAR ===
+
+--- FILE: game_env/multicar_env.py (length: 18178 chars) ---
+
+--- FILE: training/train_multicar.py (length: 13041 chars) ---
+
+--- FILE: game_env/racing_env.py (length: 36263 chars) ---
+Keyword 'optimal' found (1 matches):
+  # b. Phạt rung lắc đánh lái (Steering Smoothness Regularization từ feature/clean-111s-optimal-ghost)
+Keyword 'benchmark' found (11 matches):
+  from game_env.benchmark import RacingBenchmarkEngine
+  self._benchmark_engine: Optional[RacingBenchmarkEngine] = None
+  def get_benchmark_engine(self) -> RacingBenchmarkEngine:
+  """Khởi tạo hoặc trả về động cơ phân tích học thuật (RacingBenchmarkEngine) đã cache"""
+  if self._benchmark_engine is None:
+Keyword 'RacingBenchmarkEngine' found (6 matches):
+  from game_env.benchmark import RacingBenchmarkEngine
+  self._benchmark_engine: Optional[RacingBenchmarkEngine] = None
+  def get_benchmark_engine(self) -> RacingBenchmarkEngine:
+  """Khởi tạo hoặc trả về động cơ phân tích học thuật (RacingBenchmarkEngine) đã cache"""
+  self._benchmark_engine = RacingBenchmarkEngine(
+
+--- FILE: training/train_racing.py (length: 26994 chars) ---
+Keyword 'benchmark' found (10 matches):
+  # Chỉ số Benchmark Học thuật
+  writer.add_scalar("Benchmark/Racing_Line_MAE_m", eval_res["racing_line_mae_m"], global_step)
+  writer.add_scalar("Benchmark/Apex_Accuracy_Pct", eval_res["apex_accuracy_pct"], global_step)
+  writer.add_scalar("Benchmark/Corner_Delta_V_kmh", eval_res["corner_delta_v_kmh"], global_step)
+  writer.add_scalar("Benchmark/Friction_Utilization_Pct", eval_res["friction_utilization_pct"], global_step)
+
+--- FILE: agents/networks.py (length: 4421 chars) ---
+
+--- FILE: agents/ppo_agent.py (length: 11697 chars) ---

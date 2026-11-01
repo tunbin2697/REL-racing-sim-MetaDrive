@@ -32,13 +32,17 @@ from agents.ppo_agent import PPOAgent
 from agents.optimal_agent import OptimalRacingAgent
 
 def parse_args():
+    default_model = "models/p1_main/best_agent.pt" if os.path.exists("models/p1_main/best_agent.pt") else "models/best_agent.pt"
     parser = argparse.ArgumentParser(description="Cinematic AI Spectator & Ghost Car Racing in MetaDrive 3D")
-    parser.add_argument("--model", type=str, default="models/best_agent.pt", help="Đường dẫn weights của PPO AI")
+    parser.add_argument("--model", type=str, default=default_model, help="Đường dẫn weights của PPO AI")
     parser.add_argument("--agent", type=str, default="ppo", choices=["ppo", "optimal"], help="Loại tác tử lái chính: 'ppo' (mạng neural PPO) hoặc 'optimal' (tác tử giải tích tối ưu lý thuyết)")
     parser.add_argument("--ghost", action="store_true", help="Bật xe bóng ma đối chứng (Ghost Car) điều khiển bởi OptimalRacingAgent")
     parser.add_argument("--manual", action="store_true", help="Chế độ tự lái bằng bàn phím (W-A-S-D) để so tài trực tiếp với Ghost Car")
-    parser.add_argument("--vehicle", type=str, default="gt3", choices=["gt3", "sedan"], help="Loại xe biểu diễn ('gt3' hoặc 'sedan')")
-    parser.add_argument("--map", type=str, default="silverstone", help="Bản đồ đua ('silverstone' hoặc 'racing')")
+    parser.add_argument("--vehicle", type=str, default=None, choices=["gt3", "gt3_anchor", "gt3_real", "sedan"], help="Loại xe biểu diễn (mặc định: tự đọc từ checkpoint metadata hoặc 'gt3')")
+    parser.add_argument("--map", type=str, default=None, help="Bản đồ đua (mặc định: tự đọc từ checkpoint metadata hoặc 'silverstone')")
+    parser.add_argument("--obs-mode", type=str, default=None, choices=["pure", "line"], help="Chế độ quan sát (mặc định: tự đọc từ checkpoint metadata hoặc 'pure')")
+    parser.add_argument("--action-mode", type=str, default=None, choices=["split", "combined"], help="Action 3 trục hoặc pedal gộp (mặc định: đọc từ checkpoint metadata hoặc 'split')")
+    parser.add_argument("--offtrack-mode", type=str, default=None, choices=["terminate", "penalty"], help="Xử lý ra ngoài đường (mặc định: đọc từ checkpoint metadata hoặc 'terminate')")
     parser.add_argument("--traffic", type=float, default=0.0, help="Mật độ chướng ngại vật/xe khác (0.0 - 0.2)")
     parser.add_argument("--seed", type=int, default=42, help="Seed tạo bản đồ")
     parser.add_argument("--laps", type=int, default=2, help="Số vòng đua liên tục mỗi lượt chạy (mặc định 2: Lap 1 Standing Start + Lap 2 Flying Lap)")
@@ -46,13 +50,46 @@ def parse_args():
     parser.add_argument("--hide-line", action="store_true", help="Bắt đầu mô phỏng với Racing Line 3D ẩn (bật lại bằng phím [L])")
     return parser.parse_args()
 
+
+def _resolve_spectate_config(args):
+    """
+    Thứ tự ưu tiên (D34): CLI flag > checkpoint meta > legacy default ('silverstone', 'gt3', 'pure').
+    """
+    use_ckpt = (not args.manual) and (args.agent == "ppo") and os.path.exists(args.model)
+    meta = PPOAgent.peek_meta(args.model) if use_ckpt else {}
+
+    def resolve_field(cli_val, meta_key, legacy_default, label):
+        meta_val = meta.get(meta_key, None)
+        if cli_val is not None:
+            if meta_val is not None and str(cli_val).lower() != str(meta_val).lower():
+                print(
+                    f"⚠️ [CẢNH BÁO METADATA D34] Cờ CLI --{label}='{cli_val}' KHÁC với checkpoint meta "
+                    f"'{meta_key}'='{meta_val}' trong '{args.model}'! Ưu tiên dùng giá trị CLI '{cli_val}'."
+                )
+            return cli_val
+        if meta_val is not None:
+            return meta_val
+        return legacy_default
+
+    resolved_map = resolve_field(args.map, "map", "silverstone", "map")
+    resolved_vehicle = resolve_field(args.vehicle, "vehicle", "gt3", "vehicle")
+    resolved_obs_mode = resolve_field(args.obs_mode, "obs_mode", "pure", "obs-mode")
+    args.action_mode = resolve_field(args.action_mode, "action_mode", "split", "action-mode")
+    args.offtrack_mode = resolve_field(args.offtrack_mode, "offtrack_mode", "terminate", "offtrack-mode")
+    return resolved_map, resolved_vehicle, resolved_obs_mode, meta
+
+
 def main():
     args = parse_args()
-    race_car = get_vehicle(args.vehicle)
+    resolved_map, resolved_vehicle, resolved_obs_mode, ckpt_meta = _resolve_spectate_config(args)
+    race_car = get_vehicle(resolved_vehicle)
     
     print("=" * 75)
     print("🎬 CHẾ ĐỘ XEM BIỂU DIỄN 3D & GHOST CAR RACING (CINEMATIC SPECTATOR)")
     print("=" * 75)
+    if ckpt_meta:
+        print(f"Checkpoint Meta: {ckpt_meta}")
+    print(f"Bản đồ: {resolved_map} | Chế độ quan sát: {resolved_obs_mode}")
     print(f"Xe đua: {race_car.cfg.name} (Brake: {race_car.cfg.max_brake_force}N, Grip: {race_car.cfg.wheel_friction})")
     print(f"Tác tử điều khiển xe chính: {'TỰ LÁI BÀN PHÍM (MANUAL W-A-S-D)' if args.manual else args.agent.upper()}")
     print(f"Xe bóng ma đối chứng (Ghost Car): {'BẬT (OPTIMAL AGENT)' if args.ghost else 'TẮT'}")
@@ -75,10 +112,13 @@ def main():
         use_render=True,
         manual_control=args.manual,
         traffic_density=args.traffic,
-        map_config=args.map,
+        map_config=resolved_map,
         start_seed=args.seed,
         vehicle=race_car,
         max_laps=args.laps,
+        obs_mode=resolved_obs_mode,
+        action_mode=args.action_mode,
+        offtrack_mode=args.offtrack_mode,
     )
 
     # Khởi tạo Tác tử chính
@@ -87,13 +127,14 @@ def main():
     if not args.manual:
         if args.agent == "optimal":
             print(">> Khởi tạo Theoretical Optimal Benchmark Agent (Convex QP + Lipp & Boyd)...")
-            opt_agent = OptimalRacingAgent()
+            env.reset()
+            opt_agent = OptimalRacingAgent.from_benchmark(env.get_benchmark_engine(), vehicle_cfg=race_car.cfg, v_norm=float(env.preset.v_norm))
         else:
             obs_shape = env.observation_space.shape
-            state_dim = int(obs_shape[0]) if obs_shape is not None else 40
+            state_dim = int(obs_shape[0]) if obs_shape is not None else 35
             act_shape = env.action_space.shape
             action_dim = int(act_shape[0]) if act_shape is not None else 3
-            ppo_agent = PPOAgent(state_dim=state_dim, action_dim=action_dim)
+            ppo_agent = PPOAgent(state_dim=state_dim, action_dim=action_dim, logstd_max=env.preset.logstd_max)
             if os.path.exists(args.model):
                 print(f">> Đang nạp weights từ: {args.model}")
                 ppo_agent.load(args.model)
@@ -156,7 +197,8 @@ def main():
                 action, _, _ = opt_agent.select_action(obs, vehicle=env.car)
             elif ppo_agent is not None:
                 is_deterministic = not args.stochastic
-                action, _, _ = ppo_agent.select_action(obs, deterministic=is_deterministic)
+                res_act = ppo_agent.select_action(obs, deterministic=is_deterministic)
+                action = res_act[0]
             else:
                 action = np.array([0.0, 0.0, -1.0], dtype=np.float32)
 
@@ -168,10 +210,19 @@ def main():
             obs, reward, terminated, truncated, info = env.step(action)
             
             speed_kmh = info.get("speed_km_h", info.get("speed_kmh", 0.0))
+            # route_completion của env là tiến độ cả lượt đua (chia cho max_laps); HUD hiện thêm tiến độ vòng hiện tại
             comp = info.get("route_completion", 0.0) * 100.0
-            # Lựa chọn action hiển thị dựa trên xe camera đang theo dõi
+            n_laps = max(1, int(info.get("max_laps", args.laps)))
+            cur_lap_idx = max(1, int(info.get("current_lap", 1)))
+            lap_comp = float(np.clip(comp * n_laps - 100.0 * (cur_lap_idx - 1), 0.0, 100.0))
+            # Lựa chọn action/tốc độ hiển thị dựa trên xe camera đang theo dõi
             g_act = ghost_car.last_action if ghost_car is not None else None
-            if camera_controller is not None and getattr(camera_controller, "target_name", "main") == "ghost" and g_act is not None:
+            viewing_ghost = bool(
+                camera_controller is not None
+                and getattr(camera_controller, "target_name", "main") == "ghost"
+                and ghost_car is not None and ghost_car.active
+            )
+            if viewing_ghost and g_act is not None:
                 g_steer = g_act[0]
                 g_thr = 0.5 * (float(g_act[1]) + 1.0)
                 g_brk = 0.5 * (float(g_act[2]) + 1.0)
@@ -213,8 +264,8 @@ def main():
                 "Delta Bar": f"[{delta_color.upper()}] {delta_str}",
                 "Current Lap": f"{info.get('lap_time', 0.0):.2f}s",
                 "Best Lap": f"{info.get('best_lap_time', 0.0):.2f}s",
-                "Speed": f"{speed_kmh:.1f} km/h",
-                "Completion": f"{comp:.1f}%",
+                "Speed": f"[GHOST] {ghost_car.speed_km_h:.1f} km/h" if viewing_ghost and ghost_car is not None else f"[MAIN] {speed_kmh:.1f} km/h",
+                "Completion (Main)": f"Lap {lap_comp:.1f}% | Race {comp:.1f}%" if n_laps > 1 else f"{comp:.1f}%",
                 "Action": action_str,
             }
             
@@ -246,7 +297,7 @@ def main():
                     if bench:
                         print(f"   >> Benchmark: MAE Racing Line = {bench.get('racing_line_mae_m', 0.0):.2f}m | Apex Acc = {bench.get('apex_cutting_accuracy_pct', 0.0):.1f}% | Best Lap Diff = {bench.get('lap_time_diff_s', 0.0):+.2f}s")
                 else:
-                    print(f"💥 [KẾT THÚC] Lượt đua {lap_count} dừng tại step {step} (Lap {cur_lap_display}/{max_laps_display}): Lý do = {reason} (Completion: {comp:.1f}%)")
+                    print(f"💥 [KẾT THÚC] Lượt đua {lap_count} dừng tại step {step} (Lap {cur_lap_display}/{max_laps_display}): Lý do = {reason} (Lap: {lap_comp:.1f}% | Race: {comp:.1f}%)")
                     
                 lap_count += 1
                 step = 0

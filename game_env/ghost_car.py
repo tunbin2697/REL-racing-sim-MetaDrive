@@ -27,8 +27,17 @@ class GhostCar:
         optimal_profile_file: Optional[str] = None,
         vehicle: Optional[BaseRaceVehicle] = None,
     ):
-        self.agent: OptimalRacingAgent = agent or OptimalRacingAgent(optimal_profile_file=optimal_profile_file)
         self.car: BaseRaceVehicle = vehicle.clone() if vehicle is not None else GT3RaceCar()
+        if agent is None:
+            max_spd = float(self.car.cfg.max_speed_km_h)
+            v_norm = 80.0 if max_spd > 150.0 else 40.0
+            self.agent = OptimalRacingAgent(
+                optimal_profile_file=optimal_profile_file,
+                v_norm=v_norm,
+                max_speed_kmh=max_spd,
+            )
+        else:
+            self.agent = agent
         self.raw_vehicle: Optional[DefaultVehicle] = None
         self.active: bool = False
         self.step_count: int = 0
@@ -136,6 +145,16 @@ class GhostCar:
             # Đồng bộ cấu hình phương tiện từ xe chính nếu có (tạo thực thể độc lập cùng cấu hình)
             if hasattr(env, "car") and env.car is not None and (self.car is None or self.car is env.car):
                 self.car = env.car.clone()
+                self.agent.max_speed_kmh = float(self.car.cfg.max_speed_km_h)
+            preset = getattr(env, "preset", None)
+            if preset is not None:
+                self.agent.v_norm = float(preset.v_norm)
+
+            # Đồng bộ Racing Line và Velocity Profile từ BenchmarkEngine của env
+            if hasattr(env, "get_benchmark_engine"):
+                bench_eng = env.get_benchmark_engine()
+                if bench_eng is not None and getattr(bench_eng, "optimal_line_xy", None) is not None:
+                    self.agent = OptimalRacingAgent.from_benchmark(bench_eng, vehicle_cfg=self.car.cfg, v_norm=self.agent.v_norm)
             if engine is None or map_obj is None or agent is None:
                 return False
             road_network = getattr(map_obj, "road_network", None)
