@@ -3,8 +3,8 @@
 
 > **Môn học**: Học Tăng Cường (Reinforcement Learning - REL)  
 > **Chủ đề**: Autonomous High-Speed Racing via Continuous Model-Free Reinforcement Learning  
-> **Nhánh mã nguồn neo đối chuẩn**: `feature/111s-honest-anchor` (Commit gốc: `ee99f9d`, Commit tài liệu & đối chứng: `7853722`)  
-> **Các nhánh thực nghiệm mở rộng**: `feature/oop-clean-physics-40d` (`0180988`), `origin/feature/multicar-selfplay` (`7ab74a5`), `feature/f1-downforce` (`cdfb928`)  
+> **Mô hình & Môi trường Trọng tâm**: Mô hình tham chiếu `ref_111s` trên môi trường xe thể thao `gt3_anchor` (Nhánh `feature/111s-honest-anchor`, Commit gốc: `ee99f9d`, Commit tài liệu & đối chuẩn: `7853722`)  
+> **Các khảo sát mở rộng**: Nhánh quan sát 40D (`feature/oop-clean-physics-40d`), Nhánh đua đa tác tử tự chơi (`origin/feature/multicar-selfplay`), và Nhánh lực ép khí động học (`feature/f1-downforce`) — được trình bày trong phần Thảo luận như các bài học thực nghiệm về điều chỉnh cấu hình xe và tham số  
 > **Định dạng báo cáo**: Báo cáo học thuật cấu trúc IMRaD (Introduction, Methods, Results, Discussion)  
 > **Cam kết liêm chính học thuật**: Báo cáo trình bày dữ liệu thực nghiệm nguyên bản từ hệ thống đo lường và telemetry; phân biệt rõ các cấp độ nhận định: **[Đo được]**, **[Suy luận]**, **[Giả thuyết]**; không ngụy tạo kết quả, không che giấu lỗi kỹ thuật, và phân tích minh bạch các hạn chế của mô hình.
 
@@ -12,74 +12,74 @@
 
 ## TÓM TẮT (ABSTRACT)
 
-Báo cáo này nghiên cứu bài toán điều khiển xe đua thể thao tự hành ở giới hạn ma sát vật lý (handling limits) trên sa bàn đua Silverstone Grand Prix thu nhỏ, sử dụng thuật toán Học Tăng Cường Không Mô Hình (Model-Free Continuous Reinforcement Learning) dựa trên thuật toán Tối ưu hóa Chính sách Tiệm cận (Proximal Policy Optimization - PPO). Hệ thống được triển khai trên nền tảng mô phỏng vật lý đa vật thể Bullet Physics thông qua môi trường MetaDrive. Thay vì cung cấp quỹ đạo tối ưu định sẵn trong quan sát hay áp dụng kỹ thuật học bắt chước (Imitation Learning), nghiên cứu tập trung giải quyết câu hỏi: **Liệu một tác tử RL với quan sát thuần hình học tim đường (Zero Racing Line Prior) có thể tự khám phá kỹ thuật lái xe thể thao (Trail-braking, Apex clipping) và đạt hiệu năng tương đương hoặc vượt qua phương pháp điều khiển tối ưu giải tích dựa trên mô hình (Convex QP Minimum Curvature và Lipp-Boyd Speed Profiling) hay không?**
+Báo cáo này nghiên cứu bài toán điều khiển xe đua thể thao tự hành ở giới hạn ma sát vật lý trên sa bàn đua Silverstone Grand Prix thu nhỏ, sử dụng thuật toán Học Tăng Cường Không Mô Hình (Model-Free Continuous Reinforcement Learning) dựa trên thuật toán Tối ưu hóa Chính sách Tiệm cận (Proximal Policy Optimization - PPO). Hệ thống được triển khai trên nền tảng mô phỏng vật lý đa vật thể Bullet Physics thông qua môi trường MetaDrive. Thay vì cung cấp trước quỹ đạo tối ưu trong quan sát hay áp dụng kỹ thuật học bắt chước (Imitation Learning), nghiên cứu tập trung giải quyết câu hỏi: **Liệu một tác tử RL với quan sát thuần hình học tim đường (Zero Racing Line Prior) có thể tự học các kỹ thuật điều khiển xe thể thao (Trail-braking, Apex clipping) và đạt hiệu năng tương đương hoặc vượt qua phương pháp điều khiển tối ưu giải tích dựa trên mô hình (Convex QP Minimum Curvature và Lipp-Boyd Speed Profiling) hay không?**
 
-Kết quả thực nghiệm trên mô hình tham chiếu neo `ref_111s` (Commit `ee99f9d`), được đánh giá độc lập dưới quy tắc vạch đường 4 bánh nghiêm ngặt của FIA qua 20 episode kiểm thử độc lập ($n = 20$), cho thấy tác tử PPO hoàn thành vòng đua với thời gian vòng xuất phát đứng (Standing Lap) trung bình là $114.78 \pm 0.40\text{ s}$ và thời gian vòng chạy đà (Flying Lap) là $109.44 \pm 0.50\text{ s}$, đạt tỷ lệ vòng sạch không va chạm (Clean Lap Rate) là $90\%$ ($18/20$ vòng hoàn thành). Thành tích này vượt qua tác tử tham chiếu giải tích mạnh nhất đã được hiệu chuẩn thực nghiệm (`gt3_anchor`: Standing $118.20\text{ s}$, Flying $112.80\text{ s}$, thời gian tích phân lý thuyết $T^* = 110.62\text{ s}$) khoảng $3.36\text{ s}$ trên vòng flying. Tính lặp lại độc lập được xác nhận trên Seed 43 với thành tích $115.18 \pm 0.43\text{ s}$ (Standing) và $109.96 \pm 0.69\text{ s}$ (Flying, $19/20$ vòng sạch), bác bỏ giả thuyết kết quả đạt được do phương sai chọn hạt giống ngẫu nhiên. 
+Kết quả thực nghiệm trên mô hình tham chiếu `ref_111s` (Commit `ee99f9d`), được đánh giá độc lập dưới quy tắc vạch đường 4 bánh nghiêm ngặt của FIA qua 20 episode kiểm thử ($n = 20$), cho thấy tác tử PPO hoàn thành vòng đua với thời gian vòng xuất phát đứng (Standing Lap) trung bình là $114.78 \pm 0.40\text{ s}$ và thời gian vòng chạy đà (Flying Lap) là $109.44 \pm 0.50\text{ s}$, đạt tỷ lệ vòng sạch không va chạm (Clean Lap Rate) là $90\%$ ($18/20$ vòng hoàn thành). Thời gian vòng flying này thấp hơn thời gian của tác tử giải tích hiệu chuẩn thực nghiệm (`gt3_anchor`: Standing $118.20\text{ s}$, Flying $112.80\text{ s}$, thời gian tích phân lý thuyết $T^* = 110.62\text{ s}$) khoảng $3.36\text{ s}$. Tính lặp lại độc lập được xác nhận trên Seed 43 với thành tích $115.18 \pm 0.43\text{ s}$ (Standing) và $109.96 \pm 0.69\text{ s}$ (Flying, $19/20$ vòng sạch).
 
-Báo cáo đi sâu phân tích nguyên nhân hiện tượng "RL vượt qua nghiệm giải tích tối ưu" bắt nguồn từ sự sai lệch mô hình - hệ thống thực (Model-Plant Mismatch): mô hình chất điểm giải tích giả định gia tốc ma sát ngang không đổi ($0.95\text{G}$), trong khi PPO trực tiếp khai thác giới hạn bám động học tức thời của Bullet Physics ($a_{\text{lat}}$ phân vị $95\%$ đạt $0.99\text{G}$, cực đại $1.21\text{G}$). Đồng thời, báo cáo giải mã chi tiết các thách thức cố hữu của PPO liên tục:
-1. **Cơ chế vi mô của hiện tượng dao động bàn đạp tần số cao (Bang-bang / PWM chattering tại 5 Hz)**: Việc vector quan sát đưa trực tiếp hành động pedal bước trước (`obs[6] = last_pedal`) vào mạng nơ-ron nhưng hàm phần thưởng thiếu thành phần phạt độ mượt vi phân pedal ($\Delta\text{pedal}^2$) đã tạo thành mạch hồi tiếp dao động 2 bước (bước chẵn đạp ga dương, bước lẻ rà phanh nhẹ). Sự dồn tải dọc liên tục này gây mất ổn định lực bám ngang cầu trước ngay tại thời điểm vào cua (đối chiếu với lý thuyết CAPS của Mysore et al., 2021).
-2. **Kẹt độ lệch chuẩn khám phá (Actor Log-std Freeze)** do đạo hàm triệt tiêu của hàm clamp trong forward pass, và hiện tượng suy sụp khám phá (Exploration Collapse) khi decay entropy quá sớm.
-3. **Sự phụ thuộc sống còn vào thành phần phạt lệch tim đường $r_{\text{center}}$** như một rào cản thế năng mềm chống lại xu hướng cắt cua sớm (Early Apex) bắt nguồn từ tầm nhìn hữu hạn của hệ số chiết khấu $\gamma = 0.99$.
+Báo cáo phân tích nguyên nhân hiện tượng "RL đạt thời gian vòng thấp hơn nghiệm giải tích" bắt nguồn từ sự sai lệch mô hình - hệ thống thực (Model-Plant Mismatch): mô hình chất điểm giải tích giả định gia tốc ma sát ngang không đổi ($0.95\text{G}$), trong khi PPO trực tiếp khai thác giới hạn bám động học tức thời của Bullet Physics ($a_{\text{lat}}$ phân vị $95\%$ đạt $0.99\text{G}$, cực đại $1.21\text{G}$). Đồng thời, báo cáo phân tích chi tiết các thách thức trong quá trình tối ưu hóa PPO liên tục:
+1. **Hiện tượng dao động bàn đạp tần số cao (5 Hz PWM chattering)**: Việc vector quan sát nạp hành động pedal bước trước (`obs[6] = last_pedal`) nhưng hàm thưởng thiếu thành phần phạt độ mượt vi phân pedal ($\Delta\text{pedal}^2$) đã hình thành mạch hồi tiếp dao động 2 bước (bước chẵn đạp ga, bước lẻ rà phanh).
+2. **Kẹt độ lệch chuẩn khám phá (Actor Log-std Freeze)** do đạo hàm triệt tiêu của hàm clamp trong forward pass, và hiện tượng suy giảm phương sai khám phá khi decay entropy quá sớm.
+3. **Vai trò ràng buộc của thành phần phạt lệch tim đường $r_{\text{center}}$** trong việc hạn chế xu hướng cắt cua sớm (Early Apex) bắt nguồn từ tầm nhìn hữu hạn của hệ số chiết khấu $\gamma = 0.99$.
 
 ---
 
 ## 1. ĐẶT VẤN ĐỀ VÀ MỤC TIÊU NGHIÊN CỨU (INTRODUCTION)
 
 ### 1.1. Bối cảnh và Thách thức Kỹ thuật
-Điều khiển tự hành phương tiện ở vận tốc cao tiệm cận giới hạn vật lý của lốp xe (Autonomous High-Speed Racing) là một bài toán kinh điển nhưng phức tạp trong điều khiển học và trí tuệ nhân tạo. Khác với bài toán lái xe thông thường (Urban Driving), xe đua vận hành trong điều kiện phi tuyến tính cao độ: lực bám lốp xe nằm sâu trong vùng bão hòa phi tuyến của elip ma sát (Kamm's Friction Ellipse), đòi hỏi sự kết hợp phức tạp giữa lực dọc (phanh/ga) và lực ngang (đánh lái) nhằm khai thác tối đa gia tốc tổng hợp.
+Điều khiển tự hành phương tiện ở vận tốc cao tiệm cận giới hạn ma sát của lốp xe (Autonomous High-Speed Racing) là bài toán phức tạp trong điều khiển học và trí tuệ nhân tạo. Khác với bài toán lái xe thông thường (Urban Driving), xe đua vận hành trong điều kiện phi tuyến tính: lực bám lốp xe nằm trong vùng bão hòa của elip ma sát (Kamm's Friction Ellipse), đòi hỏi sự kết hợp giữa lực dọc (phanh/ga) và lực ngang (đánh lái) nhằm khai thác gia tốc tổng hợp.
 
-Phương pháp truyền thống giải quyết bài toán này thông qua quy trình hai giai đoạn tách rời: (1) Quy hoạch quỹ đạo tối ưu hình học tĩnh dựa trên mô hình đơn giản hóa (ví dụ: tối tiểu độ cong qua Convex QP - Heilmeier et al., 2020; phân bố tốc độ dọc tối ưu thời gian - Lipp & Boyd, 2014); và (2) Bám quỹ đạo bằng các bộ điều khiển phản hồi như Model Predictive Control (MPC) hoặc Pure Pursuit. Tuy nhiên, sự sai lệch giữa mô hình động học giả định (chất điểm, mô hình xe đạp tuyến tính) và động lực học thực tế của hệ thống mô phỏng đa vật thể (Multi-body Dynamics với hệ thống treo, vi sai, tải trọng thay đổi) tạo ra khoảng cách hiệu năng lớn (Model-Plant Mismatch).
+Phương pháp truyền thống giải quyết bài toán này qua hai giai đoạn tách rời: (1) Quy hoạch quỹ đạo tĩnh dựa trên mô hình đơn giản hóa (tối thiểu độ cong qua Convex QP - Heilmeier et al., 2020; phân bố tốc độ dọc tối ưu thời gian - Lipp & Boyd, 2014); và (2) Bám quỹ đạo bằng các bộ điều khiển phản hồi như Model Predictive Control (MPC) hoặc Pure Pursuit. Tuy nhiên, sự sai lệch giữa mô hình động học giả định (chất điểm, mô hình xe đạp) và động lực học thực tế của hệ thống mô phỏng đa vật thể (Multi-body Dynamics với hệ thống treo, tải trọng thay đổi) tạo ra khoảng cách hiệu năng (Model-Plant Mismatch).
 
-Sự trỗi dậy của Học Tăng Cường Sâu (Deep Reinforcement Learning - DRL) mở ra khả năng tối ưu hóa chính sách điều khiển trực tiếp trên simulator tương tác phức tạp (Fuchs et al., 2021; Wurman et al., 2022). Tuy nhiên, việc áp dụng DRL trong điều khiển xe đua liên tục đặt ra các câu hỏi mở mang tính cốt lõi về mặt học thuật:
-1. **Liêm chính quan sát (Observation Integrity)**: Tác tử có thể tự hình thành kỹ thuật đua xe thể thao tối ưu (vào cua chậm, ra cua nhanh - Out-In-Out, Trail-braking) từ quan sát hình học tim đường thuần túy mà không cần "mớm" trước tọa độ quỹ đạo tối ưu (Racing Line Prior) hay không?
-2. **Bản chất của việc vượt qua mốc chuẩn (Baseline Superiority)**: Khi một tác tử RL đạt thời gian hoàn thành vòng đua nhanh hơn mô hình giải tích, đó là do tác tử tìm được quỹ đạo thông minh hơn, hay do tác tử đã khai thác các điểm hở (exploitations) của simulator vật lý?
-3. **Độ mượt cơ học và Hiện tượng Chattering**: Tại sao các thuật toán Policy Gradient liên tục luôn có xu hướng xuất tín hiệu điều khiển rung giật (Bang-bang/PWM chattering) gây hại cho cơ cấu chấp hành trong thực tế (Mysore et al., 2021)?
+Học Tăng Cường Sâu (Deep Reinforcement Learning - DRL) cho phép tối ưu hóa chính sách điều khiển trực tiếp trên môi trường mô phỏng (Fuchs et al., 2021; Wurman et al., 2022). Việc áp dụng DRL trong điều khiển xe đua liên tục đặt ra các câu hỏi nghiên cứu cụ thể:
+1. **Quan sát thuần (Observation Integrity)**: Tác tử có thể tự hình thành kỹ thuật đua xe thể thao (Out-In-Out, Trail-braking) từ quan sát hình học tim đường thuần túy mà không cần cung cấp trước tọa độ quỹ đạo tối ưu (Racing Line Prior) hay không?
+2. **Bản chất của việc vượt qua mốc chuẩn (Baseline Comparison)**: Khi tác tử RL đạt thời gian hoàn thành vòng đua nhanh hơn mô hình giải tích, cơ chế động lực học nào trong mô phỏng giải thích cho kết quả này?
+3. **Độ mượt cơ học và Hiện tượng Chattering**: Nguyên nhân khiến các thuật toán Policy Gradient liên tục xuất tín hiệu điều khiển rung giật tần số cao và cách thức kiểm soát hiện tượng này (Mysore et al., 2021).
 
 ### 1.2. Mục tiêu và Phạm vi Đồ án
-Nghiên cứu này tập trung vào các mục tiêu học thuật rõ ràng:
-- **Xây dựng môi trường mô phỏng chuẩn xác**: Thiết lập môi trường đua xe thể thao GT3 trên sa bàn Silverstone Grand Prix (tổng chiều dài $2,838.7\text{ m}$ theo hệ thống MetaDrive/Bullet Physics), tích hợp quy tắc trọng tài 4 bánh nghiêm ngặt theo chuẩn FIA.
-- **Phát triển Tác tử Đối chứng Giải tích (Analytical Upper-Bound Baseline)**: Tích hợp bộ giải Convex QP và thuật toán tích phân Lipp-Boyd để thiết lập xe bóng ma giải tích (`GhostCar`), đóng vai trò là mốc chuẩn khoa học minh bạch để so sánh.
-- **Tối ưu hóa Tác tử PPO Liên tục Thuần (Pure PPO Agent)**: Huấn luyện tác tử với không gian hành động tách rời 3 chiều $[steer, throttle, brake]$ và không gian quan sát thuần 35 chiều (Zero Data Leakage), loại bỏ hoàn toàn thông tin quỹ đạo giải tích trong quá trình học.
-- **Đánh giá Độc lập và Phân tích Liêm chính**: Đo lường định lượng trên 20 episode ngẫu nhiên, phân tích dữ liệu Telemetry vi mô (G-G Diagram, Speed Trace, Steering Power Spectrum), kiểm tra tính tái lập trên nhiều hạt giống ngẫu nhiên (Seeds), và tiến hành các nghiên cứu bóc tách (Ablation Studies) để làm sáng tỏ cơ chế hoạt động của hệ thống.
+Nghiên cứu tập trung vào các mục tiêu kỹ thuật rõ ràng:
+- **Xây dựng môi trường mô phỏng chuẩn xác**: Thiết lập môi trường đua xe thể thao GT3 trên sa bàn Silverstone Grand Prix (tổng chiều dài $2,838.7\text{ m}$ theo hệ thống MetaDrive/Bullet Physics), tích hợp quy tắc trọng tài 4 bánh theo chuẩn FIA.
+- **Phát triển Tác tử Đối chứng Giải tích (Analytical Baseline)**: Tích hợp bộ giải Convex QP và thuật toán tích phân Lipp-Boyd để thiết lập xe bóng ma giải tích (`GhostCar`), làm mốc đối chứng khoa học để so sánh.
+- **Tối ưu hóa Tác tử PPO Liên tục Thuần (Pure PPO Agent)**: Huấn luyện tác tử với không gian hành động 3 chiều $[steer, throttle, brake]$ và không gian quan sát thuần 35 chiều, không sử dụng thông tin quỹ đạo giải tích trong quá trình học.
+- **Đánh giá Độc lập và Phân tích Thực nghiệm**: Đo lường định lượng trên 20 episode độc lập, phân tích dữ liệu Telemetry (biểu đồ G-G, biến thiên góc lái, góc trượt thân xe), kiểm tra tính tái lập trên hạt giống ngẫu nhiên khác nhau, và thực hiện các nghiên cứu bóc tách (Ablation Studies).
 
 ---
 
 ## 2. NGHIÊN CỨU LIÊN QUAN (RELATED WORK)
 
-Nghiên cứu được đặt trên nền tảng đối chiếu trực tiếp với 4 công trình khoa học tiêu biểu trong lĩnh vực đua xe tự hành và điều khiển liên tục bằng RL:
+Nghiên cứu được đối chiếu trực tiếp với 4 công trình khoa học trong lĩnh vực đua xe tự hành và điều khiển liên tục bằng RL:
 
 ### 2.1. Fuchs et al. (IEEE RA-L / ICRA 2021): Đua xe Super-Human trên Gran Turismo Sport
 Fuchs, Song, Kaufmann, Scaramuzza, và Dürr (2021) công bố công trình *"Super-Human Performance in Gran Turismo Sport Using Deep Reinforcement Learning"* trên IEEE Robotics and Automation Letters (RA-L).
 - **Phương pháp**: Sử dụng thuật toán Soft Actor-Critic (SAC) không mô hình với mạng nơ-ron 2 lớp ẩn (256 units, ReLU), tần số điều khiển $10\text{ Hz}$.
-- **Không gian quan sát và hành động**: Quan sát gồm vận tốc, gia tốc 3D, góc lệch tim đường, 13 tia khoảng cách (fan 180°, tầm 100m), độ cong tim đường tại 10 điểm từ $1.0\text{s}$ đến $2.8\text{s}$ phía trước. **Tác giả khẳng định không đưa racing line vào quan sát**. Không gian hành động gồm góc lái và một trục pedal gộp $[-1, 1]$ (dương là ga, âm là phanh).
-- **Hàm thưởng và kết thúc**: Phần thưởng chính là tiến độ dọc tim đường ($r_{\text{progress}}$) trừ đi phạt va chạm tỉ lệ với bình phương vận tốc: $r_t = r_{\text{progress}} - c_w \|v\|^2 \cdot \mathbb{I}_{\text{wall}}$ với $c_w = 5 \times 10^{-4}$. **Tác giả không kết thúc episode khi va chạm tường** nhằm tối ưu hóa việc lấy mẫu.
-- **Kiểm thử nhiễu loạn và độ bền (Robustness)**: Kiểm tra tác tử dưới trễ tín hiệu điều khiển ($\Delta t_{\text{delay}} \in [50, 100, 150]\text{ ms}$) và nhiễu quan sát Gaussian ($\sigma_{\text{noise}} \in [2\%, 5\%, 9\%]$). Kết quả cho thấy tác tử duy trì sự ổn định ở mức nhiễu $\le 2\%$, nhưng trễ $> 100\text{ ms}$ làm mất hoàn toàn khả năng cạnh tranh do phanh muộn.
-- **Kết quả**: Đạt thành tích siêu nhân trên 3 cấu hình đường đua/xe khác nhau (ví dụ: Audi TT Cup đạt 1:15.913, vượt kỷ lục của tay đua con người nhanh nhất thế giới là 1:16.062). Độ lệch chuẩn thời gian vòng đua qua 10 vòng chỉ đạt $15\text{ ms}$ (so với $480\text{ ms}$ của con người thuộc top $1\%$).
+- **Không gian quan sát và hành động**: Quan sát gồm vận tốc, gia tốc 3D, góc lệch tim đường, 13 tia khoảng cách (fan 180°, tầm 100m), độ cong tim đường tại 10 điểm từ $1.0\text{s}$ đến $2.8\text{s}$ phía trước. Tác giả không đưa racing line vào quan sát. Hành động gồm góc lái và một trục pedal gộp $[-1, 1]$ (dương là ga, âm là phanh).
+- **Hàm thưởng và kết thúc**: Phần thưởng chính là tiến độ dọc tim đường ($r_{\text{progress}}$) trừ đi phạt va chạm: $r_t = r_{\text{progress}} - c_w \|v\|^2 \cdot \mathbb{I}_{\text{wall}}$ với $c_w = 5 \times 10^{-4}$. Episode không bị kết thúc khi va chạm tường nhằm tăng cường lấy mẫu.
+- **Kiểm thử độ bền (Robustness)**: Kiểm tra tác tử dưới trễ tín hiệu ($\Delta t_{\text{delay}} \in [50, 100, 150]\text{ ms}$) và nhiễu quan sát Gaussian ($\sigma_{\text{noise}} \in [2\%, 5\%, 9\%]$). Kết quả cho thấy tác tử duy trì ổn định ở mức nhiễu $\le 2\%$, nhưng trễ $> 100\text{ ms}$ làm giảm hiệu năng rõ rệt do phanh muộn.
+- **Kết quả**: Đạt thành tích cạnh tranh trên 3 cấu hình đường đua/xe khác nhau (Audi TT Cup đạt 1:15.913, so với mốc con người ghi nhận 1:16.062). Độ lệch chuẩn thời gian vòng đua qua 10 vòng đạt $15\text{ ms}$.
 
 ### 2.2. Wurman et al. (Nature 2022): Gran Turismo Sophy (GT Sophy)
-Công trình kinh điển của Wurman et al. (Sony AI) xuất bản trên tạp chí *Nature*, vol. 602, mang tên *"Outracing champion Gran Turismo drivers with deep reinforcement learning"*.
+Công trình của Wurman et al. (Sony AI) xuất bản trên tạp chí *Nature*, vol. 602, mang tên *"Outracing champion Gran Turismo drivers with deep reinforcement learning"*.
 - **Phương pháp**: Sử dụng thuật toán Quantile Regression Soft Actor-Critic (QR-SAC) phân phối với 32 quantiles, cập nhật TD $N$-bước ($N=5$ hoặc $N=7$). Mạng nơ-ron sâu 4 lớp (2048 units, ReLU, dropout 0.1 ở policy). Tần số điều khiển $10\text{ Hz}$.
-- **Không gian quan sát**: Trích xuất chi tiết trạng thái động lực học gồm vận tốc 3D, gia tốc, **tải trọng và góc trượt của từng lốp trong 4 bánh**, biểu diễn đường đua qua 60 điểm 3D trên mép trái, tim đường và mép phải (phủ tầm nhìn $\sim 6\text{s}$ phía trước, co giãn theo vận tốc). **GT Sophy hoàn toàn không sử dụng racing line định trước trong quan sát**. Hành động gồm góc lái và 1 trục pedal gộp $[-1, 1]$.
-- **Chiến lược huấn luyện**: Huấn luyện phân tán không đồng bộ trên hàng nghìn máy chơi game PlayStation, áp dụng kỹ thuật lấy mẫu phân tầng (Stratified Sampling) trên tập kịch bản hỗn hợp (khởi đầu ngẫu nhiên trên đường, bám đuôi, đối kháng) thay vì giáo trình tuần tự (Curriculum Learning).
-- **Hiện tượng rung giật điều khiển**: Đáng chú ý, trong tài liệu bổ sung (Extended Data Fig. 2b–c), nhóm tác giả thừa nhận GT Sophy xuất hiện hiện tượng giật vô lăng tần số cao ở $10\text{ Hz}$ (*steering chattering*), trong khi các tay đua vô địch thế giới (Igor Fraga, Takuma Miyazono) điều khiển vô cùng mượt mà ở $60\text{ Hz}$. Tuy nhiên, GT Sophy chấp nhận điều này vì mục tiêu tối thượng là thời gian hoàn thành vòng đua và chiến thuật thi đấu trực tiếp.
+- **Không gian quan sát**: Trích xuất trạng thái động lực học gồm vận tốc 3D, gia tốc, tải trọng và góc trượt của từng lốp trong 4 bánh, biểu diễn đường đua qua 60 điểm 3D trên mép trái, tim đường và mép phải (phủ tầm nhìn $\sim 6\text{s}$ phía trước). GT Sophy không sử dụng racing line định trước trong quan sát. Hành động gồm góc lái và 1 trục pedal gộp $[-1, 1]$.
+- **Chiến lược huấn luyện**: Huấn luyện phân tán trên nền tảng PlayStation, áp dụng kỹ thuật lấy mẫu phân tầng (Stratified Sampling) trên tập kịch bản hỗn hợp (khởi đầu ngẫu nhiên, bám đuôi, đối kháng).
+- **Đặc tính điều khiển**: Trong tài liệu bổ sung (Extended Data Fig. 2b–c), nhóm tác giả ghi nhận GT Sophy xuất hiện hiện tượng dao động vô lăng ở tần số $10\text{ Hz}$ (*steering chattering*), trong khi các tay đua con người điều khiển mượt hơn ở $60\text{ Hz}$. GT Sophy chấp nhận điều này vì mục tiêu tối ưu hóa thời gian vòng đua và khả năng đối đầu trực tiếp.
 
 ### 2.3. Chisari et al. (IEEE ICRA 2021): Sim-to-Real trong Đua xe Tự hành
 Chisari, Liniger, Rupenyan, Van Gool, và Lygeros (ETH Zürich) công bố *"Learning from Simulation, Racing in Reality"* tại IEEE ICRA 2021.
 - **Phương pháp & Thách thức**: Giải quyết bài toán chuyển giao từ mô phỏng sang thực tế (Sim-to-Real Transfer) cho xe đua mô hình RC tỉ lệ 1:43 (nền tảng ORCA) chạy ở giới hạn vật lý.
-- **Điều chuẩn không gian hành động**: Tác giả chỉ ra rằng việc áp dụng trực tiếp action từ policy RL lên cơ cấu chấp hành vật lý sẽ gây rung lắc mạnh và phá hủy phần cứng. Nhóm nghiên cứu đề xuất không gian hành động nâng bậc (*lifted action space*) - điều khiển đạo hàm bậc một của lệnh lái ($\Delta u_t$) kết hợp điều chuẩn policy (*policy regularization*).
-- **Kết quả**: Sau khi áp dụng kỹ thuật xáo trộn miền (Domain Randomization) về hệ số ma sát lốp và quán tính động cơ kết hợp 3 giờ fine-tune trên đường đua thực, tác tử RL giảm $50\%$ lỗi vi phạm giới hạn vạch đường so với bộ điều khiển Model Predictive Contouring Control (MPCC) tối ưu, minh chứng năng lực thích nghi với các hiệu ứng phi tuyến mà mô hình MPC bỏ qua.
+- **Không gian hành động**: Đề xuất không gian hành động nâng bậc (*lifted action space*) - điều khiển đạo hàm bậc một của lệnh lái ($\Delta u_t$) kết hợp điều chuẩn policy (*policy regularization*) nhằm giảm rung lắc trên phần cứng thực tế.
+- **Kết quả**: Áp dụng kỹ thuật xáo trộn miền (Domain Randomization) về hệ số ma sát lốp và quán tính kết hợp fine-tune trên đường đua thực, tác tử RL giảm $50\%$ lỗi vi phạm giới hạn vạch đường so với bộ điều khiển Model Predictive Contouring Control (MPCC).
 
 ### 2.4. Mysore et al. (IEEE ICRA 2021): Điều khiển Mượt với CAPS
 Mysore, Mabsout, Mancuso, và Saenko công bố *"Regularizing Action Policies for Smooth Control with Reinforcement Learning"* (CAPS) tại IEEE ICRA 2021.
-- **Hiện tượng Bang-bang / PWM trong RL**: Nhóm tác giả chứng minh về mặt toán học rằng việc giải bài toán tối ưu Markov từng bước độc lập ($\max \mathbb{E}[Q(s, a)]$) khiến các thuật toán actor-critic liên tục (PPO, SAC, DDPG) tự nhiên hội tụ về chính sách dạng đóng/mở cực trị (Bang-bang action), tạo ra tín hiệu điều khiển dao động biên độ lớn tương tự điều chế độ rộng xung (PWM). Điều này gây hao mòn cơ học, tiêu tốn năng lượng và mất ổn định hệ thống.
-- **Đóng góp lý thuyết (CAPS Loss)**: Đề xuất hàm phạt điều chuẩn bổ sung trực tiếp vào hàm mất mát của Actor:
-  1. *Độ mượt thời gian (Temporal Smoothness Loss)*: Phạt bình phương khoảng cách giữa hai hành động liên tiếp trên quỹ đạo:
+- **Hiện tượng Bang-bang / PWM trong RL**: Nhóm tác giả chỉ ra rằng việc tối ưu Markov từng bước ($\max \mathbb{E}[Q(s, a)]$) khiến các thuật toán actor-critic liên tục (PPO, SAC, DDPG) có xu hướng hội tụ về chính sách dạng đóng/mở cực trị (Bang-bang action), tạo ra tín hiệu điều khiển dao động biên độ lớn tương tự PWM, gây hao mòn cơ học.
+- **CAPS Loss**: Đề xuất hai số hạng điều chuẩn bổ sung vào hàm mất mát của Actor:
+  1. *Độ mượt thời gian (Temporal Smoothness Loss)*:
      $$L_T = \mathbb{E}_{s_t \sim \mathcal{D}} \left[ \|\pi(s_t) - \pi(s_{t-1})\|^2 \right]$$
-  2. *Độ mượt không gian (Spatial Smoothness Loss)*: Phạt độ nhạy của hành động trước các nhiễu loạn nhỏ trong không gian trạng thái:
+  2. *Độ mượt không gian (Spatial Smoothness Loss)*:
      $$L_S = \mathbb{E}_{s_t \sim \mathcal{D}, \bar{s}_t \sim \mathcal{N}(s_t, \sigma_s^2 I)} \left[ \|\pi(s_t) - \pi(\bar{s}_t)\|^2 \right]$$
-- **Ý nghĩa đối với đồ án**: Công trình cung cấp cơ sở lý luận vững chắc để phân biệt giữa hành vi "Bang-bang chiến thuật tối ưu" (đạp lút ga trên đoạn thẳng, phanh kịch sàn ở điểm phanh) và hiện tượng "Chattering bệnh lý" (đảo lái và nhấp nhả ga/phanh ở tần số $10\text{ Hz}$).
+- **Ý nghĩa đối với đồ án**: Công trình cung cấp cơ sở lý luận để phân biệt giữa hành vi điều khiển chiến thuật (đạp ga trên đoạn thẳng, phanh tại điểm phanh) và hiện tượng dao động tần số cao do cấu trúc hàm thưởng/quan sát.
 
-### 2.5. Bảng Đối sánh Phương pháp luận giữa các Công trình và Đồ án
+### 2.5. Bảng Đối sánh Phương pháp luận
 
 | Thuộc tính So sánh | Fuchs et al. (2021) | GT Sophy (Wurman 2022) | Chisari et al. (2021) | Đồ án Này (Commit `ee99f9d` / `7853722`) |
 | :--- | :--- | :--- | :--- | :--- |
@@ -87,19 +87,18 @@ Mysore, Mabsout, Mancuso, và Saenko công bố *"Regularizing Action Policies f
 | **Tần số quyết định** | $10\text{ Hz}$ | $10\text{ Hz}$ | $20 - 50\text{ Hz}$ | **$10\text{ Hz}$ ($\Delta t = 0.1\text{s}$)** |
 | **Không gian hành động** | 2D: Lái + [Ga/Phanh gộp] | 2D: Lái + [Ga/Phanh gộp] | 2D: $\Delta\text{Steer}, \Delta\text{Throttle}$ | **3D: Lái, Ga riêng, Phanh riêng** |
 | **Phân phối Policy** | Gaussian squashed tanh | Gaussian squashed tanh | Gaussian squashed tanh | **Gaussian squashed tanh + Jacobian Fix** |
-| **Racing Line trong Obs**| **KHÔNG** (Zero prior) | **KHÔNG** (Zero prior) | Có (MPCC contouring frame) | **KHÔNG (Nhánh `pure`, Zero prior)** |
+| **Racing Line trong Obs**| Không (Zero prior) | Không (Zero prior) | Có (MPCC contouring frame) | **Không (Nhánh `pure`, Zero prior)** |
 | **Quy tắc Biên đường** | Phạt va chạm tường $\propto v^2$ | Phạt ra ngoài lề $\propto v^2$ | Ràng buộc biên mềm | **Quy tắc 4 bánh FIA (Terminate)** |
-| **Mốc Đối chứng Chính** | Kỷ lục con người (World Record) | Tay đua vô địch con người | MPCC dựa trên mô hình xe đạp | **Xe Bóng ma Giải tích (Convex QP + Lipp-Boyd)** |
-| **Xử lý Chattering** | Không xử lý (chấp nhận) | Không xử lý (thừa nhận ở Fig. 2) | Lifted Action + Regularization | **Slew Rate Limiter + Phạt $\Delta\text{steer}^2$** |
+| **Mốc Đối chứng Chính** | Kỷ lục con người | Tay đua vô địch con người | MPCC dựa trên mô hình xe đạp | **Xe Bóng ma Giải tích (Convex QP + Lipp-Boyd)** |
+| **Xử lý Chattering** | Không xử lý | Không xử lý | Lifted Action + Regularization | **Slew Rate Limiter + Phạt $\Delta\text{steer}^2$** |
 
 ---
 
 ## 3. MÔ HÌNH HÓA TOÁN HỌC VÀ HỆ THỐNG MÔ PHỎNG (SYSTEM FORMULATION)
 
 ### 3.1. Hệ Tọa độ và Ký hiệu Toán học Thống nhất
-Nhằm đảm bảo tính chuẩn xác và nhất quán trong toàn bộ báo cáo, các biến số được định nghĩa theo Bảng 1.
 
-*Bảng 1: Bảng ký hiệu toán học thống nhất trong báo cáo.*
+*Bảng 1: Ký hiệu toán học thống nhất trong báo cáo.*
 
 | Ký hiệu | Ý nghĩa vật lý / Kỹ thuật | Đơn vị | Tương ứng trong mã nguồn |
 | :--- | :--- | :---: | :--- |
@@ -110,109 +109,101 @@ Nhằm đảm bảo tính chuẩn xác và nhất quán trong toàn bộ báo c�
 | $L$ | Tổng chiều dài một vòng đua ($L = 2,838.7\text{ m}$) | $\text{m}$ | `circuit_length` |
 | $v_t$ | Vận tốc vô hướng của xe ($v_t = \|\mathbf{v}_t\|$) | $\text{m/s}$ (hoặc $\text{km/h}$) | `speed_km_h` |
 | $\kappa(s)$ | Độ cong hình học của tim đường hoặc racing line | $\text{m}^{-1}$ | `track_kappa` |
-| $\mathbf{o}_t$ | Vector quan sát đầu vào tại bước $t$ (35 chiều hoặc 40 chiều) | – | `obs` |
+| $\mathbf{o}_t$ | Vector quan sát đầu vào tại bước $t$ (35 chiều) | – | `obs` |
 | $\mathbf{a}_t$ | Vector hành động thực thi: $(\delta_t, a^{\text{thr}}_t, a^{\text{brk}}_t)$ | – | `action` |
 | $r_t$ | Phần thưởng vô hướng nhận được tại bước $t$ | – | `step_reward` |
 | $T_{\text{lap}}$ | Thời gian hoàn thành vòng đua đo được trên mô phỏng | $\text{s}$ | `lap_time` |
 | $T^*$ | Thời gian vòng đua lý thuyết tối ưu tích phân từ profile | $\text{s}$ | `theoretical_best_lap_time` |
 | $\beta$ | Góc trượt thân xe (Sideslip Angle, $\beta = \arctan(v_y / v_x)$) | $\text{độ}$ ($^\circ$) | `beta_deg` |
-| $a_{\text{lat}}, a_{\text{long}}$ | Gia tốc trọng trường ngang và dọc của xe | $\text{G}$ hoặc $\text{m/s}^2$ | `lateral_accel`, `longitudinal_accel` |
+| $a_{\text{lat}}, a_{\text{long}}$ | Gia tốc ngang và dọc của xe | $\text{G}$ hoặc $\text{m/s}^2$ | `lateral_accel`, `longitudinal_accel` |
 
 ### 3.2. Động lực học Phương tiện trong Bullet Physics và MetaDrive
 Hệ thống sử dụng mô hình xe thể thao GT3 (`GT3RaceCar`) được xây dựng trên nền tảng Bullet Physics Raycast Vehicle của MetaDrive:
-- **Cấu trúc Chassis & Dẫn động 4 Bánh**: 
-  - Khối lượng thân xe cố định ở $m = 1100\text{ kg}$ (`MASS` trong Bullet engine; các khai báo `config["mass"] = 1350` bị engine bỏ qua [Đo được]).
-  - Vị trí trọng tâm: Cách trục trước $1.052\text{ m}$, trục sau $1.417\text{ m}$, chiều cao trọng tâm $h_{\text{cg}} \approx 0.55\text{ m}$. Tải trọng tĩnh: $3100\text{ N}$ ở mỗi bánh trước, $2298\text{ N}$ ở mỗi bánh sau.
-  - Cơ chế áp lực ga (`base_vehicle._apply_throttle_brake`): Khi đạp ga ($\text{pedal} \ge 0$), Bullet áp dụng lực kéo $F_{\text{drive}} = \text{max\_engine\_force} \times \text{pedal}$ lên **cả 4 bánh xe** (dẫn động 4 bánh toàn thời gian AWD). Do đó, gia tốc dọc lý thuyết ở dải không trượt là $a_x = 4F/m$ chính xác tuyệt đối (ví dụ: $4 \times 850 / 1100 = 3.09\text{ m/s}^2$, khớp số đo telemetry đến 3 chữ số thập phân).
-  - Hiện tượng chổng đuôi (Pitch-over / Rear lift): Do trọng tâm cao ($0.55\text{ m}$) và lệch về trước, khi phanh gấp với gia tốc $a_{\text{brake}} > 1.7\text{G}$, tải trọng bánh sau giảm về $0$, gây mất lái đuôi xe. Do đó, lực phanh thực nghiệm được khống chế ở $15.0\text{ m/s}^2$.
-- **Mô hình Tiếp xúc Lốp & Bug Ma sát Cầu trước Lịch sử (F16)**:
-  - Bullet không áp dụng phương trình giải tích lốp Pacejka mà tính toán lực bám thông qua ma sát tiếp xúc Coulomb: $F_{\text{fric}} \le \mu \cdot F_z$.
-  - Trong quá trình phát triển trước commit `7853722`, việc nạp xe qua wrapper `BaseRaceVehicle` đã gặp lỗi con trỏ bánh xe cũ (`raw_vehicle.wheels` trỏ vào vùng nhớ rác sau khi dựng lại xe), khiến hệ số ma sát lốp trước luôn bị khóa ở giá trị mặc định của MetaDrive là $\mu_{\text{front}} = 0.90$, trong khi lốp sau nhận $\mu_{\text{rear}} = 1.35$. Lỗi này tạo ra đặc tính thiếu lái cưỡng bức (Strong Understeer). Để đảm bảo tính liêm chính khoa học và bảo toàn môi trường huấn luyện của mô hình tham chiếu `ref_111s`, cấu hình `gt3_anchor` giữ nguyên trạng thái động lực học này một cách minh bạch cho cả tác tử PPO và tác tử đối chứng Ghost.
-- **Quy tắc Biên đường 4 Bánh (FIA Track Limits)**: Tác tử được coi là hợp lệ khi có ít nhất một bánh xe nằm trong bề rộng mặt đường nhựa ($|d_t| \le w + w_{\text{vehicle}}/2 = 4.5 + 0.925 = 5.425\text{ m}$). Ngay khi cả 4 bánh xe hoàn toàn rời khỏi mặt đường và tiếp xúc bãi cỏ, môi trường lập tức kích hoạt cờ va chạm và kết thúc episode (`terminate`).
+- **Khung vỏ & Dẫn động 4 Bánh**: 
+  - Khối lượng thân xe cố định ở $m = 1100\text{ kg}$ trong động cơ Bullet Physics.
+  - Vị trí trọng tâm: Cách trục trước $1.052\text{ m}$, trục sau $1.417\text{ m}$, chiều cao trọng tâm $h_{\text{cg}} \approx 0.55\text{ m}$.
+  - Cơ chế ga (`base_vehicle._apply_throttle_brake`): Khi đạp ga ($\text{pedal} \ge 0$), Bullet áp dụng lực kéo $F_{\text{drive}} = \text{max\_engine\_force} \times \text{pedal}$ lên cả 4 bánh xe (dẫn động 4 bánh toàn thời gian AWD). Gia tốc dọc lý thuyết ở dải không trượt là $a_x = 4F/m$ ($4 \times 850 / 1100 = 3.09\text{ m/s}^2$, khớp số đo telemetry).
+  - Giới hạn phanh dọc: Do trọng tâm cao ($0.55\text{ m}$) và lệch về trước, khi phanh gấp với gia tốc $a_{\text{brake}} > 1.7\text{G}$, tải trọng bánh sau giảm mạnh, gây mất ổn định đuôi xe. Do đó, lực phanh thực nghiệm được khống chế ở $15.0\text{ m/s}^2$.
+- **Mô hình Tiếp xúc Lốp & Cấu hình Ma sát (F16)**:
+  - Bullet tính toán lực bám thông qua ma sát tiếp xúc Coulomb: $F_{\text{fric}} \le \mu \cdot F_z$.
+  - Trong quá trình phát triển trước commit `7853722`, cấu hình xe nạp qua wrapper gặp lỗi con trỏ bánh xe khiến hệ số ma sát lốp trước giữ ở mức $\mu_{\text{front}} = 0.90$, trong khi lốp sau nhận $\mu_{\text{rear}} = 1.35$. Đặc tính này tạo ra xu hướng thiếu lái (Understeer). Để bảo toàn tính nhất quán môi trường của mô hình tham chiếu `ref_111s`, cấu hình `gt3_anchor` giữ nguyên trạng thái động lực học này cho cả tác tử PPO và tác tử đối chứng Ghost.
+- **Quy tắc Biên đường 4 Bánh (FIA Track Limits)**: Tác tử được coi là hợp lệ khi có ít nhất một bánh xe nằm trong bề rộng mặt đường nhựa ($|d_t| \le w + w_{\text{vehicle}}/2 = 4.5 + 0.925 = 5.425\text{ m}$). Khi cả 4 bánh xe hoàn toàn rời khỏi mặt đường và tiếp xúc bãi cỏ, môi trường kích hoạt cờ va chạm và kết thúc episode (`terminate`).
 
-### 3.3. Không gian Hành động và Bộ Trộn ECU $C^1$ (Continuous Drive-by-Wire)
-Khác với quy ước 2 chiều truyền thống của MetaDrive (gộp ga và phanh vào một trục $[-1, 1]$), đồ án thiết kế không gian hành động 3 chiều tách rời:
+### 3.3. Không gian Hành động và Bộ Trộn ECU $C^1$
+Không gian hành động gồm 3 chiều tách rời:
 $$\mathbf{a}_t = [\delta_t, a_t^{\text{thr}}, a_t^{\text{brk}}] \in [-1, 1] \times [0, 1] \times [0, 1]$$
-Trong đó:
-- $\delta_t$: Lệnh góc đánh lái chuẩn hóa (ánh xạ tới góc quay bánh trước tối đa $\pm 20^\circ$).
-- $a_t^{\text{thr}}, a_t^{\text{brk}}$: Lệnh chân ga và chân phanh độc lập.
+Trong đó $\delta_t$ là lệnh góc đánh lái chuẩn hóa (ánh xạ tới góc quay bánh trước tối đa $\pm 20^\circ$), $a_t^{\text{thr}}$ và $a_t^{\text{brk}}$ là lệnh chân ga và chân phanh độc lập.
 
-Tín hiệu điều khiển được xử lý qua bộ điều chỉnh tốc độ xoay lái cơ học (Slew Rate Limiter, tối đa $0.18/\text{step} \iff 3.6^\circ/\text{step}$) và bộ trộn pedal điện tử liên tục $C^1$ (ECU Electronic Control Unit):
+Tín hiệu điều khiển được giới hạn tốc độ xoay lái (Slew Rate Limiter, tối đa $0.18/\text{step} \iff 3.6^\circ/\text{step}$) và xử lý qua bộ trộn pedal liên tục $C^1$:
 $$\text{pedal}_{\text{applied}} = a_t^{\text{thr}} \cdot (1 - a_{t, \text{eff}}^{\text{brk}}) - a_{t, \text{eff}}^{\text{brk}}$$
 với hàm vùng chết phanh liên tục:
 $$a_{t, \text{eff}}^{\text{brk}} = \begin{cases} 0, & a_t^{\text{brk}} \le 0.015 \\ \frac{a_t^{\text{brk}} - 0.015}{1.0 - 0.015}, & a_t^{\text{brk}} > 0.015 \end{cases}$$
-Cơ chế này cho phép mạng nơ-ron thực hiện đồng thời kỹ thuật phanh chân trái (Left-Foot Braking) và phanh dồn số nhả dần (Trail-braking) mà không tạo ra điểm gián đoạn gradient trong tối ưu hóa.
 
-### 3.4. Không gian Quan sát Thuần (35D Pure Obs) và Phiên bản Tiến hóa (40D Obs)
-1. **Không gian Quan sát 35 chiều Chuẩn (`ref_111s`)**: Hoàn toàn không chứa bất kỳ tọa độ hay mục tiêu nào của racing line giải tích:
-   - **Trạng thái Động học Nội tại (Ego Kinematics, 11 chiều)**: Vận tốc dọc $v_x / 40.0$, vận tốc ngang $v_y / 20.0$, tốc độ góc quay thân xe $\dot{\psi} / 2.0$, gia tốc $a_x / 10.0, a_y / 10.0$, góc trượt thân xe $\beta$, Roll, Pitch, hành động bước trước $(\delta_{t-1}, a_{t-1}^{\text{thr}}, a_{t-1}^{\text{brk}})$.
-   - **Hình học Sai lệch Tim đường Tức thời (4 chiều)**: $\sin(\Delta\theta), \cos(\Delta\theta)$, khoảng cách lệch ngang $d_t / w$, vận tốc lệch ngang $\dot{d}_t / 20.0$.
-   - **Tầm nhìn Hình học Tim đường Đón đầu (20 chiều)**: 5 điểm ngắm phía trước tại $[10, 25, 45, 70, 100]\text{ m}$; mỗi điểm cung cấp $(\Delta x_k / 50.0, \Delta y_k / 20.0, \sin\Delta\theta_k, \kappa_k \times 50.0)$.
-2. **Không gian Quan sát 40 chiều Mở rộng (Nhánh `feature/oop-clean-physics-40d`, Commit `0180988`)**:
-   - Mở rộng thêm 5 chiều thông tin bao gồm cờ cảnh báo runoff $\mathbb{I}_{\text{runoff}}$, gia tốc giật vi phân $\Delta\delta$, và mở rộng tầm nhìn đón đầu lên 6 mốc tới $150\text{ m}$ để hỗ trợ dải tốc độ cao $> 110\text{ km/h}$.
+### 3.4. Không gian Quan sát Thuần (35D Pure Obs)
+Vector quan sát 35 chiều của mô hình tham chiếu `ref_111s` không chứa thông tin racing line giải tích:
+- **Trạng thái Động học Nội tại (11 chiều)**: Vận tốc dọc $v_x / 40.0$, vận tốc ngang $v_y / 20.0$, tốc độ góc quay thân xe $\dot{\psi} / 2.0$, gia tốc $a_x / 10.0, a_y / 10.0$, góc trượt thân xe $\beta$, Roll, Pitch, hành động bước trước $(\delta_{t-1}, a_{t-1}^{\text{thr}}, a_{t-1}^{\text{brk}})$.
+- **Hình học Sai lệch Tim đường Tức thời (4 chiều)**: $\sin(\Delta\theta), \cos(\Delta\theta)$, khoảng cách lệch ngang $d_t / w$, vận tốc lệch ngang $\dot{d}_t / 20.0$.
+- **Tầm nhìn Hình học Tim đường Đón đầu (20 chiều)**: 5 điểm ngắm phía trước tại $[10, 25, 45, 70, 100]\text{ m}$; mỗi điểm cung cấp $(\Delta x_k / 50.0, \Delta y_k / 20.0, \sin\Delta\theta_k, \kappa_k \times 50.0)$.
 
-### 3.5. Hàm Phần thưởng Thể thao (Motorsport Reward Function)
-Hàm phần thưởng được thiết kế nhằm cân bằng giữa mục tiêu tối đa hóa vận tốc tiến trình và duy trì phương tiện trong giới hạn an toàn của mặt đường:
+### 3.5. Hàm Phần thưởng
+Hàm phần thưởng được cấu thành từ các thành phần:
 $$r_t = r_t^{\text{prog}} + r_t^{\text{center}} + r_t^{\text{steer}} + r_t^{\text{idle}} + R^{\text{terminal}}$$
 
 1. **Phần thưởng Tiến độ Frenet ($r_t^{\text{prog}}$)**:
    $$r_t^{\text{prog}} = c_{\text{prog}} \cdot (s_t - s_{t-1}), \quad c_{\text{prog}} = 0.15$$
 2. **Thành phần Phạt Lệch Tim đường ($r_t^{\text{center}}$)**:
    $$r_t^{\text{center}} = -c_{\text{center}} \cdot \left(\frac{d_t}{w}\right)^2, \quad c_{\text{center}} = 0.04$$
-   > *Lưu ý Liêm chính Học thuật*: Việc giữ thành phần này trong bản `ref_111s` là một sai lệch có chủ đích so với khuyến nghị ban đầu của đặc tả (vốn đề xuất thả lỏng hoàn toàn để xe tự do mở cua). Nghiên cứu bóc tách ở Chương 6 sẽ chứng minh vai trò then chốt của thành phần này.
 3. **Phạt Rung lắc Tay lái ($r_t^{\text{steer}}$)**:
    $$r_t^{\text{steer}} = -c_{\text{steer}} \cdot (\delta_t - \delta_{t-1})^2, \quad c_{\text{steer}} = 0.10$$
-4. **Phạt Đứng yên / Tốc độ Thấp ($r_t^{\text{idle}}$)**: Phạt cố định $-0.05$ nếu vận tốc phương tiện $< 5.0\text{ km/h}$.
-5. **Thưởng/Phạt Điểm mút ($R^{\text{terminal}}$)**: Phạt văng đường $R^{\text{crash}} = -20.0$. Thưởng về đích hàm mũ:
+4. **Phạt Vận tốc Thấp ($r_t^{\text{idle}}$)**: Phạt cố định $-0.05$ nếu vận tốc phương tiện $< 5.0\text{ km/h}$.
+5. **Thưởng/Phạt Kết thúc Episode ($R^{\text{terminal}}$)**: Phạt văng đường $R^{\text{crash}} = -20.0$. Thưởng về đích:
    $$R^{\text{finish}} = R_{\text{base}} \cdot \exp\left(-\frac{T_{\text{lap}} - T_0}{\tau}\right)$$
    với $R_{\text{base}} = 50.0, T_0 = 110.0\text{ s}, \tau = 25.0\text{ s}$.
 
-### 3.6. Thuật toán PPO và Hiệu chỉnh Jacobian cho Phân phối Squashed Gaussian
-Mạng nơ-ron Actor xuất ra vector kỳ vọng $\boldsymbol{\mu}_\theta(\mathbf{o})$ và vector tham số log độ lệch chuẩn $\log \boldsymbol{\sigma}$. Biến ngẫu nhiên nguyên bản $u_i \sim \mathcal{N}(\mu_i, \sigma_i^2)$ được đưa qua hàm kích hoạt phi tuyến $\tanh$ để ép vào khoảng hữu hạn $[-1, 1]$: $a_i = \tanh(u_i)$.
+### 3.6. Thuật toán PPO và Hiệu chỉnh Jacobian
+Mạng nơ-ron Actor xuất ra kỳ vọng $\boldsymbol{\mu}_\theta(\mathbf{o})$ và tham số log độ lệch chuẩn $\log \boldsymbol{\sigma}$. Biến ngẫu nhiên $u_i \sim \mathcal{N}(\mu_i, \sigma_i^2)$ được đưa qua hàm kích hoạt $\tanh$ để ép vào khoảng $[-1, 1]$: $a_i = \tanh(u_i)$.
 
-Theo định lý chuyển đổi biến ngẫu nhiên (Haarnoja et al., 2018 - Phụ lục SAC; Schulman et al., 2017), mật độ xác suất thực tế của hành động $\pi_\theta(\mathbf{a}|\mathbf{o})$ bắt buộc phải bù trừ định thức Jacobian của phép biến đổi:
+Mật độ xác suất của hành động $\pi_\theta(\mathbf{a}|\mathbf{o})$ được tính có bù trừ định thức Jacobian (Haarnoja et al., 2018):
 $$\log \pi_\theta(\mathbf{a}|\mathbf{o}) = \sum_{i=1}^3 \left[ \log \mathcal{N}(u_i; \mu_i, \sigma_i^2) - \log(1 - \tanh^2(u_i) + \delta_{\text{reg}}) \right]$$
-với $\delta_{\text{reg}} = 10^{-6}$. Việc bỏ quên số hạng Jacobian (Phát hiện F2) trong các phiên bản cũ từng gây ra sai lệch nghiêm trọng giữa hàm mục tiêu importance sampling của PPO và gradient thực tế.
+với $\delta_{\text{reg}} = 10^{-6}$.
 
 ---
 
-## 4. TÁC TỬ ĐỐI CHỨNG GIẢI TÍCH VÀ XE BÓNG MA (ANALYTICAL BASELINE & CALIBRATED GHOST CAR)
+## 4. TÁC TỬ ĐỐI CHỨNG GIẢI TÍCH VÀ XE BÓNG MA (ANALYTICAL BASELINE & GHOST CAR)
 
-Để thiết lập một mốc đối chứng khoa học khách quan và không tạo ra "đối thủ bù nhìn" (Strawman Baseline), nghiên cứu đã phát triển một động cơ giải tích tối ưu độc lập hai tầng (`RacingBenchmarkEngine`) kết hợp bộ điều khiển bám vết (`OptimalRacingAgent` / `GhostCar`).
+Nghiên cứu phát triển động cơ giải tích độc lập hai tầng (`RacingBenchmarkEngine`) kết hợp bộ điều khiển bám vết (`OptimalRacingAgent` / `GhostCar`) làm mốc đối chứng:
 
-### 4.1. Tối ưu Quỹ đạo Hình học Cực tiểu Độ cong (Convex QP Minimum Curvature)
-Theo phương pháp của Heilmeier et al. (2020), quỹ đạo đua lý tưởng là đường cong tối thiểu hóa tích phân bình phương độ cong trên toàn mạch, giúp phương tiện có thể duy trì vận tốc góc cua cao nhất:
+### 4.1. Tối ưu Quỹ đạo Cực tiểu Độ cong (Convex QP Minimum Curvature)
+Theo Heilmeier et al. (2020), quỹ đạo tối thiểu hóa tích phân bình phương độ cong trên toàn mạch:
 $$\min_{\boldsymbol{\alpha}} \int_0^L \kappa^2(s) \, ds \quad \approx \quad \min_{\boldsymbol{\alpha}} \frac{1}{2} \boldsymbol{\alpha}^T \mathbf{Q} \boldsymbol{\alpha} + \mathbf{c}^T \boldsymbol{\alpha}$$
-thỏa mãn các ràng buộc biên hình học:
+thỏa mãn ràng buộc biên hình học:
 $$-w_{\text{eff}} \le \alpha_i \le w_{\text{eff}}, \quad \forall i \in \{1..N\}$$
-trong đó $\alpha_i$ là độ dịch chuyển ngang khỏi tim đường tại điểm rời rạc $i$, và $w_{\text{eff}} = 4.05\text{ m}$ là biên an toàn đã trừ đi nửa bề rộng xe ($0.925\text{ m}$) và khoảng đệm vật lý trên mặt đường rộng $4.5\text{ m}$. Bài toán quy hoạch toàn phương lồi (Convex QP) được giải số học qua thư viện `OSQP` trong thời gian dưới $1.5\text{s}$.
+trong đó $\alpha_i$ là độ dịch chuyển ngang khỏi tim đường tại điểm rời rạc $i$, và $w_{\text{eff}} = 4.05\text{ m}$ là biên an toàn đã trừ đi nửa bề rộng xe ($0.925\text{ m}$) trên mặt đường rộng $4.5\text{ m}$. Bài toán Convex QP được giải qua thư viện `OSQP`.
 
-### 4.2. Phân bố Vận tốc Tối ưu Thời gian (Lipp-Boyd Time-Optimal Velocity Profile)
-Dựa trên thuật toán của Lipp & Boyd (2014), phân bố tốc độ dọc tối ưu $v^*(s)$ dọc theo quỹ đạo đã tìm được tính toán qua phương pháp 3-lượt (Three-pass forward/backward integration):
-1. **Giới hạn Gia tốc Ngang (Lateral Friction Limit)**:
+### 4.2. Phân bố Vận tốc Tối ưu Thời gian (Lipp-Boyd Velocity Profile)
+Dựa trên thuật toán của Lipp & Boyd (2014), phân bố tốc độ dọc tối ưu $v^*(s)$ được tính qua 3 lượt tích phân:
+1. **Giới hạn Gia tốc Ngang**:
    $$v_{\text{corner}}^*(s) = \sqrt{\frac{a_{\text{lat, max}}}{|\kappa_{\text{line}}(s)| + \epsilon}}$$
-2. **Lượt Tích phân Lùi (Backward Pass - Braking Phase)**:
+2. **Lượt Tích phân Lùi (Phanh)**:
    $$v_i^* = \min\left( v_i^*, \sqrt{(v_{i+1}^*)^2 + 2 \cdot a_{\text{brake}} \cdot \Delta s} \right)$$
-3. **Lượt Tích phân Tiến (Forward Pass - Acceleration Phase)**:
+3. **Lượt Tích phân Tiến (Tăng tốc)**:
    $$v_i^* = \min\left( v_i^*, \sqrt{(v_{i-1}^*)^2 + 2 \cdot a_{\text{engine}} \cdot \Delta s} \right)$$
-Thời gian vòng đua lý thuyết cận dưới của mô hình chất điểm được tính bằng tích phân:
+Thời gian vòng đua lý thuyết chất điểm:
 $$T^* = \int_0^L \frac{1}{v^*(s)} \, ds$$
 
 ### 4.3. Hiệu chuẩn Thực nghiệm Tham số Xe Bóng ma (`gt3_anchor`)
-Trong phiên bản cũ (`Ghost legacy v22`), các tham số vật lý của Ghost được gán theo giả định lý thuyết ($a_{\text{brake}} = 6.2\text{ m/s}^2, a_{\text{lat}} = 1.04 - 1.20\text{G}$), dẫn đến việc Ghost bị trượt văng khỏi đường đua khi cố gắng bám theo profile hoặc chạy chậm hơn năng lực thật của xe.
+Để mô hình Ghost phản ánh chính xác giới hạn vật lý của động cơ Bullet Physics (Commit `7853722`), các tham số được đo đạc trực tiếp qua thực nghiệm mô phỏng:
+- **Tăng tốc dọc**: $a_{\text{engine}} = 3.09\text{ m/s}^2$ ($a_x = 4F_{\text{drive}} / m = 4 \times 850 / 1100$).
+- **Phanh dọc an toàn**: $a_{\text{brake}} = 15.0\text{ m/s}^2$ (khống chế dưới ngưỡng $1.7\text{G}$ để tránh nhấc trục sau).
+- **Gia tốc ngang ổn định**: $a_{\text{lat}} = 0.95\text{G} = 9.32\text{ m/s}^2$ (ngưỡng cao nhất giúp Ghost hoàn thành $100\%$ vòng sạch không văng lề).
 
-Để biến Ghost thành đối thủ mạnh nhất và trung thực nhất với môi trường Bullet (Phát hiện F24, Commit `7853722`), nhóm tác giả đã thực hiện quy trình quét thực nghiệm lưới 33 cấu hình (Grid Search) đo đạc trực tiếp trên động cơ Bullet Physics:
-- **Năng lực tăng tốc dọc**: Đo được $a_{\text{engine}} = 3.09\text{ m/s}^2$ ($a_x = 4F_{\text{drive}} / m = 4 \times 850 / 1100$).
-- **Năng lực phanh dọc cực đại**: Hệ thống phanh Bullet đạt tới $18.0\text{ m/s}^2$; để tránh hiện tượng nhấc bổng trục sau (chổng đuôi do trọng tâm cao), tham số an toàn được chốt ở $a_{\text{brake}} = 15.0\text{ m/s}^2$.
-- **Trần gia tốc ngang ổn định**: Qua kiểm thử vòng tròn bán kính cố định (Skidpad test), xe bị văng lề tại cùng một góc cua ($s \approx 2390\text{ m}$) khi $a_{\text{lat}} \ge 1.00\text{G}$. Mốc giới hạn vật lý ổn định cao nhất mà Ghost có thể hoàn thành $100\%$ vòng sạch là $a_{\text{lat}} = 0.95\text{G} = 9.32\text{ m/s}^2$.
-
-Cấu hình hiệu chuẩn `gt3_anchor` này đem lại thời gian lý thuyết $T^* = 110.62\text{ s}$, và thành tích chạy thực tế trong simulator đạt Standing Lap $118.20\text{ s}$ và Flying Lap $112.80\text{ s}$ (hoàn thành $3/3$ vòng đánh giá không va chạm).
+Cấu hình hiệu chuẩn `gt3_anchor` đem lại thời gian lý thuyết $T^* = 110.62\text{ s}$, và thành tích chạy trong simulator đạt Standing Lap $118.20\text{ s}$ và Flying Lap $112.80\text{ s}$ ($3/3$ vòng đánh giá không va chạm).
 
 ---
 
 ## 5. KẾT QUẢ THỰC NGHIỆM VÀ PHÂN TÍCH DỮ LIỆU (EXPERIMENTS & RESULTS)
 
-Toàn bộ kết quả dưới đây được đo lường bằng tập lệnh đánh giá tiêu chuẩn `training/evaluate.py` trên nhánh `feature/111s-honest-anchor`, thực hiện trên sa bàn Silverstone (chiều rộng $9.0\text{ m}$, 18 góc cua), áp dụng luật 4 bánh nghiêm ngặt của FIA, chạy 2 vòng liên tiếp mỗi episode (Vòng 1: Standing Start từ vạch xuất phát; Vòng 2: Flying Lap khi đã đạt tốc độ cao). Số liệu thô được lưu trữ nguyên bản trong thư mục `logs/anchor/`.
+Kết quả đo lường được thực hiện bằng tập lệnh `training/evaluate.py` trên sa bàn Silverstone (chiều rộng $9.0\text{ m}$, 18 góc cua), áp dụng luật 4 bánh FIA, mỗi episode chạy 2 vòng liên tiếp (Vòng 1: Standing Start; Vòng 2: Flying Lap). Số liệu thô lưu tại `logs/anchor/`.
 
 ### 5.1. Bảng Tổng hợp Kết quả Đánh giá Độc lập
 
@@ -228,177 +219,150 @@ Toàn bộ kết quả dưới đây được đo lường bằng tập lệnh �
 | **Ablation Bỏ $r_{\text{center}}$ (Seed 42)**| Nhánh `exp/111s-no-rcenter` | Không hoàn thành | Không hoàn thành | $117.70$ (DNF) | **$0/20$ ($0\%$)** | $69.44$ | $2.75 \pm 0.45$ |
 | **Ablation Bỏ $r_{\text{center}}$ (Seed 43)**| Nhánh `exp/111s-no-rcenter` | $116.85 \pm 0.45$ | $112.40 \pm 0.20$ | $112.20$ | **$2/20$ ($10\%$)** | $88.75$ | $2.56 \pm 0.38$ |
 
-*(Ghi chú: Giá trị hiển thị dạng $\text{Mean} \pm \text{Std}$; số mẫu $n=20$ cho các tác tử RL, $n=3$ cho tác tử tất định Ghost. "Vòng Sạch" được định nghĩa là episode không có bất kỳ thời điểm nào vi phạm luật 4 bánh hoặc va chạm).*
+*(Ghi chú: Giá trị hiển thị dạng $\text{Mean} \pm \text{Std}$; số mẫu $n=20$ cho các tác tử RL, $n=3$ cho tác tử Ghost. "Vòng Sạch" được định nghĩa là episode không có thời điểm nào vi phạm luật 4 bánh hoặc va chạm).*
 
 ### 5.2. Phân tích Hiện tượng RL Vượt qua Nghiệm Tối ưu Giải tích
-Dữ liệu Bảng 2 thể hiện một kết quả đáng kinh ngạc: **Tác tử PPO `ref_111s` đạt thời gian vòng flying $109.44\text{ s}$, nhanh hơn Ghost hiệu chỉnh $3.36\text{ s}$ ($\sim 3.0\%$) và thậm chí vượt qua cả thời gian lý thuyết tối ưu tích phân của mô hình chất điểm ($T^* = 110.62\text{ s}$)**. 
+Dữ liệu Bảng 2 cho thấy tác tử PPO `ref_111s` đạt thời gian vòng flying $109.44 \pm 0.50\text{ s}$, thấp hơn Ghost hiệu chuẩn $3.36\text{ s}$ ($\sim 3.0\%$) và thấp hơn thời gian tích phân lý thuyết chất điểm $T^* = 110.62\text{ s}$. Kết quả lặp lại trên Seed 43 với Flying $109.96 \pm 0.69\text{ s}$ ($19/20$ vòng sạch) xác nhận tính ổn định của mô hình. 
 
-Bằng chứng thực nghiệm lặp lại trên Seed 43 với thành tích Flying $109.96 \pm 0.69\text{ s}$ ($19/20$ vòng sạch) xác nhận hiện tượng này là một thuộc tính có tính quy luật của hệ thống học, không phải do biến động may rủi. Để giải mã hiện tượng này dưới góc nhìn khoa học khách quan, nhóm nghiên cứu đã phân tích dữ liệu Telemetry chuyên sâu:
+Phân tích dữ liệu Telemetry cho thấy hai yếu tố giải thích cho sự chênh lệch này:
+1. **Độ bám Động lực học Tức thời (Instantaneous Dynamic Grip)**:
+   - Mô hình chất điểm của Ghost Car giả định giới hạn gia tốc ngang cố định $a_{\text{lat}} \le 0.95\text{G}$.
+   - Đo đạc gia tốc thực tế của tác tử PPO (Phát hiện F20, F23): Phân vị 95% của gia tốc ngang thực tế đạt $a_{\text{lat, p95}} = 0.99\text{G}$, cực đại tức thời ghi nhận đạt $a_{\text{lat, max}} = 1.21\text{G}$.
+   - **[Suy luận]**: Trong mô phỏng Bullet, hiện tượng dịch chuyển tải trọng động (Dynamic Load Transfer) nén lên hai bánh ngoài kết hợp với góc trượt thân xe ($\beta_{\text{p95}} = 3.5^\circ$, cực đại $18^\circ$) cho phép lốp phát sinh lực bám tức thời vượt ngưỡng ma sát tĩnh trong thời gian ngắn ($0.2 - 0.4\text{s}$). Thuật toán RL tối ưu hóa trực tiếp trên mô phỏng nên đã tận dụng được hiệu ứng động học này.
+2. **Kỹ thuật Trail-Braking**:
+   - Biểu đồ phối hợp gia tốc G-G cho thấy PPO duy trì áp lực phanh nhẹ ($10\% - 25\%$) đồng thời với việc bẻ lái vào cua, thay vì phanh thẳng hoàn toàn rồi mới đánh lái như bộ điều khiển của Ghost. Hành vi này dồn tải trọng lên trục trước, tạm thời tăng lực bám dẫn hướng của bánh trước khi chuyển hướng.
 
-1. **Khai thác Độ bám Động lực học Tức thời (Instantaneous Dynamic Grip)**:
-   - Mô hình chất điểm của Ghost Car áp dụng định luật ma sát tĩnh với trần gia tốc ngang không đổi $a_{\text{lat}} \le 0.95\text{G}$.
-   - Trích xuất dữ liệu cảm biến gia tốc thực tế của xe do PPO điều khiển (Phát hiện F20, F23): Phân vị 95% của gia tốc ngang thực tế đạt $a_{\text{lat, p95}} = 0.99\text{G}$, và gia tốc cực đại tức thời ghi nhận lên tới $a_{\text{lat, max}} = 1.21\text{G}$.
-   - **[Suy luận]**: Trong mô phỏng đa vật thể Bullet, khi xe vào cua gắt, hiện tượng dịch chuyển tải trọng động (Dynamic Load Transfer) nén mạnh lên hai bánh ngoài kết hợp với góc trượt thân xe ($\beta_{\text{p95}} = 3.5^\circ$, đỉnh điểm lên tới $18^\circ$ drift nhẹ) cho phép lốp xe phát sinh lực bám tức thời vượt qua ngưỡng ma sát tĩnh trong khoảng thời gian ngắn ($0.2 - 0.4\text{s}$). RL trực tiếp tối ưu trên mô phỏng nên đã học được cách "ép tải" này, trong khi mô hình chất điểm tĩnh bỏ qua hoàn toàn.
-
-2. **Kỹ thuật Trail-Braking Tự sinh (Emergent Trail-Braking)**:
-   - Phân tích biểu đồ phối hợp gia tốc G-G (G-G Friction Circle Diagram) cho thấy PPO không thực hiện phanh theo kiểu tuần tự (phanh thẳng hoàn toàn rồi mới đánh lái như thuật toán tách rời của Ghost), mà duy trì áp lực phanh nhẹ ($10\% - 25\%$) đồng thời với việc bắt đầu bẻ lái vào apex.
-   - Hành vi này giữ trọng tâm xe dồn lên trục trước, tăng tải trọng thẳng đứng $F_{z, \text{front}}$, từ đó tạm thời gia tăng lực bám dẫn hướng của hai bánh trước ngay tại thời điểm bắt đầu chuyển hướng.
-
-### 5.3. Độ Ổn định và Vấn đề Sai số Biên (Failure Mode Analysis)
-Mặc dù đạt tốc độ vượt trội, mô hình tham chiếu `ref_111s` vẫn tồn tại xác suất rủi ro $10\%$ ($2/20$ episode bị crash):
-- Điểm văng thứ nhất: Mét thứ $2637\text{ m}$ (Góc cua Vale - góc cua chậm sau đoạn thẳng dài, xe lao vào với tốc độ cao và trượt nhẹ 4 bánh ra bãi cỏ).
-- Điểm văng thứ hai: Mét thứ $364\text{ m}$ (Góc cua Farm Curve).
-- Khi tiến hành fine-tune trên chính luật 4 bánh nghiêm ngặt (`ref_111s_ft_strict`, Commit `f4d8ef9`), mô hình cố gắng rút ngắn thêm thời gian vòng đua ($108.98\text{ s}$ flying), nhưng tỷ lệ vòng sạch sụp đổ nghiêm trọng xuống chỉ còn $40\%$ ($8/20$ sạch). Dữ liệu crash phân bổ tập trung cao độ tại đoạn $1734 - 1807\text{ m}$ ($10/12$ vụ tai nạn). Điều này chứng minh rằng khi không có các cơ chế điều chuẩn độ mượt hành động, chính sách PPO bị đẩy sát ranh giới phân kỳ động lực học (Dynamic Divergence Boundary).
+### 5.3. Độ Ổn định và Chế độ Lỗi (Failure Mode Analysis)
+Mô hình `ref_111s` có $2/20$ episode gặp lỗi văng đường ($10\%$ rủi ro):
+- Vị trí 1: Mét thứ $2637\text{ m}$ (Góc cua Vale - góc cua chậm sau đoạn thẳng dài, xe lao vào với vận tốc cao và trượt 4 bánh ra lề).
+- Vị trí 2: Mét thứ $364\text{ m}$ (Góc cua Farm Curve).
+- Khi fine-tune với điều kiện kết thúc nghiêm ngặt ngay khi chạm lề (`ref_111s_ft_strict`, Commit `f4d8ef9`), thời gian vòng flying giảm xuống $108.98\text{ s}$, nhưng tỷ lệ vòng sạch giảm xuống $40\%$ ($8/20$ sạch). Các vụ văng đường tập trung tại đoạn $1734 - 1807\text{ m}$ ($10/12$ lần), cho thấy việc ép tốc độ mà không có ràng buộc độ mượt hành động dễ khiến tác tử rơi vào vùng phân kỳ động lực học.
 
 ---
 
-## 6. NGHIÊN CỨU BÓC TÁCH VÀ THẢO LUẬN LIÊM CHÍNH (ABLATIONS & CRITICAL DISCUSSION)
+## 6. NGHIÊN CỨU BÓC TÁCH VÀ THẢO LUẬN (ABLATIONS & DISCUSSION)
 
-### 6.1. Nghiên cứu Bóc tách Vai trò của Thành phần Phạt Lệch Tim đường ($r_{\text{center}}$)
-Trong bản đặc tả ban đầu (`PROJECT_SPECIFICATION.md`), việc đưa thành phần phạt lệch tim đường $r_{\text{center}} = -c_{\text{center}} (d_t/w)^2$ bị coi là vi phạm nguyên tắc "để xe tự do học đường đua tối ưu", vì phạt tim đường sẽ cản trở xe mở rộng cua hình học (Out-In-Out).
-
-Để kiểm chứng tác động thực tế, nhóm nghiên cứu đã thực hiện thí nghiệm bóc tách triệt để (Ablation A13, Nhánh `exp/111s-no-rcenter`): giữ nguyên toàn bộ siêu tham số và hạt giống ngẫu nhiên, chỉ đặt $c_{\text{center}} = 0.0$.
+### 6.1. Bóc tách Vai trò của Thành phần Phạt Lệch Tim đường ($r_{\text{center}}$)
+Thí nghiệm bóc tách (Ablation A13, Nhánh `exp/111s-no-rcenter`): giữ nguyên toàn bộ siêu tham số và hạt giống ngẫu nhiên, chỉ đặt hệ số $c_{\text{center}} = 0.0$.
 - **Kết quả đo được**:
-  - Tại Seed 42: Tỷ lệ vòng sạch sụt giảm từ $90\%$ xuống **$0\%$ ($0/20$ vòng hoàn thành, $20/20$ vụ tai nạn)**. Xe liên tục văng khỏi đường ngay tại mét $363 - 365\text{ m}$ (13 lần crash lặp lại chính xác tại cùng một mét cua).
-  - Tại Seed 43: Tỷ lệ vòng sạch sụt giảm từ $95\%$ xuống **$10\%$ ($2/20$ vòng hoàn thành)**.
-- **Cơ chế Khoa học**:
-  - Khi không có $r_{\text{center}}$, không gian khám phá của bài toán trở nên quá rộng trong điều kiện mặt đường hẹp ($4.5\text{ m}$). Hệ số chiết khấu $\gamma = 0.99$ tương đương với tầm nhìn hiệu dụng khoảng $\sim 10\text{s}$ ($\frac{1}{1 - \gamma} \times 0.1\text{s} = 100$ bước). 
-  - Tại các góc cua gắt, phần thưởng tiến độ tức thời $r_{\text{prog}}$ thúc đẩy xe cắt góc sớm (Early Apex) để tối đa hóa quãng đường ngắn nhất trước mắt, khiến xe mất quỹ đạo thoát cua và văng lề ở lối ra.
-  - $r_{\text{center}}$ đóng vai trò như một "hàng rào thế năng mềm" (Soft Potential Barrier), giữ xe không bị trôi dạt quá xa vào vùng nguy hiểm trong các giai đoạn đầu của quá trình học. Minh chứng là ở bản `ref_111s`, mặc dù có $r_{\text{center}}$, sai số lệch so với racing line tối ưu (Line MAE) vẫn đạt $2.12\text{ m}$, cho thấy xe vẫn biết cách mở cua ra sát biên khi cần thiết.
+  - Tại Seed 42: Tỷ lệ vòng sạch giảm từ $90\%$ về **$0\%$ ($0/20$ vòng hoàn thành)**. Xe liên tục văng lề tại mét $363 - 365\text{ m}$ (13 lần lặp lại tại cùng một góc cua).
+  - Tại Seed 43: Tỷ lệ vòng sạch giảm từ $95\%$ về **$10\%$ ($2/20$ vòng hoàn thành)**.
+- **Phân tích cơ chế**:
+  - Khi không có $r_{\text{center}}$, không gian khám phá mở rộng trong điều kiện mặt đường hẹp ($4.5\text{ m}$). Hệ số chiết khấu $\gamma = 0.99$ tương đương tầm nhìn hiệu dụng khoảng 100 bước ($10\text{s}$). 
+  - Tại các góc cua gắt, phần thưởng tiến độ tức thời $r_{\text{prog}}$ thúc đẩy xe cắt góc sớm (Early Apex) để tối đa hóa tiến độ trước mắt, khiến xe mất quỹ đạo thoát cua và thiếu không gian mặt đường ở lối ra.
+  - $r_{\text{center}}$ đóng vai trò như một lực kéo mềm giữ xe trong phạm vi an toàn. Ở bản `ref_111s`, sai số lệch racing line (Line MAE) vẫn đạt $2.12\text{ m}$, cho thấy xe vẫn mở rộng cua khi cần thiết.
 
-### 6.2. Cơ chế Vi mô của Hiện tượng Rung giật Điều khiển (Bang-bang / PWM Chattering)
-Dữ liệu Telemetry ở tần số $10\text{ Hz}$ ghi nhận phong cách lái của PPO `ref_111s` và các nhánh mở rộng (Phát hiện F20, F23, và Phân tích `plan_notices.md` §1):
-- **Đảo chiều lái**: Trung bình PPO đảo chiều vô lăng tới **$60$ lần trên mỗi $100$ bước** ($6\text{ Hz}$ oscillation), với biên độ biến thiên $|\Delta\text{steer}| = 0.074$.
-- **Nhấp nhả pedal chu kỳ 2 bước (5 Hz PWM)**: PPO `ref_111s` có tần suất chuyển đổi giữa ga và phanh là $4.7$ lần / $100$ bước (trong khi ở các nhánh chưa hiệu chỉnh như P2 v2, con số này lên tới $20.3$ lần / $100$ bước). Ngược lại, Ghost Car giải tích chỉ đổi trạng thái pedal $0.2$ lần / $100$ bước.
+### 6.2. Hiện tượng Rung giật Điều khiển (5 Hz PWM Chattering)
+Dữ liệu Telemetry ghi nhận đặc tính điều khiển của PPO `ref_111s` (Commit `7853722`):
+- **Đảo chiều lái**: Trung bình $60$ lần đảo chiều vô lăng trên mỗi $100$ bước, biên độ biến thiên trung bình $|\Delta\text{steer}| = 0.074$.
+- **Chuyển đổi Ga - Phanh (5 Hz PWM)**: PPO `ref_111s` có tần suất chuyển đổi giữa ga và phanh là $4.7$ lần / $100$ bước (so với Ghost Car là $0.2$ lần / $100$ bước).
 
-*Bảng 3: So sánh chỉ số điều khiển giữa PPO Agent và Ghost Car.*
+*Bảng 3: Chỉ số điều khiển giữa PPO Agent và Ghost Car.*
 
-| Chỉ số Đánh giá Độ mượt | PPO `ref_111s` (Map Half) | PPO P2 v2 (Map Full, GT3Real) | Ghost Hiệu chỉnh (`gt3_anchor`) |
+| Chỉ số Đánh giá | PPO `ref_111s` (Map Half) | PPO P2 v2 (Map Full, GT3Real) | Ghost Hiệu chuẩn (`gt3_anchor`) |
 | :--- | :---: | :---: | :---: |
 | Số lần đảo chiều lái / 100 bước | **$60$** | **$74$** | **$16$** |
 | Biến thiên góc lái trung bình $|\Delta\text{steer}|$ | $0.074$ | $0.121$ | $0.007$ |
-| Số lần đổi trạng thái Ga $\leftrightarrow$ Phanh / 100 bước | **$4.7$** | **$20.3$** | **$0.2$** |
+| Tần suất đổi Ga $\leftrightarrow$ Phanh / 100 bước | **$4.7$** | **$20.3$** | **$0.2$** |
 | Góc trượt thân xe $\beta$ (Phân vị 95% / Max) | $3.5^\circ / 18.0^\circ$ | $8.9^\circ / 52.7^\circ$ | $2.0^\circ / 3.8^\circ$ |
 
-**Phân tích Cơ chế Vi mô và Liên hệ Lý thuyết CAPS (Mysore et al., 2021)**:
-1. *Cơ chế Hình thành Dao động Chu kỳ 2 Bước (`obs[6]` Feedback Loop)*:
-   Trong vector quan sát, chiều thứ 7 đưa trực tiếp giá trị `last_pedal` vào Actor MLP:
+**Phân tích nguyên nhân và liên hệ lý thuyết CAPS (Mysore et al., 2021)**:
+1. *Mạch dao động pedal 2 bước do `obs[6]`*:
+   Vector quan sát nạp trực tiếp giá trị `last_pedal` vào Actor:
    $$\text{obs}[6] = a_{t-1}^{\text{thr}} \cdot (1 - a_{t-1}^{\text{brk}}) - a_{t-1}^{\text{brk}}$$
-   Tuy nhiên, hàm thưởng vi mô chỉ phạt độ rung giật góc lái ($r_{\text{steer\_smooth}} = -0.1 \cdot (\Delta\delta)^2$) mà hoàn toàn **không có khoản phạt độ giật bàn đạp ($r_{\text{pedal\_smooth}} = 0$)**. Do nguy cơ văng đường bị phạt nặng, mạng nơ-ron Actor học cách duy trì vận tốc an toàn (~150 km/h) bằng cách tạo thành một mạch dao động nghịch đảo liên tục mỗi bước ($\Delta t = 0.1\text{s} \implies 5\text{ Hz}$):
-   - Bước chẵn: Quan sát thấy `last_pedal < 0` $\implies$ xuất lệnh ga dương ($+0.3$ đến $+0.7$).
-   - Bước lẻ: Quan sát thấy `last_pedal > 0` $\implies$ xuất lệnh rà phanh nhẹ ($-0.1$ đến $-0.3$).
-   Gia tốc dọc trung bình trượt qua 2 bước bằng $0$, nhưng việc nhấp nhả ga/phanh liên tục gây ra hiện tượng **dồn tải trọng dọc (longitudinal load transfer) không ngừng**. Tại thời điểm bắt đầu vào cua, nhịp giật pedal làm tải trọng và lực bám ngang của hai bánh trước dao động mạnh, giải thích nguyên nhân xe bị văng mất lái ngay cả khi vận tốc vào cua thấp hơn vận tốc tối ưu $v^*$!
-2. *Ảo giác Thống kê về Độ mượt (Insight I10)*:
-   Bản `ref_111s` trông có vẻ "mượt mà" hơn các nhánh Phase 2 map lớn chủ yếu là vì xe chạy ở dải vận tốc thấp hơn ($88\text{ km/h}$ so với $144\text{ km/h}$) và đặc tính understeer của bug F16. Do gia tốc ngang ly tâm tỉ lệ với bình phương vận tốc ($a_y \propto v^2 \cdot \delta$), cùng một biên độ giật lái $|\Delta\delta| = 0.074$ ở $144\text{ km/h}$ sẽ phát sinh xung lực ngang lớn gấp gần **$4\text{ lần}$** so với ở $88\text{ km/h}$, lập tức đẩy xe vượt qua elip ma sát bão hòa và gây drift mất kiểm soát ($\beta_{\text{max}} = 52.7^\circ$).
-3. *Tại sao Ràng buộc Vật lý Cơ học Thất bại trước Bang-bang?*
-   Việc thử nghiệm bộ lọc thông thấp EMA (`c1904fa`) hay mô hình sức cản bánh lái trong `ExtendedVehiclePhysics` (`a79aee7`) không giải quyết được chattering vì Actor MLP nhanh chóng học cách bù trừ ngược lại độ trễ của bộ lọc. Đúng như phân tích của Mysore et al. (2021) và Seyde et al. (2021), chattering là hệ quả của hàm mục tiêu Markov; chỉ khi bổ sung số hạng điều chuẩn thời gian $L_T$ trực tiếp vào loss hoặc phạt $\Delta\text{pedal}^2$ trong reward thì mới triệt tiêu được hiện tượng này.
+   Trong khi đó, hàm thưởng chỉ phạt độ giật lái ($r_{\text{steer}} = -0.1 \cdot (\Delta\delta)^2$) mà không có thành phần phạt độ giật pedal ($r_{\text{pedal}} = 0$). Mạng nơ-ron hình thành chu kỳ dao động 2 bước (bước chẵn đạp ga dương $+0.3$ đến $+0.7$, bước lẻ rà phanh nhẹ $-0.1$ đến $-0.3$). Dao động này gây dồn tải dọc liên tục, làm dao động tải trọng pháp tuyến bánh trước khi vào cua.
+2. *Ảnh hưởng của vận tốc*:
+   Gia tốc ngang tỷ lệ với bình phương vận tốc ($a_y \propto v^2 \delta$). Ở dải tốc độ cao (nhánh Phase 2, $> 140\text{ km/h}$), cùng một biên độ giật lái $|\Delta\delta| \approx 0.07$ phát sinh lực quán tính ngang lớn gấp gần 4 lần so với ở $88\text{ km/h}$, dễ đẩy lốp xe vào vùng bão hòa ma sát.
 
-### 6.3. Bóc tách Nhánh PPO + Racing Line (Ablation R14 / P2-line)
-Trong nhánh thử nghiệm `p2_line` (Commit `11807e4`), nhóm nghiên cứu đưa trực tiếp sai lệch khoảng cách và vận tốc mục tiêu của racing line tối ưu $(\Delta d_{\text{line}}, v^*)$ vào quan sát.
-- **Hiện tượng đo được (Phát hiện F21)**: Tác tử PPO + Line đạt vòng sạch đầu tiên rất sớm (tại $1.147\text{M}$ steps, so với $2.15\text{M}$ steps của nhánh pure), chứng minh racing line đóng vai trò như một gợi ý an toàn (safety guide) rất tốt.
-- **Hệ quả dài hạn**: Tuy nhiên, sau mốc $2.0\text{M}$ steps, thời gian vòng đua của tác tử bị thoái hóa dần: từ $146.6\text{s}$ chậm dần về $173 - 181\text{s}$, vận tốc trung bình tụt từ $144\text{ km/h}$ xuống $115\text{ km/h}$.
-- **Giải mã cơ chế**: Do hàm phạt văng đường tỉ lệ với bình phương vận tốc ($\propto v^2$) quá nặng so với áp lực thời gian, kết hợp với việc bám theo line định sẵn khiến tác tử triệt tiêu động lực khám phá các đường chạy vượt giới hạn bám. Điều này khẳng định kết luận khoa học: **Racing line trong quan sát giúp tăng tốc độ hội tụ an toàn ban đầu, nhưng cản trở việc khám phá ra các giải pháp điều khiển siêu việt ở giới hạn ma sát**.
+### 6.3. Bóc tách PPO + Racing Line (Ablation R14 / P2-line)
+Trong nhánh thử nghiệm `p2_line` (Commit `11807e4`), thông tin sai lệch khoảng cách và vận tốc mục tiêu của racing line $(\Delta d_{\text{line}}, v^*)$ được đưa vào quan sát:
+- Tác tử đạt vòng sạch sớm tại $1.15\text{M}$ bước (so với $2.15\text{M}$ bước của nhánh pure).
+- Tuy nhiên, sau mốc $2.0\text{M}$ bước, thời gian vòng đua thoái hóa dần từ $146.6\text{s}$ về $173 - 181\text{s}$, vận tốc trung bình giảm từ $144\text{ km/h}$ xuống $115\text{ km/h}$.
+- Nguyên nhân: Việc bám theo line định sẵn kết hợp với phạt văng đường nặng làm giảm xu hướng khám phá các giới hạn bám cao hơn của tác tử.
 
-### 6.4. Các Lỗi Kỹ thuật PPO Đã Được Khắc phục (Debugging Findings)
-1. **Lỗi Đóng băng Độ lệch chuẩn Khám phá (F1 - Actor Log-std Freeze)**:
-   - *Cơ chế*: Hàm forward của Actor sử dụng lệnh `torch.clamp(self.actor_logstd, min=-2.3, max=0.0)`. Khi tham số gốc trôi ra ngoài biên do bước cập nhật Adam, đạo hàm của phép clamp triệt tiêu về $0$, khiến gradient của policy loss và entropy bonus hoàn toàn biến mất. Tham số bị kẹt vĩnh viễn ở biên.
-   - *Hệ quả*: Tại commit `2055469`, độ lệch chuẩn phanh bị kẹt ở mức cực đại ($\sigma_{\text{brake}} = 1.0$), khiến $70\%$ số bước rollout bị phanh ngẫu nhiên, làm tỷ lệ tai nạn luôn ở mức xấp xỉ $100\%$.
-   - *Bản vá*: Thay thế việc clamp trong forward bằng thao tác chiếu trực tiếp tham số (In-place Parameter Projection) sau bước tối ưu hóa: `self.ac.actor_logstd.clamp_(MIN, MAX)`.
-2. **Lỗi Lệch Mật độ Xác suất Squashed Gaussian (F2 - Log-prob Mismatch)**:
-   - Khắc phục sự sai lệch giữa hành động rời rạc lấy mẫu trong quá trình rollout và việc tính toán lại log-likelihood trong pha tối ưu hóa PPO, đồng bộ hóa ngưỡng cận $\text{ACTION\_BOUND} = 0.999$ và phép bù Jacobian.
-3. **Cạm bẫy Suy sụp Khám phá khi Decay Entropy (F14 & Insight I9)**:
-   - Thử nghiệm giảm hệ số entropy (`ent_coef`) về $0.001$ khiến phương sai đánh lái $\sigma_{\text{steer}}$ sập xuống mức sàn $0.10$ chỉ sau $150\text{k}$ bước. Kết quả là tác tử bị kẹt trong một "hố đen cục bộ", liên tục đâm vào đúng góc cua mét thứ $1306\text{ m}$ suốt 8 lần đánh giá liên tiếp. Khi mạng Critic dự đoán chính xác xác suất tai nạn, value loss giảm về $0.05$ và triệt tiêu hoàn toàn gradient khám phá.
-   - *Giải pháp*: Cố định `ent_coef = 0.01` và thiết lập trần độ lệch chuẩn độc lập theo từng chiều: $\text{LOGSTD\_MAX} = [0.0, -0.7, -0.7]$ cho $[\text{steer}, \text{throttle}, \text{brake}]$.
-4. **Sửa đổi Khởi tạo Thiên vị Chân phanh (F14 - Brake Bias Initialization)**:
-   - Lớp tuyến tính cuối của Actor được khởi tạo với trọng số thiên vị chân phanh âm (`bias[2] = -1.6`), giúp xác suất phanh ngẫu nhiên ban đầu giảm từ $50\%$ xuống dưới $5\%$, ngăn chặn triệt để hiện tượng tác tử học thói quen rê phanh đứng yên tại vạch xuất phát.
+### 6.4. Các Lỗi Kỹ thuật Đã Xử lý trong Huấn luyện PPO
+1. **Kẹt Độ lệch chuẩn Khám phá (F1 - Actor Log-std Freeze)**:
+   - Forward pass dùng `torch.clamp(self.actor_logstd, min=-2.3, max=0.0)`. Khi giá trị trôi ra ngoài khoảng, gradient triệt tiêu khiến tham số bị kẹt ở biên. Tại commit `2055469`, độ lệch chuẩn phanh bị kẹt ở $\sigma_{\text{brake}} = 1.0$, gây phanh ngẫu nhiên liên tục.
+   - Khắc phục: Thay clamp trong forward bằng phép chiếu trực tiếp tham số sau bước cập nhật Adam: `self.ac.actor_logstd.clamp_(MIN, MAX)`.
+2. **Bù trừ Jacobian cho Squashed Gaussian (F2)**: Đồng bộ hóa biên hành động $\text{ACTION\_BOUND} = 0.999$ và định thức Jacobian trong tính toán log-likelihood của PPO.
+3. **Hiện tượng Sập Khám phá khi Giảm Entropy (F14 & I9)**: Giảm hệ số entropy về $0.001$ khiến phương sai đánh lái sập về $0.10$ chỉ sau $150\text{k}$ bước, làm tác tử kẹt trong cực tiểu cục bộ và liên tục va chạm tại mét $1306\text{ m}$. Khắc phục bằng cách cố định `ent_coef = 0.01` và đặt trần độ lệch chuẩn riêng cho từng trục hành động.
+4. **Khởi tạo Thiên vị Chân phanh (F14)**: Đặt trọng số thiên vị ban đầu của lớp phanh âm (`bias[2] = -1.6`), giảm xác suất phanh ngẫu nhiên ban đầu từ $50\%$ xuống dưới $5\%$.
 
-### 6.5. Mở rộng Đua Đa Tác tử (6-Car Self-play MARL) và Khí động học F1 Downforce
-Tại các nhánh phát triển mở rộng của nhóm nghiên cứu (`origin/feature/multicar-selfplay` commit `7ab74a5`, và `feature/f1-downforce` commit `cdfb928` / `24fb2e4`):
-- **Đua Đa Tác tử Tự Chơi (6-Car MARL Self-Play)**:
-  - Triển khai 6 xe đua GT3 cùng xuất phát so le trên sa bàn mở rộng 3 làn ($13.5\text{ m}$). 
-  - *Hàm thưởng va chạm đối xứng (Symmetric Collision Penalty)*: Nhằm loại bỏ rủi ro sai lệch của các quy tắc heuristic phán đoán góc đâm, cả xe gây va chạm và xe bị đâm đều nhận mức phạt đối xứng: $-2.0$ tại thời điểm va chạm đầu và $-0.2/\text{step}$ trong suốt thời gian tiếp xúc.
-  - *Thưởng vượt xe sạch có kiểm soát (Controlled Overtake Bonus)*: Tác tử vượt xe thành công trên mặt đường nhựa nhận $+1.0$, kèm cơ chế thời gian hồi (cooldown) $50\text{ bước}$ ($5.0\text{s}$) giữa từng cặp xe nhằm triệt tiêu hoàn toàn hành vi "cày điểm" tiến-lùi (oscillating overtake loops).
-  - *Cơ chế Hồi sinh Tại chỗ (In-place Respawn)*: Xe gặp sự cố được hồi sinh ngay trên làn đường với vận tốc giảm về $0$, phạt điểm tỉ lệ với bình phương vận tốc lúc va chạm, và nhận thời gian miễn trừ xếp hạng $150\text{ bước}$ để tránh phá vỡ phân phối trạng thái của các xe phía sau.
-  - *Hiệu ứng núp gió (Slipstream)*: Tái hiện chân thực vùng chân không phía sau đuôi xe, giúp xe bám đuôi tăng tốc độ tiếp cận khi cự ly $< 15\text{ m}$.
-- **Khí động học Lực ép Xuống (F1 Aerodynamic Downforce)**:
-  - Bổ sung phương trình lực ép khí động học tỉ lệ với bình phương vận tốc:
-    $$F_{\text{down}} = m \cdot g \cdot \left(\frac{v}{200}\right)^2$$
-  - Giúp gia tăng tải trọng thẳng đứng $F_z$ ở tốc độ cao mà không làm tăng khối lượng quán tính. Xe F1 đơn đạt tốc độ tối đa $301\text{ km/h}$ và hoàn thành vòng đua Silverstone trong thời gian kỷ lục $111.7\text{ s}$ trên sa bàn tỷ lệ lớn.
+### 6.5. Khảo sát Mở rộng: Đua Đa Tác tử (MARL) và Lực ép Khí động học (Downforce)
+Bên cạnh trục thực nghiệm chính trên môi trường `gt3_anchor`, nhóm nghiên cứu đã tiến hành khảo sát mở rộng trên hai nhánh thử nghiệm:
+1. **Khảo sát Lực ép Khí động học (`feature/f1-downforce`)**:
+   - Thử nghiệm bổ sung phương trình lực ép khí động học tỷ lệ với bình phương vận tốc:
+     $$F_{\text{down}} = m \cdot g \cdot \left(\frac{v}{200}\right)^2$$
+   - Lực ép làm tăng tải trọng thẳng đứng $F_z$ ở tốc độ cao mà không làm tăng khối lượng quán tính $m$, giúp mở rộng giới hạn ma sát ngang $F_{y, \text{max}} = \mu F_z$. Mô hình đạt vận tốc $301\text{ km/h}$ và hoàn thành vòng đua mà không văng lề.
+   - **Ghi chú phương pháp**: Việc bổ sung downforce nhân tạo làm thay đổi đặc tính động lực học so với xe thể thao GT3 tiêu chuẩn. Do đó, mô hình này không dùng để đối chuẩn với mốc giải tích của xe GT3 ban đầu.
+2. **Khảo sát Đua Đa Tác tử 6 Xe (`origin/feature/multicar-selfplay`)**:
+   - Thử nghiệm 6 xe cùng xuất phát trên sa bàn mở rộng 3 làn ($13.5\text{ m}$).
+   - Áp dụng các cơ chế: phạt va chạm đối xứng ($-2.0$ khi chạm, $-0.2/\text{step}$ tiếp xúc), cooldown vượt xe 50 bước ($5.0\text{s}$), và cơ chế hồi sinh tại chỗ (in-place respawn) với 150 bước miễn trừ xếp hạng.
+   - **Ghi chú phương pháp**: Quá trình huấn luyện trải qua nhiều lần tinh chỉnh tham số giữa các checkpoint; số liệu thu được mang tính chất khảo sát định tính về hành vi tương tác nhóm.
 
-### 6.6. Bảng Phân Tích Thực Nghiệm Toàn Diện Các Chuỗi Ablation và Log Huấn Luyện (Comprehensive Cross-Run Ablation & Telemetry Analysis)
-Để trả lời thấu đáo các câu hỏi về tác động độc lập của từng thành phần kỹ thuật, nhóm nghiên cứu đã rà soát và phân tích định lượng toàn bộ dữ liệu thô trích xuất từ các thư mục log thực nghiệm (`logs/run_*`, `logs/multicar_*`, `logs/p1_main`, `logs/p2_*`).
+### 6.6. Bảng Tổng hợp So sánh Các Chuỗi Thực Nghiệm
 
-*Bảng 4: Ma trận so sánh định lượng các chuỗi thực nghiệm Ablation trên toàn bộ dự án.*
+*Bảng 4: Tổng hợp định lượng các chuỗi thực nghiệm trong dự án.*
 
-| Mã Run / Nhánh Nguồn | Cấu hình & Biến số Khảo sát | Tổng Bước / Mẫu | Tỷ lệ Hoàn thành Max (Cuối) | Lap Nhanh nhất [s] | Tỷ lệ Vòng Sạch / Hoàn thành | Va chạm (Contacts) / Respawns | Nhận định Kỹ thuật Cốt lõi |
-| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
-| **`run_a0_legacy`** (Nhánh `0180988`) | Baseline cũ: Lỗi F1 (σ kẹt trần), thiếu Jacobian F2, không $r_{\text{time}}$ | $3.38\text{M}$ steps | $42.5\%$ ($19.4\%$) | $147.5\text{s}$ (DNF) | **$0/20$ ($0\%$)** (Crash $100\%$) | – | **Thất bại hoàn toàn**: $\sigma_{\text{brake}} = 1.0$ khiến $70\%$ bước bị phanh ngẫu nhiên; không có vòng sạch. |
-| **`p1_main`** (Nhánh `7853722`) | Đã vá F1/F2; thưởng về đích hàm mũ; map half; thử decay entropy | $2.66\text{M}$ steps | **$100.0\%$** ($46.0\%$) | $130.2\text{s}$ | Vòng sạch đầu tiên tại $1.35\text{M}$; cuối run crash $100\%$ | – | **Exploration Collapse (F14 & I9)**: Decay ent về $0.001$ làm kẹt vĩnh viễn ở khúc cua $46\%$ (mét 1306). |
-| **`p2_single` v2** (Nhánh `819d3e1`) | Map 1:1, GT3RealCar, trần bám $1.56\text{G}$, vận tốc $> 140\text{ km/h}$ | $3.32\text{M}$ steps | **$100.0\%$** ($66.8\%$) | **$137.5\text{s}$** (Best sạch $143.4\text{s}$) | $0/10$ sạch ở $3.3\text{M}$; $5/10$ crash ở $5.4\text{km}$ | – | **Hiện tượng F17 & F20**: Giật pedal 5 Hz và đảo lái 74 lần/100 bước gây drift văng lề ở vận tốc cao ($a_y \propto v^2\delta$). |
-| **`p2_line`** (Nhánh `6df6ba9`) | Map 1:1, PPO + Racing line và $v^*$ trong observation (Prior) | $2.66\text{M}$ steps | **$100.0\%$** ($54.0\%$) | $138.6\text{s}$ (Sạch $153.7\text{s}$) | Sạch sớm tại $1.15\text{M}$; sau $2\text{M}$ chậm dần | – | **Prior Trade-off (F21)**: Line giúp an toàn sớm nhưng giảm tốc độ về $115\text{ km/h}$ do triệt tiêu động lực khám phá. |
-| **`run_v5`** (`logs/run_v5`) | GT3 3 làn đường ($13.5\text{m}$), $r_{\text{time}} = 0$, không penalize steer | $379\text{k}$ steps | $11.8\%$ ($10.1\%$) | Không có | $0\%$ (Crash $100\%$) | – | Xe rơi vào bẫy rà phanh chạy chậm, không vượt qua được nửa vòng đầu. |
-| **`run_v6`** (`logs/run_v6`) | GT3 3 làn, điều chỉnh phân bố khởi tạo | $737\text{k}$ steps | $32.7\%$ ($12.4\%$) | Không có | $0\%$ (Crash $100\%$) | – | Tiến độ tăng nhưng tiếp tục crash ở các góc cua tốc độ cao do thiếu áp lực thời gian. |
-| **`run_v7`** (`logs/run_v7`) | GT3 3 làn, bổ sung áp lực thời gian $r_{\text{time}} = -0.01/\text{step}$ | $963\text{k}$ steps | **$100.0\%$** ($27.3\%$) | $141.5\text{s}$ | Checkpoint `clean_389k`: **$5/6$ ($83.3\%$)** sạch | – | **Đột phá hoàn thành vòng đua**: Áp lực thời gian ép tác tử duy trì vận tốc qua apex; đạt $150\text{s}$ vòng sạch. |
-| **`run_v8b`** (`logs/run_v8b`) | GT3 3 làn, 40D obs, Slew rate $0.18$ + Phạt mượt lái $-0.1(\Delta\delta)^2$ | $502\text{k}$ steps | **$100.0\%$** ($22.6\%$) | **$135.4\text{s}$** | Checkpoint `clean_123k`: **$5/6$ ($83.3\%$)** sạch | – | **Tối ưu hóa độ mượt 40D**: Hoàn thành vòng đua ở $123\text{k}$ bước, tốc độ TB $69.0\text{ km/h}$, lap sạch $141.2\text{s}$. |
-| **`run_f1b`** (`logs/run_f1b`) | F1 đơn có Downforce, tinh chỉnh hệ số ma sát và lực bám | $399\text{k}$ steps | **$100.0\%$** ($100.0\%$) | $138.9\text{s}$ | **$100\%$ sạch** (Crash $0.0\%$) | – | Downforce giúp xe bám đường tuyệt đối, triệt tiêu hoàn toàn nguy cơ văng lề ở giai đoạn đầu. |
-| **`run_f1c`** (`logs/run_f1c`) | F1 đơn Downforce $F_{\text{down}} = mg(v/200)^2$, tốc độ trần $301\text{ km/h}$ | $1.00\text{M}$ steps | **$100.0\%$** ($87.8\%$) | **$109.4\text{s}$** | **$100\%$ sạch ($2/2$) liên tục** từ 600k đến 1000k | – | **Hiệu năng siêu việt**: Tốc độ trung bình tăng từ $83.8\text{ km/h}$ (600k) lên $90.2\text{ km/h}$ (last agent), lap $109.4\text{s}$. |
-| **`multicar_v1`** (`logs/multicar_v1`) | MARL 6 xe GT3 self-play, xuất phát hàng ngang (abreast grid) | $4.45\text{M}$ samples | $39.1\%$ | $128.2\text{s}$ | $1/6$ xe hoàn thành | Contacts: $12$ | Xe va chạm chùm ngay vạch xuất phát do cự ly hàng ngang quá hẹp. |
-| **`multicar_v3`** (`logs/multicar_v3`) | MARL 6 xe GT3, xuất phát so le (staggered grid), cooldown vượt | $1.41\text{M}$ samples | $40.0\%$ | $132.9\text{s}$ | $2/6$ xe hoàn thành | Contacts: $100$ | Cải thiện xuất phát nhưng xe vẫn dính nhau ở góc cua hẹp đầu tiên. |
-| **`multicar_f1`** (`logs/multicar_f1`) | MARL 6 xe F1 Downforce thế hệ 1, phạt va chạm ban đầu | $1.47\text{M}$ samples | $33.1\%$ | $111.2\text{s}$ | $1/6$ xe hoàn thành | Contacts: $67$ | Tốc độ cao khiến các pha va chạm dây chuyền làm hỏng episode của cả nhóm. |
-| **`multicar_f1b`** (`logs/multicar_f1b`) | MARL 6 xe F1, điều chỉnh lực đẩy hồi tiếp | $660\text{k}$ samples | $64.5\%$ | $113.5\text{s}$ | $3/6$ xe hoàn thành | Contacts: $113$ | Tỷ lệ hoàn thành tăng vọt lên $64.5\%$, $3/6$ xe về đích an toàn. |
-| **`multicar_f1d`** (`logs/multicar_f1d`) | MARL 6 xe F1, cơ chế hồi sinh tại chỗ (In-place Respawn) | $1.50\text{M}$ samples | $92.5\%$ | $114.5\text{s}$ | **$5/6$ xe hoàn thành** | Contacts: $106$, Respawns: $14$ | **Bước ngoặt MARL**: Cơ chế hồi sinh giữ các xe tiếp tục học, $5/6$ xe hoàn thành chặng đua. |
-| **`multicar_f1e`** (`logs/multicar_f1e`) | MARL 6 xe F1 hoàn thiện: Phạt đối xứng $-2.0/-0.2$, miễn trừ 150 bước | $1.50\text{M}$ samples | **$94.7\%$** | **$112.9\text{s}$** | **$5.67 / 6$ xe ($\approx 95\%$)** | Contacts: **$33.0$**, Respawns: **$5.3$** | **Đỉnh cao tự chơi 6 xe**: Checkpoint 750k đạt $6/6$ về đích với chỉ $1$ respawn và $44$ va chạm; lap trung bình $123.2\text{s}$. |
+| Mã Run / Nhánh Nguồn | Cấu hình & Biến số Khảo sát | Tổng Bước Huấn Luyện | Tỷ lệ Hoàn thành Cuối | Thời gian Vòng [s] | Tỷ lệ Vòng Sạch | Nhận định Kỹ thuật |
+| :--- | :--- | :---: | :---: | :---: | :---: | :--- |
+| **`ref_111s` (Mô hình Chính)** (`ee99f9d`) | GT3, 35D pure obs, 3D action, map half ($4.5\text{m}$), $r_{\text{center}} = 0.04$ | $2.15\text{M}$ steps | **$100.0\%$** | Flying TB: **$109.4\text{s}$** (Best $108.6\text{s}$) | **$18/20$ ($90\%$)** | Mô hình tham chiếu chính: Khai thác gia tốc ngang tức thời ($1.21\text{G}$) và trail-braking, hoàn thành ổn định dưới luật 4 bánh FIA. |
+| **PPO Seed 43 (Kiểm chứng)** (`7853722`) | Cùng cấu hình `ref_111s`, thay đổi hạt giống ngẫu nhiên | $2.15\text{M}$ steps | **$100.0\%$** | Flying TB: **$110.0\text{s}$** (Best $108.6\text{s}$) | **$19/20$ ($95\%$)** | Xác nhận tính lặp lại độc lập của thuật toán PPO trên hạt giống ngẫu nhiên khác nhau. |
+| **`111s_no_rcenter`** (`exp/...`) | Giữ nguyên `ref_111s`, bỏ phạt tim đường $c_{\text{center}} = 0.0$ | $2.15\text{M}$ steps | $0.0\%$ | $112.2\text{s}$ (DNF) | **$0/20$ ($0\%$)** ở S42; **$2/20$ ($10\%$)** ở S43 | Bóc tách: Thiếu $r_{\text{center}}$, tầm nhìn ngắn của $\gamma = 0.99$ khiến xe sa bẫy Early Apex và văng lề ở mét 363. |
+| **`run_a0_legacy`** (`0180988`) | Baseline cũ: Lỗi F1 (σ kẹt trần), thiếu bù Jacobian F2 | $3.38\text{M}$ steps | $19.4\%$ | $147.5\text{s}$ (DNF) | **$0/20$ ($0\%$)** (Crash $100\%$) | Lỗi kẹt tham số độ lệch chuẩn phanh khiến tác tử không thể hoàn thành vòng đua. |
+| **`p1_main`** (`7853722`) | Đã vá F1/F2; thưởng về đích hàm mũ; thử decay entropy | $2.66\text{M}$ steps | $46.0\%$ | $130.2\text{s}$ | Sạch ở $1.35\text{M}$; cuối run crash $100\%$ | Suy giảm phương sai khám phá quá sớm dẫn đến kẹt cục bộ tại góc cua mét thứ $1306\text{m}$. |
+| **`p2_single` v2** (`819d3e1`) | Map 1:1, GT3RealCar, $v > 140\text{ km/h}$ | $3.32\text{M}$ steps | $66.8\%$ | Best sạch $143.4\text{s}$ | $0/10$ sạch ở cuối run | Dao động pedal 5 Hz và đảo lái tần số cao gây mất bám ở dải tốc độ cao ($a_y \propto v^2\delta$). |
+| **`p2_line`** (`6df6ba9`) | Map 1:1, nạp Racing line và $v^*$ vào observation | $2.66\text{M}$ steps | $54.0\%$ | Best sạch $153.7\text{s}$ | Sạch sớm tại $1.15\text{M}$; sau $2\text{M}$ chậm dần | Racing line hỗ trợ an toàn giai đoạn đầu nhưng làm giảm vận tốc hội tụ dài hạn do tính bảo thủ của hàm thưởng. |
+| **`run_v7`** (`logs/run_v7`) | GT3 3 làn đường, bổ sung phạt thời gian $r_{\text{time}} = -0.01/\text{step}$ | $963\text{k}$ steps | $27.3\%$ | $141.5\text{s}$ | Checkpoint $389\text{k}$: **$5/6$ ($83.3\%$)** sạch | Phạt thời gian tạo gradient thúc đẩy xe duy trì vận tốc qua góc cua thay vì rà phanh chạy chậm. |
+| **`run_v8b`** (`logs/run_v8b`) | GT3 3 làn, 40D obs, Slew rate $0.18$ + Phạt mượt lái | $502\text{k}$ steps | $22.6\%$ | $135.4\text{s}$ | Checkpoint $123\text{k}$: **$5/6$ ($83.3\%$)** sạch | Mở rộng tầm nhìn đón đầu và điều chỉnh độ mượt lái giúp tăng tốc độ học vòng sạch. |
+| **`run_f1c` (Khảo sát Downforce)** (`24fb2e4`) | Xe F1 có Downforce nhân tạo $F_{\text{down}} \propto v^2$, sa bàn 3 làn | $1.00\text{M}$ steps | $87.8\%$ | $109.4\text{s}$ (không cùng điều kiện GT3) | $2/2$ sạch ở các checkpoint cuối | Lực ép khí động học nhân tạo giúp xe ổn định ở tốc độ cao; không dùng để đối chuẩn với xe GT3 tiêu chuẩn. |
+| **`multicar_f1e` (Khảo sát 6 xe)** (`cdfb928`) | 6 xe F1 tự chơi, phạt đối xứng, có hồi sinh tại chỗ, sa bàn 3 làn | $1.50\text{M}$ samples | Không đối chuẩn | $112.9\text{s}$ (không cùng điều kiện GT3) | $5.67 / 6$ xe hoàn thành | Khảo sát định tính về phối hợp đa tác tử; tham số được điều chỉnh qua nhiều lần fine-tune. |
 
 ---
 
-### 6.7. Giải Mã Chuyên Sâu Các Cơ Chế Động Lực Học Từ Dữ Liệu Đo Đạc
-Từ các con số đo lường trong Bảng 4, ba kết luận khoa học quan trọng được rút ra:
+### 6.7. Thảo Luận Kỹ Thuật và Đánh Giá Thực Nghiệm
 
-1. **Tác động Quyết định của Áp lực Thời gian ($r_{\text{time}} = -0.01/\text{step}$)**:
-   - Trong `run_v5` và `run_v6` ($r_{\text{time}} = 0$), mạng Actor tối ưu hóa phần thưởng bằng cách bò chậm ở tốc độ $30 - 50\text{ km/h}$ để tránh rủi ro văng lề. Kết quả là tỷ lệ hoàn thành tối đa chỉ đạt $32.7\%$ và crash rate luôn ở mức $100\%$ khi gặp các đoạn cua dốc.
-   - Khi áp dụng $r_{\text{time}} = -0.01$ ở `run_v7` và `run_v8b`, việc dừng đỗ hoặc chạy chậm bị trừng phạt tích lũy ($-1.0$ điểm mỗi $10\text{s}$). Điều này tạo ra lực đẩy gradient cưỡng bức phương tiện phải tăng tốc qua các góc cua, giúp tỷ lệ hoàn thành đạt $100\%$ ngay tại $389\text{k}$ bước và rút ngắn lap time xuống $135.4\text{s}$.
+1. **Vai trò của Thành phần Phạt Thời gian ($r_{\text{time}} = -0.01/\text{step}$)**:
+   - Khi không có áp lực thời gian (`run_v5`, `run_v6`), hàm phạt văng đường ($\propto v^2$) tạo ra cực tiểu cục bộ: tác tử học cách rà phanh chạy chậm ở tốc độ $30 - 50\text{ km/h}$. Do thiếu động năng, xe mất lực hướng tâm khi vào cua dốc và trôi ra lề.
+   - Việc bổ sung thành phần phạt trễ $r_{\text{time}} = -0.01$ mỗi bước ($-1.0$ điểm mỗi $10\text{s}$) tạo gradient ép xe phải duy trì vận tốc qua apex, giúp `run_v7` và `run_v8b` đạt tỷ lệ vòng sạch $83.3\%$ ở các mốc bước sớm.
 
-2. **Khí Động Học Downforce Hóa Giải Ranh Giới Bão Hòa Elip Ma Sát**:
-   - So sánh giữa xe GT3 (`p2_single`, không downforce) và xe F1 (`run_f1c`, có downforce $F_{\text{down}} = mg(v/200)^2$):
-     - Ở GT3 map 1:1, khi vận tốc vượt $140\text{ km/h}$, tải trọng bánh xe chỉ phụ thuộc vào trọng trường tĩnh ($F_z \approx mg$). Gia tốc ly tâm cần thiết để ôm cua vượt qua giới hạn bám $1.56\text{G}$, dẫn đến hiện tượng trượt ngang không thể cứu vãn ($\beta_{\text{max}} = 52.7^\circ$).
-     - Ở F1 (`run_f1c`), ở vận tốc $200\text{ km/h}$, lực ép khí động học tăng thêm đúng bằng $100\%$ trọng lượng xe ($F_z = 2mg$). Trần lực ma sát ngang $F_{y, \text{max}} = \mu F_z$ tăng gấp đôi mà không làm tăng khối lượng quán tính cần bẻ lái ($m$). Do đó, `run_f1c` duy trì sự ổn định tuyệt đối với **$100\%$ tỷ lệ vòng sạch ($2/2$ sạch ở mọi checkpoint từ 600k đến 1000k)** và lap time giảm sâu xuống **$109.4\text{s}$**.
+2. **Khảo sát Lực ép Khí động học Downforce và Giới hạn Bài toán**:
+   - Ở nhánh `run_f1c`, việc bổ sung $F_{\text{down}} = mg(v/200)^2$ làm tăng tải trọng thẳng đứng $F_z$ theo bình phương vận tốc, mở rộng giới hạn ma sát ngang $F_{y, \text{max}} = \mu F_z$ mà không tăng khối lượng quán tính $m$. Điều này giúp xe ôm cua ổn định ở tốc độ cao.
+   - Tuy nhiên, mục tiêu cốt lõi của nghiên cứu là điều khiển xe thể thao GT3 ở giới hạn ma sát tự nhiên của lốp xe (không có cánh gió lớn). Việc bổ sung downforce làm thay đổi bài toán động lực học ban đầu. Do đó, nhóm nghiên cứu duy trì mô hình `ref_111s` trên xe GT3 tiêu chuẩn làm kết quả khoa học chính.
 
-3. **Sự Tiến Hóa Trật Tự Trong Đua Đa Tác Tử (Self-Play Order Emergence)**:
-   - Trong giai đoạn đầu (`multicar_f1` và `multicar_f1c`), các tác tử đua theo phong cách hỗn loạn: số vụ va chạm lên tới $142$ lần mỗi episode và chỉ $2/6$ xe hoàn thành.
-   - Nhờ sự kết hợp của 3 cơ chế: (1) Phạt va chạm đối xứng loại bỏ hành vi chèn ép ác ý, (2) Cooldown 50 bước loại bỏ thói quen nhường đường cày điểm, và (3) Hồi sinh tại chỗ kèm 150 bước miễn trừ xếp hạng, mô hình `multicar_f1e` ghi nhận sự chuyển dịch pha ngoạn mục: số va chạm giảm hơn $76\%$ (từ $142$ xuống còn $33.0$), số lần hồi sinh giảm từ $14$ xuống $5.3$, và **$5.67 / 6$ xe hoàn thành cuộc đua**. Telemetry ghi nhận các xe tự động xếp hàng so le khí động học khi vào cua và tận dụng hiệu ứng núp gió (slipstream) để vượt nhau trên đoạn thẳng.
+3. **Bài học về Tính Nhất quán của Môi trường Kiểm chuẩn**:
+   - Các nhánh mở rộng (`multicar`, `f1`) cho thấy rủi ro khi điều chỉnh đồng thời nhiều biến số (thay đổi cấu hình xe, độ rộng làn, quy tắc va chạm) qua các lần chạy, gây khó khăn cho việc phân tích nguyên nhân - kết quả.
+   - Việc đóng băng môi trường xe thể thao `gt3_anchor` trên nhánh `feature/111s-honest-anchor` đã đảm bảo tính nhất quán để thực hiện 20 episode kiểm thử độc lập và kiểm chứng lặp lại trên Seed 43 với độ tin cậy khoa học cao.
 
 ---
 
 ## 7. GIỚI HẠN NGHIÊN CỨU VÀ HƯỚNG PHÁT TRIỂN (LIMITATIONS & FUTURE WORK)
 
-Nhằm duy trì tính liêm chính học thuật cao nhất, các giới hạn kỹ thuật của đồ án được làm rõ:
-
-1. **Giới hạn Mô hình Hình học Sa bàn Silverstone**:
-   - Sa bàn trong môi trường MetaDrive gồm 23 khối đường (18 góc cua cung tròn và 5 đoạn thẳng) được xây dựng theo tô-pô của Silverstone nhưng bán kính các góc cua được ước lượng xấp xỉ thủ công ($R \in [25, 95]\text{ m}$ ở map half) và khép kín qua thuật toán tối ưu hóa góc.
-   - Bản đồ không chứa các đoạn cong chuyển tiếp (Clothoid Transition Curves) và bỏ qua độ mấp mô địa hình 3D ($z = 0$). Chiều dài bản đồ bị nén theo tỉ lệ xấp xỉ $\approx 1:2.075$ ($2,838.7\text{ m}$ so với $5,891\text{ m}$ thực tế).
-   - *Tính thực tế của bề rộng mặt đường*: Tuy nhiên, độ rộng đường lại rất sát với thực tế: 3 làn $\times 4.8\text{ m} = 14.4\text{ m}$ (so với $15.0\text{ m}$ thực tế của Silverstone). Tỉ lệ chiều rộng xe / mặt đường ($1.85\text{ m} / 14.4\text{ m} \approx 1:7.8$) phản ánh chính xác không gian hình học Out-In-Out.
-   - *Hiện tượng các sai số tự bù trừ nhau trong profile $v^*$*: Trên sa bàn tỷ lệ lớn, việc thiếu lực cản khí động học khiến xe giữ nguyên trần $260\text{ km/h}$ trên toàn bộ đoạn thẳng, trong khi việc thiếu downforce khiến xe ôm cua chậm hơn thực tế. Tổng thời gian $T^* = 124.0\text{ s}$ rất gần với lap GT3 thực tế, nhưng đây là do **các sai số vật lý tự bù trừ nhau**, không phải do mô hình chất điểm trùng khớp hoàn hảo với động lực học xe đua ngoài đời thực.
+1. **Giới hạn Mô hình Sa bàn Silverstone**:
+   - Sa bàn gồm 23 khối đường (18 góc cua cung tròn và 5 đoạn thẳng) được xấp xỉ thủ công ($R \in [25, 95]\text{ m}$) và khép kín qua thuật toán tối ưu hóa góc.
+   - Sa bàn không chứa đường cong chuyển tiếp (Clothoid) và bỏ qua độ mấp mô địa hình 3D ($z = 0$). Chiều dài bị nén theo tỉ lệ xấp xỉ $\approx 1:2.075$ ($2,838.7\text{ m}$ so với $5,891\text{ m}$ thực tế).
+   - Độ rộng đường tương đối sát thực tế: 3 làn $\times 4.8\text{ m} = 14.4\text{ m}$ (so với $15.0\text{ m}$ thực tế của Silverstone).
 
 2. **Giới hạn Động lực học Xe Bullet**:
-   - Raycast vehicle thiếu mô hình khí động học dòng khí đầy đủ (không có lực cản không khí $F_{\text{drag}} \propto v^2$).
-   - Không có sự biến thiên nhiệt độ lốp, hao mòn lốp hay áp suất lốp.
-   - Thân xe hình hộp cố định với trọng tâm cao ($0.55\text{ m}$) khiến xe dễ bị nhấc đuôi khi phanh gấp trên $1.7\text{G}$, buộc hệ thống phải giới hạn áp lực phanh thực nghiệm.
+   - Mô hình Raycast vehicle chưa bao gồm lực cản không khí đầy đủ ($F_{\text{drag}} \propto v^2$).
+   - Chưa mô phỏng sự biến thiên nhiệt độ và hao mòn lốp.
+   - Thân xe dạng khối hộp cố định với trọng tâm cao ($0.55\text{ m}$) khiến xe dễ nhấc trục sau khi phanh trên $1.7\text{G}$.
 
-3. **Hướng phát triển Sim-to-Real**:
-   - Tích hợp hàm mất mát CAPS đầy đủ (cả Temporal Smoothness $L_T$ và Spatial Smoothness $L_S$) trực tiếp vào hàm mục tiêu của Actor PPO để triệt tiêu hoàn toàn hiện tượng rung giật vô lăng $10\text{ Hz}$.
-   - Áp dụng kỹ thuật Xáo trộn Miền (Domain Randomization) theo Chisari et al. (2021) trên các tham số ma sát $\mu \in [0.8, 1.4]$, độ trễ cơ cấu chấp hành ($20 - 80\text{ ms}$), và khối lượng xe nhằm chuẩn bị cho việc triển khai trên phần cứng xe đua mô hình vật lý thực tế.
+3. **Hướng phát triển Tiếp theo**:
+   - Tích hợp hàm mất mát CAPS đầy đủ ($L_T$ và $L_S$) trực tiếp vào hàm mục tiêu của Actor PPO để triệt tiêu hiện tượng dao động vô lăng $10\text{ Hz}$.
+   - Áp dụng kỹ thuật Xáo trộn Miền (Domain Randomization) theo Chisari et al. (2021) trên hệ số ma sát lốp và độ trễ chấp hành nhằm chuẩn bị cho triển khai trên phần cứng xe mô hình thực tế.
 
 ---
 
 ## 8. KẾT LUẬN (CONCLUSION)
 
-Đồ án đã nghiên cứu và triển khai thành công hệ thống điều khiển xe đua thể thao tự hành tốc độ cao tiệm cận giới hạn ma sát vật lý bằng thuật toán Học Tăng Cường PPO liên tục trên nền tảng mô phỏng Bullet Physics/MetaDrive. 
+Đồ án đã triển khai và đánh giá hệ thống điều khiển xe đua thể thao tự hành ở giới hạn ma sát vật lý bằng thuật toán Học Tăng Cường PPO liên tục trên nền tảng mô phỏng Bullet Physics/MetaDrive.
 
-Các đóng góp khoa học và kỹ thuật cốt lõi bao gồm:
-1. **Minh chứng Thực nghiệm về Năng lực của RL Thuần**: Chứng minh rằng một tác tử PPO với quan sát thuần hình học tim đường (Zero Racing Line Prior) hoàn toàn có khả năng tự khám phá các kỹ năng đua xe thể thao phức tạp (Apex clipping, Trail-braking, Over-the-limit slip control) và đạt thời gian hoàn thành vòng đua vượt trội ($109.44 \pm 0.50\text{ s}$ flying) so với mốc chuẩn giải tích dựa trên mô hình chất điểm tối ưu ($112.80\text{ s}$).
-2. **Làm sáng tỏ Cơ chế Model-Plant Mismatch**: Phân tích định lượng nguyên nhân RL vượt qua cận lý thuyết giải tích $T^*$ là nhờ khả năng tối ưu hóa trực tiếp trên mô hình mô phỏng đa vật thể, khai thác độ bám động học tức thời ($a_{\text{lat}}$ lên tới $1.21\text{G}$) và chuyển dịch tải trọng lốp mà mô hình giải tích tĩnh bỏ qua.
-3. **Bóc tách Minh bạch các Thành phần Hệ thống**: Chỉ ra sự phụ thuộc của quá trình học vào thành phần phạt tim đường $r_{\text{center}}$ như một rào cản thế năng chống phân kỳ, đồng thời đối chiếu bản chất hiện tượng chattering điều khiển với các nghiên cứu hàng đầu thế giới (CAPS, GT Sophy).
-4. **Chuẩn hóa Thực nghiệm và Mã nguồn**: Toàn bộ quy trình từ khâu mô phỏng, hiệu chuẩn xe bóng ma giải tích, sửa lỗi gradient PPO đến công cụ đánh giá tự động đa tác tử đã được xây dựng theo chuẩn mực hướng đối tượng (OOP) vững chắc, tạo nền tảng vững chắc cho các nghiên cứu tiếp theo về đua xe tự hành.
+Các kết quả chính bao gồm:
+1. **Hiệu năng của PPO thuần**: Tác tử PPO với quan sát thuần hình học tim đường (`ref_111s`) đạt thời gian vòng flying $109.44 \pm 0.50\text{ s}$ với tỷ lệ vòng sạch $90\%$ qua 20 episode kiểm thử độc lập, và được xác nhận lặp lại trên Seed 43 ($109.96 \pm 0.69\text{ s}$, $95\%$ sạch).
+2. **Giải thích chênh lệch với mô hình giải tích**: Hiện tượng PPO đạt thời gian thấp hơn mô hình giải tích chất điểm ($112.80\text{ s}$ Ghost) được giải thích bằng Model-Plant Mismatch: RL khai thác gia tốc ngang tức thời ($1.21\text{G}$) và kỹ thuật trail-braking tự sinh từ động lực học đa vật thể của Bullet Physics.
+3. **Phân tích bóc tách hệ thống**: Xác định vai trò của thành phần phạt tim đường $r_{\text{center}}$ trong việc hạn chế bẫy cắt góc sớm, đồng thời phân tích cơ chế hình thành dao động pedal 5 Hz do quan sát `last_pedal` thiếu phạt độ mượt vi phân.
+4. **Quy trình thực nghiệm chuẩn hóa**: Toàn bộ quy trình thử nghiệm và kiểm chuẩn được thực hiện trên môi trường đóng băng `gt3_anchor` dưới luật 4 bánh FIA, đảm bảo tính nhất quán và khách quan của các kết quả nghiên cứu.
 
 ---
 
@@ -419,28 +383,28 @@ Các đóng góp khoa học và kỹ thuật cốt lõi bao gồm:
 
 ---
 
-## PHỤ LỤC: DANH MỤC TRUY XUẤT ARTIFACT VÀ SỐ LIỆU (DATA REPRODUCIBILITY INDEX)
+## PHỤ LỤC: DANH MỤC TRUY XUẤT DỮ LIỆU THỰC NGHIỆM
 
-Để hỗ trợ hội đồng chấm thi và cộng đồng nghiên cứu kiểm chứng độc lập, Bảng 5 cung cấp chỉ mục truy xuất chính xác từng tệp dữ liệu, mô hình và nhật ký đánh giá trong kho lưu trữ Git:
+Bảng 5 cung cấp chỉ mục truy xuất các tệp dữ liệu, mô hình và nhật ký đánh giá trong kho lưu trữ Git:
 
-*Bảng 5: Chỉ mục truy xuất artifact và log thực nghiệm toàn diện.*
+*Bảng 5: Chỉ mục truy xuất tệp dữ liệu và nhật ký thực nghiệm.*
 
 | Tên Dữ liệu / Mô hình | Nhánh Git & Commit SHA | Đường dẫn Tệp trong Repository | Mô tả Nội dung / Số liệu Đối sánh |
 | :--- | :--- | :--- | :--- |
-| **Mô hình Tham chiếu Neo (`ref_111s`)** | `feature/111s-honest-anchor` (`ee99f9d`) | `models/ref_111s/best_agent.pt` | Trọng số mạng nơ-ron PPO 35D, đạt Standing $114.78\text{s}$, Flying $109.44\text{s}$. |
+| **Mô hình Tham chiếu (`ref_111s`)** | `feature/111s-honest-anchor` (`ee99f9d`) | `models/ref_111s/best_agent.pt` | Trọng số mạng nơ-ron PPO 35D, đạt Standing $114.78\text{s}$, Flying $109.44\text{s}$. |
 | **Nhật ký Đánh giá 20 Lap `ref_111s`** | `feature/111s-honest-anchor` (`7853722`) | `logs/anchor/eval_111s_anchor.json` | Log JSON chi tiết 20 episode kiểm thử độc lập dưới luật 4 bánh FIA. |
-| **Nhật ký Đánh giá Ghost Hiệu chỉnh** | `feature/111s-honest-anchor` (`7853722`) | `logs/anchor/eval_ghost_anchor.json` | Đánh giá xe bóng ma `gt3_anchor` ($0.95\text{G} / 15.0 / 3.09$), đạt Flying $112.80\text{s}$. |
+| **Nhật ký Đánh giá Ghost Hiệu chuẩn** | `feature/111s-honest-anchor` (`7853722`) | `logs/anchor/eval_ghost_anchor.json` | Đánh giá xe bóng ma `gt3_anchor` ($0.95\text{G} / 15.0 / 3.09$), đạt Flying $112.80\text{s}$. |
 | **Nhật ký Đánh giá Ghost Legacy v22** | `feature/111s-honest-anchor` (`7853722`) | `logs/anchor/eval_ghost_legacy.json` | Đánh giá Ghost cũ tham số lý thuyết, đạt Flying $114.20\text{s}$. |
 | **Mô hình & Nhật ký Lặp lại Seed 43** | `feature/111s-honest-anchor` (`7853722`) | `logs/anchor/eval_overnight_seed43_best.json` | Kiểm chứng tính lặp lại độc lập ($n=20$), đạt Flying $109.96\text{s}$ (19/20 sạch). |
-| **Nhật ký Fine-tune Luật Chặt 4 Bánh** | `feature/111s-honest-anchor` (`f4d8ef9`) | `logs/anchor/eval_overnight_ft_best.json` | Kết quả fine-tune 1M bước, lap $108.98\text{s}$ nhưng crash $60\%$ (8/20 sạch). |
-| **Nhật ký Bóc tách Bỏ $r_{\text{center}}$** | `exp/111s-no-rcenter` | `logs/anchor/eval_nocenter_s42.json`, `...s43.json` | Minh chứng sụp đổ tỷ lệ vòng sạch về $0\% - 10\%$ khi loại bỏ phạt lệch tim đường. |
+| **Nhật ký Fine-tune Luật 4 Bánh** | `feature/111s-honest-anchor` (`f4d8ef9`) | `logs/anchor/eval_overnight_ft_best.json` | Kết quả fine-tune 1M bước, lap $108.98\text{s}$, tỷ lệ sạch $40\%$ (8/20 sạch). |
+| **Nhật ký Bóc tách Bỏ $r_{\text{center}}$** | `exp/111s-no-rcenter` | `logs/anchor/eval_nocenter_s42.json`, `...s43.json` | Số liệu sụt giảm tỷ lệ sạch về $0\% - 10\%$ khi loại bỏ phạt lệch tim đường. |
 | **Dữ liệu Profile Tối ưu Giải tích** | `feature/111s-honest-anchor` | `scripts/silverstone_optimal_profile.npz` | Quỹ đạo lồi Convex QP và phân bố vận tốc Lipp-Boyd ($T^* = 110.62\text{s}$). |
-| **Nhật ký Huấn luyện GT3 3 Làn (`run_v8b`)** | `feature/oop-clean-physics-40d` (`0180988`) | `logs/run_v8b/training_metrics.json`, `checkpoint_eval.json` | 40D obs, time penalty $-0.01$; checkpoint `clean_123k` đạt $83.3\%$ vòng sạch, lap $135.4\text{s}$. |
-| **Nhật ký Huấn luyện F1 Downforce (`run_f1c`)** | `feature/f1-downforce` (`24fb2e4`) | `logs/run_f1c/training_metrics.json`, `checkpoint_eval.json` | F1 đơn có downforce $F_{\text{down}} \propto v^2$, đạt $100\%$ vòng sạch liên tục từ 600k đến 1000k, lap $109.4\text{s}$. |
-| **Nhật ký Đua 6 Xe Tự Chơi (`multicar_f1e`)** | `feature/f1-downforce` (`cdfb928`) | `logs/multicar_f1e/training_metrics.json`, `checkpoint_eval.json` | MARL 6 xe F1 hoàn thiện: $5.67/6$ xe về đích ($\approx 95\%$), va chạm giảm còn $33.0$, lap TB $123.2\text{s}$. |
-| **Nhật ký Baseline Cũ Lỗi F1 (`run_a0_legacy`)** | `feature/111s-honest-anchor` (`7853722`) | `logs/run_a0_legacy/training_metrics.json` | $3.38\text{M}$ bước với $100\%$ crash rate, minh chứng sự phá hủy của lỗi actor_logstd freeze. |
-| **Nhật ký Phase 1 Main (`p1_main`)** | `feature/111s-honest-anchor` (`7853722`) | `logs/p1_main/training_metrics.json` | $2.66\text{M}$ bước, minh chứng lỗi suy sụp khám phá khi decay entropy về $0.001$. |
+| **Nhật ký Huấn luyện GT3 3 Làn (`run_v8b`)** | `feature/oop-clean-physics-40d` (`0180988`) | `logs/run_v8b/training_metrics.json`, `checkpoint_eval.json` | 40D obs, phạt thời gian $-0.01$; checkpoint `clean_123k` đạt $83.3\%$ vòng sạch, lap $135.4\text{s}$. |
+| **Nhật ký Khảo sát Downforce (`run_f1c`)** | `feature/f1-downforce` (`24fb2e4`) | `logs/run_f1c/training_metrics.json` | Thực nghiệm bổ sung lực ép khí động học $F_{\text{down}} \propto v^2$, lap $109.4\text{s}$ (sa bàn 3 làn). |
+| **Nhật ký Khảo sát Đua 6 Xe (`multicar_f1e`)** | `feature/f1-downforce` (`cdfb928`) | `logs/multicar_f1e/training_metrics.json` | Khảo sát hành vi đa tác tử với cơ chế hồi sinh tại chỗ và phạt đối xứng. |
+| **Nhật ký Baseline Ban đầu (`run_a0_legacy`)** | `feature/111s-honest-anchor` (`7853722`) | `logs/run_a0_legacy/training_metrics.json` | $3.38\text{M}$ bước với $100\%$ crash rate, minh họa lỗi actor_logstd clamp freeze. |
+| **Nhật ký Phase 1 Main (`p1_main`)** | `feature/111s-honest-anchor` (`7853722`) | `logs/p1_main/training_metrics.json` | $2.66\text{M}$ bước, minh họa lỗi suy giảm phương sai khám phá khi decay entropy về $0.001$. |
 | **Nhật ký Phase 2 Single (`p2_single`)** | `feature/111s-honest-anchor` (`819d3e1`) | `logs/p2_single/training_metrics.json` | $3.32\text{M}$ bước trên map 1:1, chẩn đoán cơ chế dao động pedal 5 Hz (F17 & F20). |
-| **Nhật ký Phase 2 Racing Line (`p2_line`)** | `feature/111s-honest-anchor` (`6df6ba9`) | `logs/p2_line/training_metrics.json` | $2.66\text{M}$ bước với racing line prior, minh chứng sự suy thoái tốc độ dài hạn (F21). |
+| **Nhật ký Phase 2 Racing Line (`p2_line`)** | `feature/111s-honest-anchor` (`6df6ba9`) | `logs/p2_line/training_metrics.json` | $2.66\text{M}$ bước với racing line prior, minh họa sự suy thoái tốc độ dài hạn (F21). |
 | **Nhật ký Chẩn đoán Kỹ thuật (F1–F24)**| `feature/111s-honest-anchor` | `knowledge/rl_debugging_findings.md` | Báo cáo chi tiết 24 phát hiện kỹ thuật, cơ chế lỗi và bài học thuật toán. |
 | **Tổng kết Vật lý Bullet & Hiệu chuẩn**| `feature/111s-honest-anchor` | `knowledge/vehicle_and_engine_physics.md` | Báo cáo đo đạc trực tiếp hệ thống raycast vehicle, ma sát lốp và phân tích sai lệch mô hình. |
