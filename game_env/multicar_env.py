@@ -12,7 +12,7 @@ from typing import Dict, List, Optional, Tuple
 import numpy as np
 from gymnasium import spaces
 
-from metadrive.component.vehicle.vehicle_type import DefaultVehicle
+from metadrive.component.vehicle.vehicle_type import DefaultVehicle, MVehicle, SVehicle, LVehicle
 from game_env.racing_env import MetaRacingEnv
 from game_env.telemetry import TelemetryTracker
 from game_env.vehicle import BaseRaceVehicle, get_vehicle
@@ -21,24 +21,29 @@ BASE_OBS_DIM = 35
 OPPONENT_FEATURES = 5
 
 # Hằng số WI-L5 (§4.3): thưởng vượt sạch & vùng đệm né va chạm
-OVERTAKE_BONUS = 1.0
-OVERTAKE_COOLDOWN_STEPS = 50
+OVERTAKE_BONUS = 2.5
+OVERTAKE_COOLDOWN_STEPS = 20
 RESPAWN_IMMUNITY_STEPS = 150
-PROXIMITY_LONG_M = 5.4     # Dài thân xe 4.5m + đệm dọc 0.9m
-PROXIMITY_LAT_M = 2.5      # Rộng thân xe 1.85m + đệm ngang 0.65m
-PROXIMITY_PENALTY_COEF = 0.50
+PROXIMITY_LONG_M = 4.8     # Dài thân xe 4.5m + đệm dọc 0.3m
+PROXIMITY_LAT_M = 1.30     # Rộng thân xe 1.85m: vùng đệm trực diện; mở thông thoáng 2 bên làn để vượt
+PROXIMITY_PENALTY_COEF = 0.25
 
-# Màu xe: xe 0 xanh lá, các xe AI màu khác nhau để dễ phân biệt
+# Bảng 10 màu rực rỡ, độ tương phản cao để phân biệt rõ 10 xe trên track
 CAR_COLORS = [
-    (0.10, 0.90, 0.20),
-    (0.95, 0.10, 0.10),
-    (0.10, 0.35, 0.95),
-    (0.95, 0.75, 0.05),
-    (0.85, 0.20, 0.90),
-    (0.05, 0.85, 0.85),
-    (0.95, 0.45, 0.05),
-    (0.90, 0.90, 0.90),
+    (0.00, 0.95, 0.20),  # 0: Xanh lá neon thể thao
+    (1.00, 0.15, 0.15),  # 1: Đỏ cờ Ferrari
+    (0.15, 0.50, 1.00),  # 2: Xanh dương thể thao
+    (1.00, 0.85, 0.00),  # 3: Vàng chanh rực rỡ
+    (0.90, 0.20, 0.90),  # 4: Tím phong cách
+    (0.00, 0.90, 0.90),  # 5: Xanh ngọc lam (Cyan)
+    (1.00, 0.45, 0.00),  # 6: Cam cháy
+    (0.95, 0.95, 0.95),  # 7: Trắng tuyết
+    (0.95, 0.20, 0.60),  # 8: Hồng sen đậm
+    (0.20, 0.20, 0.25),  # 9: Xám nòng súng / Đen carbon
 ]
+
+# Danh sách kiểu dáng model 3D xe trong MetaDrive (Ferra, Sedan 130, Con bọ Beetle, Sedan Lada)
+VEHICLE_BODY_CLASSES = [DefaultVehicle, MVehicle, SVehicle, LVehicle]
 
 
 class RacerState:
@@ -173,7 +178,7 @@ class MultiCarRacingEnv(MetaRacingEnv):
         offset = min(3.0, self.half_width - 1.5)
         return [(56.0 - 8.0 * k, self.center_lat + (offset if k % 2 == 0 else -offset)) for k in range(self.num_cars)]
 
-    def _spawn_extra_vehicle(self, car: BaseRaceVehicle, pos, heading: float):
+    def _spawn_extra_vehicle(self, car: BaseRaceVehicle, pos, heading: float, car_id: int = 1):
         engine = self.env.engine
         cfg = {
             "use_special_color": False,
@@ -187,7 +192,8 @@ class MultiCarRacingEnv(MetaRacingEnv):
             "show_dest_mark": False,
             "show_line_to_dest": False,
         }
-        raw = engine.spawn_object(DefaultVehicle, vehicle_config=cfg, position=list(pos), heading=float(heading))
+        v_cls = VEHICLE_BODY_CLASSES[car_id % len(VEHICLE_BODY_CLASSES)]
+        raw = engine.spawn_object(v_cls, vehicle_config=cfg, position=list(pos), heading=float(heading))
         return raw
 
     def _set_color(self, raw, car_id: int):
@@ -195,6 +201,7 @@ class MultiCarRacingEnv(MetaRacingEnv):
             from panda3d.core import Vec4
             r, g, b = CAR_COLORS[car_id % len(CAR_COLORS)]
             if getattr(raw, "origin", None) is not None:
+                raw.origin.setColor(Vec4(r, g, b, 1.0), 1)
                 raw.origin.setColorScale(Vec4(r, g, b, 1.0))
         except Exception:
             pass
@@ -226,7 +233,7 @@ class MultiCarRacingEnv(MetaRacingEnv):
                 car.reset_state()
             else:
                 car = get_vehicle(self.vehicle_name)
-                raw = self._spawn_extra_vehicle(car, (x, y), 0.0)
+                raw = self._spawn_extra_vehicle(car, (x, y), 0.0, car_id=k)
                 self.extra_vehicles.append(raw)
             car.attach_agent(raw)
             raw.set_position([x, y])
@@ -294,28 +301,29 @@ class MultiCarRacingEnv(MetaRacingEnv):
 
                 # 2. Nhường nhịp dọc (Throttle lift) cho xe đi sau khi 2 xe chụm vào cùng 1 làn/đỉnh cua
                 is_behind = (dx > 0.20) or (abs(dx) <= 0.20 and st.car_id > ot.car_id)
-                if is_behind and dx >= -0.5 and abs(dy) < 2.40:
+                # CHỈ can thiệp khi xe sau đang đâm trực diện cùng vệt tim đường (|dy| < 1.30m)
+                # Nếu xe sau đã lách sang bên (|dy| >= 1.30m) để mở làn vượt: KHÔNG bóp chân ga!
+                if is_behind and dx >= -0.5 and abs(dy) < 1.30:
                     closing = max(0.0, -dvx)
-                    urg = float(np.clip((9.5 - max(0.0, dx)) / 4.8 + 0.12 * closing, 0.0, 1.0)) * (1.0 - 0.25 * (abs(dy) / 2.40))
+                    urg = float(np.clip((6.5 - max(0.0, dx)) / 3.5 + 0.15 * closing, 0.0, 1.0)) * (1.0 - abs(dy) / 1.30)
                     if urg > max_yield_urg:
                         max_yield_urg = urg
-                    if abs(dy) < 1.95 and dx > 0.0 and dx < min_front_dx:
+                    if dx > 0.0 and dx < min_front_dx:
                         min_front_dx = dx
                         front_closing_v = closing
 
         # Lọc thông thấp cho steer_nudge để không tăng steer_rev và không làm lệch cua
-        st.steer_nudge = float(0.80 * st.steer_nudge + 0.20 * np.clip(raw_nudge, -0.05, 0.05))
+        st.steer_nudge = float(0.80 * st.steer_nudge + 0.20 * np.clip(raw_nudge, -0.06, 0.06))
         act[0] = float(np.clip(act[0] + st.steer_nudge, -1.0, 1.0))
 
-        # Nhả ga mượt cho xe đi sau (giữ throttle dương >= 0.12 để pedal không đổi dấu sang phanh)
-        if max_yield_urg > 0.05:
-            max_thr = float(np.clip(1.0 - 0.86 * max_yield_urg, 0.12, 1.0))
+        # Nhả ga và phanh khẩn cấp CHỈ khi chụm thẳng tim đường (|dy| < 1.30m)
+        if max_yield_urg > 0.10:
+            max_thr = float(np.clip(1.0 - 0.70 * max_yield_urg, 0.20, 1.0))
             cur_thr = 0.5 * (float(act[1]) + 1.0)
             if cur_thr > max_thr:
                 act[1] = 2.0 * max_thr - 1.0
-            if min_front_dx < 4.5 and front_closing_v > 2.2:
-                # Chỉ phanh nhẹ khi thật sự sắp đâm đuôi ở khoảng cách < 4.5m
-                brk = float(np.clip(0.28 * (4.5 - min_front_dx) / 1.8, 0.0, 0.35))
+            if min_front_dx < 4.0 and front_closing_v > 2.5:
+                brk = float(np.clip(0.30 * (4.0 - min_front_dx) / 1.5, 0.0, 0.40))
                 act[1] = -1.0
                 act[2] = max(float(act[2]), 2.0 * brk - 1.0)
         return act
@@ -462,6 +470,44 @@ class MultiCarRacingEnv(MetaRacingEnv):
         st.stagnant_steps = 0
         st.in_contact = False
         st.finished = False
+
+    def respawn_car(self, car_id: int):
+        """
+        Hồi sinh tức thì xe chỉ định trở lại mặt đường nhựa an toàn:
+        - Đặt xe về tim đường gần vị trí gặp sự cố nhất
+        - Xoay đầu xe theo đúng chiều tiến của đường đua
+        - Vận tốc về 0 km/h, reset các lực chấp hành
+        - Giữ nguyên số vòng đua hiện tại (current_lap) và tiến độ để tiếp tục thi đấu
+        """
+        if car_id < 0 or car_id >= len(self.racers):
+            return
+        st = self.racers[car_id]
+        try:
+            st.raw_vehicle.set_static(False)
+        except Exception:
+            pass
+
+        idx = max(0, min(st.current_track_idx, self.num_track_points - 1))
+        th = float(self.track_theta[idx])
+        pos = self.track_xy[idx]
+
+        st.raw_vehicle.set_position([float(pos[0]), float(pos[1])])
+        st.raw_vehicle.set_heading_theta(th)
+        st.raw_vehicle.set_velocity([0.0, 0.0])
+        st.car.reset_state()
+        st.telemetry.reset()
+        st.active = True
+        st.termination_reason = ""
+        st.respawn_step = self.current_step
+        st.steer_nudge = 0.0
+        st.in_contact = False
+        st.stagnant_steps = 0
+        st.last_s = float(self.track_s[idx])
+        st.lat_offset = 0.0
+        st.prev_action = np.zeros(3, dtype=np.float32)
+        st.last_action = np.zeros(3, dtype=np.float32)
+        st.last_applied = np.zeros(2, dtype=np.float32)
+        print(f">> [HỒI SINH] Xe #{car_id + 1} đã được hồi sinh an toàn ngay trên tim đường đua!")
 
     def step(self, actions: np.ndarray):
         """
