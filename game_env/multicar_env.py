@@ -509,6 +509,72 @@ class MultiCarRacingEnv(MetaRacingEnv):
         st.last_applied = np.zeros(2, dtype=np.float32)
         print(f">> [HỒI SINH] Xe #{car_id + 1} đã được hồi sinh an toàn ngay trên tim đường đua!")
 
+    def _compute_no_gap_reckless_penalty(self, st: RacerState, fwd: np.ndarray, vel: np.ndarray) -> float:
+        """
+        Quy tắc 'Keep It Simple':
+        Nếu phía trước cả line trong và ngoài đều KHÔNG có đủ khoảng trống cho 1 thân xe (max_gap < 2.1m)
+        mà xe sau vẫn cố tình duy trì vận tốc lao tới (closing_speed > 2.0 m/s) hoặc gây va chạm:
+        -> Phạt hành vi liều lĩnh (Reckless Entry Penalty).
+        """
+        front_cars = []
+        pos = st.car.position
+        for ot in self.racers:
+            if ot is st or not ot.active:
+                continue
+            rel_pos = ot.car.position - pos
+            dx = float(np.dot(rel_pos, fwd))
+            if 0.8 <= dx <= 7.5:
+                rel_v = ot.car.velocity - vel
+                closing_speed = max(0.0, -float(np.dot(rel_v, fwd)))
+                front_cars.append((ot, dx, closing_speed))
+
+        if not front_cars:
+            return 0.0
+
+        half_w = float(self.preset.half_width)
+        car_half_w = 1.85 / 2.0  # Nửa thân xe GT3
+
+        # Gom các khoảng bị chiếm dụng trên mặt cắt ngang [-half_w, +half_w]
+        occupied = []
+        for ot, _, _ in front_cars:
+            y = float(ot.lat_offset)
+            occupied.append((y - car_half_w, y + car_half_w))
+
+        # Hợp nhất các đoạn chiếm dụng
+        occupied.sort(key=lambda x: x[0])
+        merged = []
+        for interval in occupied:
+            if not merged:
+                merged.append(list(interval))
+            else:
+                if interval[0] <= merged[-1][1]:
+                    merged[-1][1] = max(merged[-1][1], interval[1])
+                else:
+                    merged.append(list(interval))
+
+        # Tính các khoảng trống còn lại trên lòng đường
+        free_gaps = []
+        free_gaps.append(max(0.0, merged[0][0] - (-half_w)))
+        for k in range(len(merged) - 1):
+            free_gaps.append(max(0.0, merged[k + 1][0] - merged[k][1]))
+        free_gaps.append(max(0.0, half_w - merged[-1][1]))
+
+        max_gap = max(free_gaps) if free_gaps else 0.0
+
+        # Nếu khoảng trống lớn nhất không đủ cho 1 xe (yêu cầu tối thiểu 2.10m)
+        MIN_PASSING_GAP = 2.10
+        if max_gap < MIN_PASSING_GAP:
+            max_closing = max(cs for _, _, cs in front_cars)
+            # Lao tới quá nhanh khi cửa đã bị bịt kín
+            if max_closing > 2.0:
+                urgency = min(2.0, (max_closing - 2.0) / 2.0 + 0.5)
+                return -1.50 * urgency
+            # Hoặc đâm vào xe khác khi cửa đóng
+            if st.car.crash_vehicle:
+                return -2.50
+
+        return 0.0
+
     def step(self, actions: np.ndarray):
         """
         actions: (num_cars, 3) [steer, throttle, brake]; hành động của xe không còn active bị bỏ qua.
@@ -611,11 +677,14 @@ class MultiCarRacingEnv(MetaRacingEnv):
             r_contact = -self.collision_penalty if new_contact else (-0.25 * self.collision_penalty if contact else 0.0)
             r_proximity = self._proximity_penalty(st)
 
-            # Thưởng phong cách đua xe thể thao (Slipstream & Wheel-to-wheel)
-            r_racecraft = 0.0
+            vel = st.car.velocity
             h = float(st.car.heading_theta)
             fwd = np.array([np.cos(h), np.sin(h)], dtype=np.float32)
             lat = np.array([-np.sin(h), np.cos(h)], dtype=np.float32)
+            r_no_gap = self._compute_no_gap_reckless_penalty(st, fwd, vel)
+
+            # Thưởng phong cách đua xe thể thao (Slipstream & Wheel-to-wheel)
+            r_racecraft = 0.0
             for ot in self.racers:
                 if ot is st or not ot.active:
                     continue
@@ -659,7 +728,7 @@ class MultiCarRacingEnv(MetaRacingEnv):
                     st.lap_start_step = self.current_step
                     st.lap_target += self.circuit_length
 
-            rewards[i] = r_progress + r_steer_smooth + r_pedal_smooth + r_center + r_idle + r_time + r_contact + r_proximity + r_racecraft + macro
+            rewards[i] = r_progress + r_steer_smooth + r_pedal_smooth + r_center + r_idle + r_time + r_contact + r_proximity + r_racecraft + r_no_gap + macro
             infos[i].update({
                 "speed_km_h": speed_km_h,
                 "track_s": current_s,
