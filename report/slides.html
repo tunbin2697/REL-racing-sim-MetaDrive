@@ -1,0 +1,1420 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Autonomous High-Speed Racing via Continuous DRL</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true}]});"></script>
+
+  <style>
+    :root {
+      --bg: #090b0e;
+      --card-bg: #12151b;
+      --border: #1e2430;
+      --border-focus: #334155;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.12);
+      --success: #34d399;
+      --warning: #fbbf24;
+      --danger: #f87171;
+      --purple: #c084fc;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      user-select: none;
+    }
+
+    .deck {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .slide {
+      position: absolute;
+      width: 92vw;
+      max-width: 1360px;
+      height: 88vh;
+      max-height: 820px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 30px 42px;
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(16px) scale(0.985);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5);
+    }
+
+    .slide.active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0) scale(1);
+    }
+
+    /* Slide Header */
+    .slide-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 10px;
+    }
+
+    .slide-tag {
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--accent);
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 3px;
+    }
+
+    .slide-tag::before {
+      content: "";
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    .slide-title {
+      font-size: 1.52rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.02em;
+    }
+
+    .slide-step {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.03);
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+
+    /* Slide Grid */
+    .slide-content {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1.18fr 0.82fr;
+      gap: 26px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .slide-content::-webkit-scrollbar { width: 4px; }
+    .slide-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    .left-col, .right-col {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* Typography & Lists */
+    p.lead {
+      font-size: 0.9rem;
+      line-height: 1.55;
+      color: #cbd5e1;
+    }
+
+    .bullet-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .bullet-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      font-size: 0.83rem;
+      line-height: 1.5;
+      color: var(--text-muted);
+    }
+
+    .bullet-item strong {
+      color: #f1f5f9;
+      font-weight: 600;
+    }
+
+    .bullet-icon {
+      color: var(--accent);
+      flex-shrink: 0;
+      font-weight: 700;
+      margin-top: 2px;
+      font-size: 0.82rem;
+    }
+
+    /* Spec & Metric Cards */
+    .metric-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 9px 13px;
+    }
+
+    .metric-card.highlight {
+      background: var(--accent-glow);
+      border-color: rgba(56, 189, 248, 0.35);
+    }
+
+    .metric-card h4 {
+      font-size: 0.76rem;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .metric-sub {
+      font-size: 0.8rem;
+      color: #cbd5e1;
+      line-height: 1.45;
+    }
+
+    .metric-sub code {
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent);
+      background: rgba(56, 189, 248, 0.1);
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-size: 0.76rem;
+    }
+
+    /* Tables */
+    .clean-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.77rem;
+      margin-top: 3px;
+    }
+
+    .clean-table th {
+      text-align: left;
+      padding: 6px 8px;
+      color: var(--text-muted);
+      font-weight: 600;
+      border-bottom: 1px solid var(--border);
+      text-transform: uppercase;
+      font-size: 0.68rem;
+      letter-spacing: 0.05em;
+    }
+
+    .clean-table td {
+      padding: 6px 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: #e2e8f0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.76rem;
+    }
+
+    .clean-table td.label-col {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 500;
+      color: #cbd5e1;
+    }
+
+    .clean-table tr.highlight-row {
+      background: rgba(56, 189, 248, 0.07);
+    }
+
+    .clean-table tr.highlight-row td {
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .badge-clean {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.68rem;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .badge-clean.success { background: rgba(52, 211, 153, 0.15); color: var(--success); }
+    .badge-clean.info { background: rgba(56, 189, 248, 0.15); color: var(--accent); }
+    .badge-clean.danger { background: rgba(248, 113, 113, 0.15); color: var(--danger); }
+    .badge-clean.warning { background: rgba(251, 191, 36, 0.15); color: var(--warning); }
+
+    /* Visual Box */
+    .visual-box {
+      width: 100%;
+      height: 100%;
+      min-height: 250px;
+      border: 1px dashed var(--border-focus);
+      border-radius: 12px;
+      background: #0f1217;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      position: relative;
+    }
+
+    .visual-box svg {
+      width: 38px;
+      height: 38px;
+      stroke: var(--text-muted);
+      stroke-width: 1.4;
+      margin-bottom: 8px;
+      opacity: 0.8;
+    }
+
+    .visual-box .visual-label {
+      font-size: 0.84rem;
+      font-weight: 600;
+      color: #f1f5f9;
+      text-align: center;
+      margin-bottom: 4px;
+    }
+
+    .visual-box .visual-desc {
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      text-align: center;
+      max-width: 90%;
+      line-height: 1.4;
+    }
+
+    .visual-details {
+      margin-top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      justify-content: center;
+    }
+
+    .tag-pill {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.66rem;
+      padding: 2px 5px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.05);
+      color: #94a3b8;
+      border: 1px solid var(--border);
+    }
+
+    /* Math formula highlight box */
+    .formula-banner {
+      background: rgba(15, 23, 42, 0.6);
+      border-left: 3px solid var(--accent);
+      padding: 6px 10px;
+      border-radius: 0 8px 8px 0;
+      font-size: 0.8rem;
+      color: #e2e8f0;
+    }
+
+    /* Controls */
+    .controls {
+      position: fixed;
+      bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: rgba(18, 21, 27, 0.88);
+      backdrop-filter: blur(10px);
+      padding: 6px 16px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      z-index: 100;
+    }
+
+    .nav-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 5px;
+      border-radius: 50%;
+      transition: all 0.2s;
+    }
+
+    .nav-btn:hover { color: #fff; background: rgba(255, 255, 255, 0.08); }
+
+    .slide-indicator {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      color: #cbd5e1;
+      letter-spacing: 0.05em;
+    }
+
+    .hotkey-tip {
+      position: fixed;
+      bottom: 20px;
+      right: 28px;
+      font-size: 0.7rem;
+      color: #64748b;
+      font-family: 'JetBrains Mono', monospace;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="deck">
+
+    <!-- ===================================================================
+         SLIDE 1: GIỚI THIỆU & BỐI CẢNH ĐUA XE
+         =================================================================== -->
+    <section class="slide active" id="slide-1">
+      <div class="slide-header">
+        <div>
+          <div class="slide-tag">01 / Giới thiệu & Khái niệm Đua xe</div>
+          <h1 class="slide-title">Tối ưu Lái xe Tốc độ Cao bằng Continuous DRL</h1>
+        </div>
+        <div class="slide-step">Introduction & Motorsport Principles</div>
+      </div>
+      <div class="slide-content">
+        <div class="left-col">
+          <p class="lead">
+            Bài toán điều khiển xe đua thể thao GT3 tự hành tiệm cận giới hạn ma sát vật lý trên sa bàn Silverstone Grand Prix mô phỏng bằng Bullet Physics / MetaDrive.
+          </p>
+          <ul class="bullet-list">
+            <li class="bullet-item">
+              <span class="bullet-icon">✦</span>
+              <div>
+                <strong>Bản chất Đua xe Thể thao (High-Speed Racing):</strong> Khác lái xe đô thị (Urban Driving) chỉ giữ làn, xe đua liên tục vận hành tại mép bão hòa ma sát lốp để tối thiểu hóa thời gian vòng đua ($T_{\text{lap}}$).
+              </div>
+            </li>
+            <li class="bullet-item">
+              <span class="bullet-icon">✦</span>
+              <div>
+                <strong>Racing Line & Nguyên tắc Out-In-Out:</strong> Quỹ đạo "Cực tiểu độ cong" mở rộng bán kính góc cua ($R = 1/\kappa$), giúp tối đa hóa trần tốc độ qua góc cua theo vật lý ly tâm: $v \le \sqrt{a_{\text{lat}} \cdot R}$. Xe ôm từ mép ngoài, cắt qua điểm đỉnh cua (Apex) và thoát rộng ra lề đối diện.
+              </div>
+            </li>
+            <li class="bullet-item">
+              <span class="bullet-icon">✦</span>
+              <div>
+                <strong>Câu hỏi Nghiên cứu:</strong> Liệu một tác tử RL với quan sát hình học tim đường thuần túy (Zero Racing Line Prior) có thể tự học các kỹ năng điều khiển xe thể thao (Trail-braking, Apex clipping) và vượt qua nghiệm giải tích dựa trên mô hình hay không?
+              </div>
+            </li>
+          </ul>
+        </div>
+        <div class="right-col">
+          <div class="visual-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+            </svg>
+            <div class="visual-label">[Placeholder: Sơ đồ Nguyên tắc Out-In-Out & Apex]</div>
+            <div class="visual-desc">So sánh trực quan giữa chạy bám tim đường hình học thông thường vs Kỹ thuật bẻ thẳng góc cua (Racing Line) giúp duy trì động năng cao nhất.</div>
+            <div class="visual-details">
+              <span class="tag-pill">Out-In-Out</span>
+              <span class="tag-pill">Apex Clipping</span>
+              <span class="tag-pill">Zero Prior RL</span>
+              <span class="tag-pill">Autonomous GT3</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         SLIDE 2: RELATED WORK & CƠ SỞ HỌC THUẬT
+         =================================================================== -->
+    <section class="slide" id="slide-2">
+      <div class="slide-header">
+        <div>
+          <div class="slide-tag">02 / Cơ sở Học thuật</div>
+          <h1 class="slide-title">Các Công trình Khoa học Tiêu biểu & Đối sánh</h1>
+        </div>
+        <div class="slide-step">Related Work & State-of-the-Art</div>
+      </div>
+      <div class="slide-content">
+        <div class="left-col">
+          <p class="lead">
+            Dự án kế thừa và đối chiếu trực tiếp với 4 nghiên cứu nền tảng trong lĩnh vực Autonomous Racing và Continuous RL:
+          </p>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div class="metric-card">
+              <h4>Fuchs et al. (IEEE RA-L 2021) — Gran Turismo Sport</h4>
+              <div class="metric-sub">
+                Thuật toán SAC ($10\text{ Hz}$), hành động 2D $[steer, throttle/brake]$, quan sát 13 tia raycast + độ cong. Đạt trình độ siêu phàm không cần racing line, nhưng nhạy cảm với trễ tín hiệu $> 100\text{ ms}$.
+              </div>
+            </div>
+            <div class="metric-card">
+              <h4>Wurman et al. (Nature 2022) — Gran Turismo Sophy</h4>
+              <div class="metric-sub">
+                QR-SAC phân phối (32 quantiles), quan sát động lực học 4 bánh và 60 điểm biên 3D. Nhóm tác giả ghi nhận Sophy xuất hiện hiện tượng dao động vô lăng $10\text{ Hz}$ (*steering chattering*) để tối ưu thời gian.
+              </div>
+            </div>
+            <div class="metric-card">
+              <h4>Chisari et al. (IEEE ICRA 2021) & Mysore et al. (CAPS 2021)</h4>
+              <div class="metric-sub">
+                Đề xuất không gian nâng bậc ($\Delta u_t$) và hàm mất mát điều chuẩn độ mượt thời gian ($L_T$) / không gian ($L_S$) để triệt tiêu hiện tượng bang-bang rung giật trong điều khiển liên tục.
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="right-col">
+          <div class="visual-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+            </svg>
+            <div class="visual-label">[Placeholder: Bảng So sánh Phương pháp SOTA]</div>
+            <div class="visual-desc">Bảng đối chuẩn 4 công trình SOTA: Khác biệt về Action Space (3D tách biệt vs 2D gộp), On-policy PPO vs Off-policy SAC, và cách xử lý Chattering.</div>
+            <div class="visual-details">
+              <span class="tag-pill">GT Sophy (Nature)</span>
+              <span class="tag-pill">Fuchs (RA-L)</span>
+              <span class="tag-pill">CAPS (ICRA)</span>
+              <span class="tag-pill">PPO Continuous</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         SLIDE 3: VẬT LÝ BULLET & METADRIVE
+         =================================================================== -->
+    <section class="slide" id="slide-3">
+      <div class="slide-header">
+        <div>
+          <div class="slide-tag">03 / Động lực học Mô phỏng</div>
+          <h1 class="slide-title">Vật lý Động cơ Bullet Physics & Nền tảng MetaDrive</h1>
+        </div>
+        <div class="slide-step">Multi-body Dynamics & Friction Limits</div>
+      </div>
+      <div class="slide-content">
+        <div class="left-col">
+          <p class="lead">
+            Hệ thống vận hành trên động cơ vật lý đa vật thể Bullet Physics thông qua môi trường MetaDrive:
+          </p>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div class="metric-card">
+              <h4>Mô hình Phương tiện Raycast (Raycast Vehicle Dynamics)</h4>
+              <div class="metric-sub">
+                Thân xe là khối cứng (Rigid Body) tương tác mặt đường qua 4 tia raycast độc lập. Mỗi bánh xe có hệ thống treo nhún (Spring-Damper), tự động tính toán phản lực pháp tuyến $F_z$ tức thời theo độ nén lò xo.
+              </div>
+            </div>
+            <div class="metric-card">
+              <h4>Elip Ma sát Coulomb & Kamm</h4>
+              <div class="metric-sub">
+                $$\left(\frac{F_x}{\mu F_z}\right)^2 + \left(\frac{F_y}{\mu F_z}\right)^2 \le 1$$
+                Lực ma sát lốp được giới hạn bởi tải trọng pháp tuyến tức thời. Khi tải nén dồn sang hai bánh ngoài lúc ôm cua, giới hạn bám cục bộ tăng vọt cho phép chịu gia tốc ngang lớn.
+              </div>
+            </div>
+            <div class="metric-card">
+              <h4>Dịch chuyển Tải trọng & Góc trượt Thân xe $\beta$</h4>
+              <div class="metric-sub">
+                Góc trượt thân xe $\beta = \arctan(v_y / v_x)$. Khi phanh dồn tải về trước ($\Delta F_z \approx \frac{m a_x h_{\text{cg}}}{L}$), tải bánh sau giảm mạnh. Đánh lái đột ngột khi tải sau triệt tiêu sẽ gây xoay vòng (Spin-out).
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="right-col">
+          <div class="visual-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <ellipse cx="12" cy="12" rx="9" ry="6" stroke-width="1.5"></ellipse>
+              <line x1="12" y1="3" x2="12" y2="21" stroke-width="1.2" stroke-dasharray="2 2"></line>
+              <line x1="3" y1="12" x2="21" stroke-width="1.2" stroke-dasharray="2 2"></line>
+            </svg>
+            <div class="visual-label">[Placeholder: Sơ đồ Raycast 4 Bánh & Dynamic Load Transfer]</div>
+            <div class="visual-desc">Minh họa dịch chuyển trọng tâm khi gia tốc/phanh và nén lò xo giảm xóc ngoài góc cua, tạo độ bám động học tức thời vượt ma sát tĩnh.</div>
+            <div class="visual-details">
+              <span class="tag-pill">Bullet Raycast</span>
+              <span class="tag-pill">Normal Force Fz</span>
+              <span class="tag-pill">Suspension Roll</span>
+              <span class="tag-pill">Sideslip Angle &beta;</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         SLIDE 4: TỪ XE DÂN DỤNG METADRIVE ĐẾN XE ĐUA GT3
+         =================================================================== -->
+    <section class="slide" id="slide-4">
+      <div class="slide-header">
+        <div>
+          <div class="slide-tag">04 / Cơ học & Hiệu chuẩn Xe</div>
+          <h1 class="slide-title">Từ Xe Gốc MetaDrive Đến Cấu Hình GT3: Đã Sửa Gì & Giữ Gì?</h1>
+        </div>
+        <div class="slide-step">Vehicle Transformation: Civilian Sedan &rarr; GT3 RaceCar</div>
+      </div>
+      <div class="slide-content">
+        <div class="left-col">
+          <p class="lead">
+            Xe đua thể thao <strong>GT3RaceCar</strong> được cải tiến từ khung gầm <code>DefaultVehicle</code> (Sedan dân dụng) của MetaDrive để đáp ứng điều kiện đua tốc độ cao:
+          </p>
+          <table class="clean-table">
+            <thead>
+              <tr>
+                <th>Thông số Động cơ / Cơ học</th>
+                <th>Xe Gốc MetaDrive (Sedan)</th>
+                <th>Xe Đua GT3 của Đồ án</th>
+                <th>Mục đích / Nhận định Kỹ thuật</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="label-col">Lực Kéo Động cơ ($F_{\text{drive}}$)</td>
+                <td>$789.2\text{ N}$ (yếu, xe phố)</td>
+                <td><strong>$850.0\text{ N}$</strong> (AWD 4 bánh)</td>
+                <td>Gia tốc dọc đo được $a_x = 3.09\text{ m/s}^2$, $0 \to 100\text{ km/h}$ trong $9.0\text{s}$</td>
+              </tr>
+              <tr>
+                <td class="label-col">Lực Phanh Cực đại ($F_{\text{brake}}$)</td>
+                <td>$119.2\text{ N}$ (chậm dừng)</td>
+                <td><strong>$650.0\text{ N}$</strong> (Gấp $5.5\times$)</td>
+                <td>Hãm tốc gấp ở tốc độ cao; khống chế $a_{\text{brake}} \le 15.0\text{ m/s}^2$ tránh nhấc đuôi</td>
+              </tr>
+              <tr>
+                <td class="label-col">Góc Lái Tối đa ($\delta_{\text{max}}$)</td>
+                <td>$40.0^\circ$ (góc cua phố rộng)</td>
+                <td><strong>$20.0^\circ$</strong> (Siết góc lái)</td>
+                <td>Tạo độ đầm chắc, triệt tiêu nguy cơ đánh lái quá gắt gây lật xe</td>
+              </tr>
+              <tr>
+                <td class="label-col">Tốc độ Quay Vô-lăng (Slew)</td>
+                <td>$0.35/\text{step}$ ($7.0^\circ/\text{step}$)</td>
+                <td><strong>$0.18/\text{step}$</strong> ($3.6^\circ/\text{step}$)</td>
+                <td>Bộ lọc làm mượt lái (Slew Rate Limiter) khống chế dao động quán tính</td>
+              </tr>
+              <tr>
+                <td class="label-col">Hệ số Ma sát Lốp ($\mu_{\text{f}} / \mu_{\text{r}}$)</td>
+                <td>$0.90 / 0.90$ (lốp dân dụng)</td>
+                <td><strong>$0.90 / 1.35$</strong> (Slicks sau)</td>
+                <td>Lỗi F16: cầu trước giữ $0.90$, sau nhận $1.35$ &rarr; đặc tính Thiếu lái (Understeer)</td>
+              </tr>
+              <tr class="highlight-row">
+                <td class="label-col">Khối lượng Chassis ($m$)</td>
+                <td>$1100\text{ kg}$ (hardcode Bullet)</td>
+                <td><strong>Giữ nguyên $1100\text{ kg}$</strong></td>
+                <td>MetaDrive không đọc `config["mass"]`; ghi nhận đúng thực tế Bullet</td>
+              </tr>
+              <tr class="highlight-row">
+                <td class="label-col">Trọng tâm ($h_{\text{cg}}$) & Phân bố</td>
+                <td>$0.55\text{ m}$ (lệch trước $1.05\text{m}$)</td>
+                <td><strong>Giữ nguyên $0.55\text{ m}$</strong></td>
+                <td>Trọng tâm cao nguyên bản là nguyên nhân gây chổng đuôi khi phanh $> 1.7\text{G}$</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="right-col">
+          <div class="visual-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.676A48.337 48.337 0 0012 7.5" />
+            </svg>
+            <div class="visual-label">[Placeholder: So Sánh Hình Học & Động Lực Học Xe]</div>
+            <div class="visual-desc">Sơ đồ đối sánh: Xe Sedan nguyên bản góc lái 40° vs Xe thể thao GT3 siết lái 20°, phanh 650N, lốp slick sau và giữ nguyên chassis 1100kg.</div>
+            <div class="visual-details">
+              <span class="tag-pill">Sedan vs GT3</span>
+              <span class="tag-pill">F_brake x5.5</span>
+              <span class="tag-pill">Steer 20° Limit</span>
+              <span class="tag-pill">Understeer (0.9/1.35)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         SLIDE 5: NGUỒN GỐC MÔ HÌNH: TRAIN EE99F9D VS ANCHOR
+         =================================================================== -->
+    <section class="slide" id="slide-5">
+      <div class="slide-header">
+        <div>
+          <div class="slide-tag">05 / Nguồn gốc Mô hình & Môi trường</div>
+          <h1 class="slide-title">Môi trường Train Gốc (`ee99f9d`) vs Chuẩn Neo (`gt3_anchor`)</h1>
+        </div>
+        <div class="slide-step">Origin Environment vs Standardized Anchor (D41)</div>
+      </div>
+      <div class="slide-content">
+        <div class="left-col">
+          <p class="lead">
+            <strong>Bản chất nguồn gốc mô hình:</strong> Trọng số <code>ref_111s</code> được huấn luyện tại commit <code>ee99f9d</code> (nhánh <code>feature/clean-111s-optimal-ghost</code>), sau đó được đưa sang nhánh <code>feature/111s-honest-anchor</code> để đánh giá (eval) và chạy biểu diễn (demo) đối chuẩn:
+          </p>
+          <table class="clean-table">
+            <thead>
+              <tr>
+                <th>Hạng mục Đối chiếu</th>
+                <th>Môi trường Train Gốc (111s @ ee99f9d)</th>
+                <th>Môi trường Đánh giá Neo (gt3_anchor)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="label-col">Quy tắc Biên đường</td>
+                <td><strong>Kerb ảo (4 góc thân xe):</strong> Cho phép cản xe lấn ra tới $4.5\text{m}$ (tâm xe ra $5.5\text{m}$)</td>
+                <td><strong>Luật 4 bánh FIA nghiêm ngặt:</strong> Terminate ngay khi cả 4 lốp rời mép nhựa ($> 5.425\text{m}$)</td>
+              </tr>
+              <tr>
+                <td class="label-col">Cấu hình Episode</td>
+                <td>1 vòng đua (Standing Start đơn)</td>
+                <td>2 vòng liên tiếp (Vòng 1 Standing + Vòng 2 Flying)</td>
+              </tr>
+              <tr>
+                <td class="label-col">Thưởng Cán đích</td>
+                <td>$100.0$ điểm + Bậc thang rời rạc</td>
+                <td>$50.0$ điểm + Hàm mũ $4.0 \cdot \exp((T_0 - T)/\tau)$</td>
+              </tr>
+              <tr>
+                <td class="label-col">Cơ học Xe GT3</td>
+                <td>$m=1100\text{kg}$, AWD, $\mu_{\text{f}}=0.90, \mu_{\text{r}}=1.35$</td>
+                <td><strong>Giữ nguyên 100%</strong> cơ học và lỗi F16 để công bằng</td>
+              </tr>
+              <tr>
+                <td class="label-col">Mốc Đối chứng</td>
+                <td>Ghost Legacy v22 ($114.2\text{s}$, profile cũ)</td>
+                <td><strong>Ghost Hiệu chỉnh gt3_anchor</strong> ($112.8\text{s}$, 33 sweep)</td>
+              </tr>
+            </tbody>
+          </table>
+          <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 5px;">
+            * <strong>Ý nghĩa học thuật (D41):</strong> Việc model train dưới kerb ảo nhưng vẫn hoàn thành <strong>90% vòng sạch</strong> dưới luật 4 bánh FIA khắt khe hơn trên nhánh anchor chứng minh độ bền vững (robustness) của chính sách.
+          </p>
+        </div>
+        <div class="right-col">
+          <div class="visual-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div class="visual-label">[Placeholder: Sơ đồ Chuyển giao Model ee99f9d &rarr; Anchor]</div>
+            <div class="visual-desc">Mô hình train trên môi trường kerb ảo nới lỏng được đem sang môi trường luật 4 bánh nghiêm ngặt để đo đạc khách quan và chạy demo so sánh Ghost.</div>
+            <div class="visual-details">
+              <span class="tag-pill">Train: ee99f9d</span>
+              <span class="tag-pill">Eval: gt3_anchor</span>
+              <span class="tag-pill">FIA Strict Rule</span>
+              <span class="tag-pill">F16 Preserved</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         SLIDE 6: SETUP MÔI TRƯỜNG ĐUA, LUẬT & SA BÀN
+         =================================================================== -->
+    <section class="slide" id="slide-6">
+      <div class="slide-header">
+        <div>
+          <div class="slide-tag">06 / Thiết lập Môi trường Đánh giá</div>
+          <h1 class="slide-title">Sa bàn Silverstone Grand Prix & Luật 4 Bánh FIA</h1>
+        </div>
+        <div class="slide-step">Circuit Topology & Track Limits Referee</div>
+      </div>
+      <div class="slide-content">
+        <div class="left-col">
+          <p class="lead">
+            Sa bàn đua được số hóa chính xác từ bản đồ đường đua quốc tế Silverstone với luật trọng tài nghiêm ngặt:
+          </p>
+          <ul class="bullet-list">
+            <li class="bullet-item">
+              <span class="bullet-icon">✦</span>
+              <div>
+                <strong>Hình học Sa bàn Silverstone:</strong> Tổng chiều dài $L = 2,838.7\text{ m}$ (tỷ lệ nén $1:2.075$ so với thực tế), gồm 23 khối đường (18 góc cua cung tròn $R \in [25, 95]\text{ m}$ và 5 đoạn thẳng), độ rộng lòng đường $9.0\text{ m}$ ($w = 4.5\text{ m}$).
+              </div>
+            </li>
+            <li class="bullet-item">
+              <span class="bullet-icon">✦</span>
+              <div>
+                <strong>Quy tắc Biên đường 4 Bánh FIA (Track Limits):</strong> Xe được coi là hợp lệ khi có ít nhất 1 bánh nằm trên mặt nhựa ($|d_t| \le w + w_{\text{vehicle}}/2 = 4.5 + 0.925 = 5.425\text{ m}$). Ngay khi cả 4 bánh rời mép nhựa ra bãi cỏ, môi trường kích hoạt kết thúc episode (`terminate`) và phạt crash $R = -20$.
+              </div>
+            </li>
+            <li class="bullet-item">
+              <span class="bullet-icon">✦</span>
+              <div>
+                <strong>Giao thức Kiểm thử 2 Vòng:</strong> Mỗi episode đánh giá gồm 2 vòng: Vòng 1 là xuất phát đứng (Standing Start, $v_0 = 0$), Vòng 2 là vòng chạy đà (Flying Lap, duy trì tốc độ cao qua vạch đích).
+              </div>
+            </li>
+          </ul>
+        </div>
+        <div class="right-col">
+          <div class="visual-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.284a1.125 1.125 0 00-1.006 0L3.623 5.722A1.125 1.125 0 003 6.728v11.933c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z" />
+            </svg>
+            <div class="visual-label">[Placeholder: Bản đồ 18 Góc cua Sa bàn Silverstone]</div>
+            <div class="visual-desc">Tọa độ 18 góc cua (Copse, Maggotts-Becketts-Chapel, Stowe, Vale, Club) kèm vùng giới hạn vạch đường theo luật 4 bánh FIA.</div>
+            <div class="visual-details">
+              <span class="tag-pill">2,838.7m Circuit</span>
+              <span class="tag-pill">Track Width: 9.0m</span>
+              <span class="tag-pill">FIA 4-Wheel Rule</span>
+              <span class="tag-pill">Standing & Flying</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         SLIDE 7: LÝ THUYẾT RL & PPO
+         =================================================================== -->
+    <section class="slide" id="slide-7">
+      <div class="slide-header">
+        <div>
+          <div class="slide-tag">07 / Cơ sở Lý thuyết RL</div>
+          <h1 class="slide-title">Định lý Policy Gradient & Thuật toán Continuous PPO</h1>
+        </div>
+        <div class="slide-step">Policy Gradients, GAE & Clipped Objective</div>
+      </div>
+      <div class="slide-content">
+        <div class="left-col">
+          <p class="lead">
+            Vận dụng kiến thức nền tảng môn học: Tham số hóa chính sách liên tục $\pi_\theta(a|s)$ và tối ưu hóa bằng thuật toán Actor-Critic on-policy:
+          </p>
+          <ul class="bullet-list">
+            <li class="bullet-item">
+              <span class="bullet-icon">✦</span>
+              <div>
+                <strong>Định lý Policy Gradient (Sutton et al., 1999):</strong>
+                $$\nabla_\theta J(\theta) = \mathbb{E}_{\pi_\theta} \left[ \nabla_\theta \ln \pi_\theta(a|s) \cdot A^{\pi_\theta}(s, a) \right]$$
+                Kỳ diệu ở chỗ đạo hàm hoàn toàn không phụ thuộc vào đạo hàm của phân phối trạng thái dừng $d^\pi(s)$, cho phép lấy mẫu trực tiếp từ quỹ đạo chạy trong mô phỏng.
+              </div>
+            </li>
+            <li class="bullet-item">
+              <span class="bullet-icon">✦</span>
+              <div>
+                <strong>Thuật toán PPO (Schulman et al., 2017):</strong>
+                $$L^{\text{CLIP}}(\theta) = \hat{\mathbb{E}}_t \left[ \min\left(r_t(\theta) \hat{A}_t, \, \text{clip}(r_t(\theta), 1-\epsilon, 1+\epsilon) \hat{A}_t\right) \right]$$
+                với tỷ lệ xác suất $r_t(\theta) = \frac{\pi_\theta(a_t|s_t)}{\pi_{\theta_{\text{old}}}(a_t|s_t)}$, biên kẹp $\epsilon = 0.15$ khống chế bước nhảy chính sách, ngăn chặn thảm họa sụp đổ policy.
+              </div>
+            </li>
+            <li class="bullet-item">
+              <span class="bullet-icon">✦</span>
+              <div>
+                <strong>Generalized Advantage Estimation (GAE):</strong> Ước lượng hàm ưu thế $\hat{A}_t^{\text{GAE}(\gamma, \lambda)} = \sum_{l=0}^\infty (\gamma \lambda)^l \delta_{t+l}^V$ với $\gamma = 0.99, \lambda = 0.95$ cân bằng tối ưu giữa độ chệch (bias) và phương sai (variance).
+              </div>
+            </li>
+          </ul>
+        </div>
+        <div class="right-col">
+          <div class="visual-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+            </svg>
+            <div class="visual-label">[Placeholder: Sơ đồ Clipped Objective & GAE]</div>
+            <div class="visual-desc">Đồ thị hàm mất mát PPO Clip: Vùng chặn $\epsilon = 0.15$ bảo vệ cập nhật chính sách khi Advantage âm/dương và sơ đồ lan truyền TD error của GAE.</div>
+            <div class="visual-details">
+              <span class="tag-pill">PPO-Clip (&epsilon;=0.15)</span>
+              <span class="tag-pill">GAE (&lambda;=0.95)</span>
+              <span class="tag-pill">&gamma; = 0.99</span>
+              <span class="tag-pill">Actor-Critic</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         SLIDE 8: CẤU TRÚC PHẦN THƯỞNG, POLICY & ECU
+         =================================================================== -->
+    <section class="slide" id="slide-8">
+      <div class="slide-header">
+        <div>
+          <div class="slide-tag">08 / Cấu trúc RL & Chấp hành</div>
+          <h1 class="slide-title">Thiết kế Phần thưởng, Policy & Bộ Trộn ECU $C^1$</h1>
+        </div>
+        <div class="slide-step">Reward Formulation & Jacobian-Corrected Policy</div>
+      </div>
+      <div class="slide-content">
+        <div class="left-col">
+          <p class="lead">
+            Thiết kế chi tiết không gian trạng thái, phân phối chính sách và cơ chế điều khiển chấp hành:
+          </p>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div class="formula-banner">
+              <strong>Hàm Thưởng Chi tiết:</strong>
+              $$r_t = 0.15 \Delta s_t - 0.04 \left(\frac{d_t}{w}\right)^2 - 0.10 (\Delta\delta_t)^2 + r_{\text{idle}} + R^{\text{terminal}}$$
+              Thưởng về đích: $R^{\text{finish}} = 50.0 + \min\left(150, 4.0 \cdot \exp\left(\frac{T_0 - T_{\text{lap}}}{\tau}\right)\right)$; Phạt crash $R^{\text{crash}} = -20.0$.
+            </div>
+            <ul class="bullet-list">
+              <li class="bullet-item">
+                <span class="bullet-icon">✦</span>
+                <div>
+                  <strong>Phân phối Squashed Gaussian & Bù trừ Jacobian:</strong> $a_i = \tanh(u_i)$ với $u_i \sim \mathcal{N}(\mu_i, \sigma_i^2)$. Tính log-prob chính xác qua định thức Jacobian:
+                  $$\log \pi(\mathbf{a}|\mathbf{s}) = \sum_{i=1}^3 \left[ \log \mathcal{N}(u_i) - 2\left(\ln 2 - u_i - \text{softplus}(-2u_i)\right) \right]$$
+                </div>
+              </li>
+              <li class="bullet-item">
+                <span class="bullet-icon">✦</span>
+                <div>
+                  <strong>Bộ Trộn ECU $C^1$ & Slew Rate Limiter:</strong> Tín hiệu lái khống chế $|\Delta\delta| \le 0.18/\text{step}$ ($3.6^\circ$). Tín hiệu pedal gộp qua hàm vùng chết phanh liên tục: $\text{pedal} = a^{\text{thr}} \cdot (1 - a_{\text{eff}}^{\text{brk}}) - a_{\text{eff}}^{\text{brk}}$.
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="right-col">
+          <div class="visual-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6a7.5 7.5 0 107.5 7.5h-7.5V6z" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0013.5 3v7.5z" />
+            </svg>
+            <div class="visual-label">[Placeholder: Sơ đồ Mạng Nơ-ron Actor-Critic & Bộ trộn ECU]</div>
+            <div class="visual-desc">Sơ đồ khối: MLP 35D $\to$ Mean & Log-std $\to$ Tanh $\to$ Slew Rate $\to$ ECU Pedal Mixer $\to$ Mô tơ & Phanh Bullet.</div>
+            <div class="visual-details">
+              <span class="tag-pill">MLP [256, 256]</span>
+              <span class="tag-pill">Jacobian Log-prob</span>
+              <span class="tag-pill">Slew Rate Limiter</span>
+              <span class="tag-pill">C1 Pedal Mixer</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         SLIDE 9: MỐC CHUẨN GIẢI TÍCH & GHOST CAR
+         =================================================================== -->
+    <section class="slide" id="slide-9">
+      <div class="slide-header">
+        <div>
+          <div class="slide-tag">09 / Mốc Đối chuẩn Giải tích</div>
+          <h1 class="slide-title">Xe Bóng Ma Giải tích: Convex QP & Lipp-Boyd</h1>
+        </div>
+        <div class="slide-step">Analytical Baseline & Ghost Car Benchmark</div>
+      </div>
+      <div class="slide-content">
+        <div class="left-col">
+          <p class="lead">
+            Phát triển động cơ giải tích độc lập hai tầng làm mốc đối chứng khoa học tuyệt đối để so sánh với RL:
+          </p>
+          <ul class="bullet-list">
+            <li class="bullet-item">
+              <span class="bullet-icon">1.</span>
+              <div>
+                <strong>Tối ưu Quỹ đạo Cực tiểu Độ cong (Convex QP):</strong>
+                $$\min_{\boldsymbol{\alpha}} \int_0^L \kappa^2(s) \, ds \approx \min_{\boldsymbol{\alpha}} \frac{1}{2} \boldsymbol{\alpha}^T \mathbf{Q} \boldsymbol{\alpha} + \mathbf{c}^T \boldsymbol{\alpha} \quad \text{s.t. } -w_{\text{eff}} \le \alpha_i \le w_{\text{eff}}$$
+                Giải qua OSQP trên lưới rời rạc, $w_{\text{eff}} = 4.05\text{ m}$ (trừ nửa bề rộng xe) trên mặt đường 9m.
+              </div>
+            </li>
+            <li class="bullet-item">
+              <span class="bullet-icon">2.</span>
+              <div>
+                <strong>Phân bố Tốc độ Lipp-Boyd (3 lượt tích phân):</strong>
+                (1) Giới hạn góc cua $v_{\text{corner}}^*(s) = \sqrt{a_{\text{lat}} / |\kappa(s)|}$; (2) Tích phân lùi xác định điểm phanh tối ưu theo $a_{\text{brake}} = 15.0\text{ m/s}^2$; (3) Tích phân tiến tăng tốc theo $a_{\text{engine}} = 3.09\text{ m/s}^2$.
+              </div>
+            </li>
+            <li class="bullet-item">
+              <span class="bullet-icon">3.</span>
+              <div>
+                <strong>Thời gian Lý thuyết & Thành tích Ghost:</strong> Tích phân thời gian chất điểm $T^* = \int_0^L \frac{1}{v^*(s)} ds = 110.62\text{ s}$. Xe Ghost Car (`gt3_anchor`) bám vết thực tế đạt Flying Lap $112.80\text{ s}$ ($100\%$ sạch).
+              </div>
+            </li>
+          </ul>
+        </div>
+        <div class="right-col">
+          <div class="visual-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <div class="visual-label">[Placeholder: Bản đồ Tốc độ Tối ưu Lipp-Boyd]</div>
+            <div class="visual-desc">Bản đồ nhiệt phân bố vận tốc dọc tối ưu $v^*(s)$ trên quỹ đạo cực tiểu độ cong sa bàn Silverstone làm mốc chuẩn cho Ghost Car.</div>
+            <div class="visual-details">
+              <span class="tag-pill">Convex QP (OSQP)</span>
+              <span class="tag-pill">Lipp-Boyd Profiling</span>
+              <span class="tag-pill">T* = 110.62s</span>
+              <span class="tag-pill">Ghost: 112.80s</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         SLIDE 10: QUÁ TRÌNH HUẤN LUYỆN CHÍNH & VÁ LỖI
+         =================================================================== -->
+    <section class="slide" id="slide-10">
+      <div class="slide-header">
+        <div>
+          <div class="slide-tag">10 / Quá trình Huấn luyện</div>
+          <h1 class="slide-title">Huấn luyện Mô hình Tham chiếu `ref_111s` & Các Lỗi Đã Vá</h1>
+        </div>
+        <div class="slide-step">Training Dynamics & Critical Bug Fixes</div>
+      </div>
+      <div class="slide-content">
+        <div class="left-col">
+          <p class="lead">
+            Quá trình huấn luyện trên $2.15\text{M}$ bước mẫu tại nhánh gốc <code>clean-111s</code> kinh qua việc chẩn đoán và khắc phục 4 lỗi cốt lõi:
+          </p>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div class="metric-card">
+              <h4>1. Kẹt Độ lệch chuẩn Khám phá (F1 - Actor Log-std Freeze)</h4>
+              <div class="metric-sub">
+                Lệnh `clamp` trong forward pass triệt tiêu gradient khi log-std trôi ra biên, làm $\sigma_{\text{brake}}$ kẹt cứng ở $1.0$ (gây phanh ngẫu nhiên liên tục). Vá bằng cách chuyển sang clamp tham số sau bước cập nhật Adam.
+              </div>
+            </div>
+            <div class="metric-card">
+              <h4>2. Khởi tạo Thiên vị Chân phanh (F14 - Brake Bias Init)</h4>
+              <div class="metric-sub">
+                Lớp tuyến tính phanh ban đầu khởi tạo bias $= -1.6$, kéo xác suất phanh ngẫu nhiên ở các bước đầu từ $50\%$ xuống $< 5\%$, giúp xe có đủ động năng khám phá đường đua.
+              </div>
+            </div>
+            <div class="metric-card">
+              <h4>3. Chống Sập Phương sai do Decay Entropy (F14 & I9)</h4>
+              <div class="metric-sub">
+                Hạ `ent_coef` về $0.001$ khiến phương sai đánh lái sập về $0.10$ sau $150\text{k}$ bước, làm xe kẹt cực tiểu tại mét $1306\text{ m}$. Khắc phục bằng cách cố định `ent_coef = 0.01` trong suốt run.
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="right-col">
+          <div class="visual-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            <div class="visual-label">[Placeholder: Đường cong Hội tụ Huấn luyện PPO ref_111s]</div>
+            <div class="visual-desc">Đồ thị tiến trình 2.15M bước: Hàm thưởng trung bình tăng trưởng ổn định, Entropy được kiểm soát và tỷ lệ hoàn thành vòng đua đạt 100%.</div>
+            <div class="visual-details">
+              <span class="tag-pill">2.15M Steps</span>
+              <span class="tag-pill">Commit ee99f9d</span>
+              <span class="tag-pill">F1 / F14 Patched</span>
+              <span class="tag-pill">100% Completion</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         SLIDE 11: KẾT QUẢ SO SÁNH CHÍNH
+         =================================================================== -->
+    <section class="slide" id="slide-11">
+      <div class="slide-header">
+        <div>
+          <div class="slide-tag">11 / Kết quả Thực nghiệm Chính</div>
+          <h1 class="slide-title">Đối chuẩn Độc lập: PPO Agent vs Mốc Chuẩn Giải tích</h1>
+        </div>
+        <div class="slide-step">20 Independent Evaluation Episodes (FIA 4-Wheel Rule)</div>
+      </div>
+      <div class="slide-content">
+        <div class="left-col">
+          <p class="lead">
+            Đánh giá độc lập trên 20 episode kiểm thử ($n=20$) dưới sự giám sát của trọng tài 4 bánh FIA trên nhánh <code>feature/111s-honest-anchor</code>:
+          </p>
+          <table class="clean-table">
+            <thead>
+              <tr>
+                <th>Cấu hình / Mô hình</th>
+                <th>Standing Lap</th>
+                <th>Flying Lap</th>
+                <th>Best Lap</th>
+                <th>Clean Rate</th>
+                <th>V_tb</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="highlight-row">
+                <td class="label-col">PPO ref_111s (Anchor)</td>
+                <td>114.78 ± 0.40s</td>
+                <td>109.44 ± 0.50s</td>
+                <td>108.60s</td>
+                <td><span class="badge-clean success">18/20 (90%)</span></td>
+                <td>90.26 km/h</td>
+              </tr>
+              <tr>
+                <td class="label-col">PPO Seed 43 (Kiểm chứng)</td>
+                <td>115.18 ± 0.43s</td>
+                <td>109.96 ± 0.69s</td>
+                <td>108.60s</td>
+                <td><span class="badge-clean success">19/20 (95%)</span></td>
+                <td>89.73 km/h</td>
+              </tr>
+              <tr>
+                <td class="label-col">Lý thuyết Tích phân (T*)</td>
+                <td>—</td>
+                <td>110.62s</td>
+                <td>110.62s</td>
+                <td><span class="badge-clean info">Nghiệm số</span></td>
+                <td>92.40 km/h</td>
+              </tr>
+              <tr>
+                <td class="label-col">Ghost Hiệu chỉnh (gt3_anchor)</td>
+                <td>118.20 ± 0.00s</td>
+                <td>112.80 ± 0.00s</td>
+                <td>112.80s</td>
+                <td><span class="badge-clean info">3/3 (100%)</span></td>
+                <td>86.97 km/h</td>
+              </tr>
+              <tr>
+                <td class="label-col">Ghost Cũ (Legacy v22)</td>
+                <td>119.50 ± 0.00s</td>
+                <td>114.20 ± 0.00s</td>
+                <td>114.20s</td>
+                <td><span class="badge-clean info">2/2 (100%)</span></td>
+                <td>85.88 km/h</td>
+              </tr>
+              <tr>
+                <td class="label-col">Fine-tune Luật 4 Bánh (f4d8ef9)</td>
+                <td>113.56 ± 0.38s</td>
+                <td>108.98 ± 0.24s</td>
+                <td>108.70s</td>
+                <td><span class="badge-clean warning">8/20 (40%)</span></td>
+                <td>89.22 km/h</td>
+              </tr>
+            </tbody>
+          </table>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 6px;">
+            * PPO nhanh hơn Ghost Car hiệu chỉnh <strong>$3.36\text{ s}$</strong> và nhanh hơn nghiệm lý thuyết chất điểm $1.18\text{ s}$. 2 lần văng lề xảy ra ở Vale ($2637\text{m}$) và Farm Curve ($364\text{m}$) phản ánh sự chuyển đổi từ môi trường train kerb ảo sang luật 4 bánh FIA.
+          </p>
+        </div>
+        <div class="right-col">
+          <div class="visual-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <div class="visual-label">[Placeholder: Biểu đồ Hộp Lap Time & Vết Quỹ đạo]</div>
+            <div class="visual-desc">Boxplot thời gian vòng PPO (109.4s) vs Ghost (112.8s) và hình ảnh chồng vết quỹ đạo của PPO mở rộng cua so với đường tim đường.</div>
+            <div class="visual-details">
+              <span class="tag-pill">20 Ep Independent</span>
+              <span class="tag-pill">Flying: 109.44s</span>
+              <span class="tag-pill">&Delta;T = -3.36s vs Ghost</span>
+              <span class="tag-pill">90% Clean Lap</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         SLIDE 12: THỰC NGHIỆM VỚI NHIỀU SETUP KHÁC NHAU (ABLATIONS)
+         =================================================================== -->
+    <section class="slide" id="slide-12">
+      <div class="slide-header">
+        <div>
+          <div class="slide-tag">12 / Nghiên cứu Bóc tách & Khảo sát Mở rộng</div>
+          <h1 class="slide-title">Khảo sát Biến số Mô phỏng & Các Nhánh Thực nghiệm</h1>
+        </div>
+        <div class="slide-step">Ablation Studies & Extended Explorations</div>
+      </div>
+      <div class="slide-content">
+        <div class="left-col">
+          <p class="lead">
+            Dự án tiến hành khảo sát có kiểm soát trên nhiều nhánh thực nghiệm để hiểu rõ ảnh hưởng của từng biến số:
+          </p>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div class="metric-card">
+              <h4>1. Bóc tách Phạt Lệch Tim đường (Ablation A13 — `exp/111s-no-rcenter`)</h4>
+              <div class="metric-sub">
+                Đặt $c_{\text{center}} = 0.0$. Tỷ lệ vòng sạch sụt giảm từ $90\%$ về $0\%$ ở Seed 42 và $10\%$ ở Seed 43. Xe liên tục văng lề tại mét $363-365\text{ m}$.
+              </div>
+            </div>
+            <div class="metric-card">
+              <h4>2. Bóc tách Đưa Racing Line vào Quan sát (Nhánh `p2_line`)</h4>
+              <div class="metric-sub">
+                Đưa $(\Delta d_{\text{line}}, v^*)$ vào observation. Tác tử đạt vòng sạch rất sớm ($1.15\text{M}$ bước), nhưng sau $2\text{M}$ bước tốc độ thoái hóa dần ($146.6\text{s} \to 181\text{s}$) do mất động lực khám phá.
+              </div>
+            </div>
+            <div class="metric-card">
+              <h4>3. Khảo sát Lực ép Khí động học (Nhánh `run_f1c` Downforce) & Đua Đa Xe 6 Car</h4>
+              <div class="metric-sub">
+                Thêm $F_{\text{down}} = mg(v/200)^2$ giúp xe ôm cua ổn định ở $301\text{ km/h}$; thử nghiệm đua 6 xe tự chơi (`multicar_f1e`) với phạt va chạm đối xứng và hồi sinh tại chỗ.
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="right-col">
+          <div class="visual-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+            </svg>
+            <div class="visual-label">[Placeholder: Sơ đồ Cây Thực nghiệm & Ablations]</div>
+            <div class="visual-desc">Sơ đồ phân nhánh thử nghiệm: Nhánh tham chiếu Anchor, Nhánh bóc tách không r_center, Nhánh privileged line obs, và Nhánh F1 downforce / đa xe.</div>
+            <div class="visual-details">
+              <span class="tag-pill">Ablation r_center</span>
+              <span class="tag-pill">Privileged Line Obs</span>
+              <span class="tag-pill">F1 Downforce</span>
+              <span class="tag-pill">6-Car Selfplay</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         SLIDE 13: BẢNG TỔNG HỢP KẾT QUẢ THỰC NGHIỆM
+         =================================================================== -->
+    <section class="slide" id="slide-13">
+      <div class="slide-header">
+        <div>
+          <div class="slide-tag">13 / Bảng Tổng hợp Kết quả</div>
+          <h1 class="slide-title">So sánh Định lượng Tất cả các Chuỗi Thực nghiệm</h1>
+        </div>
+        <div class="slide-step">Complete Experimental Inventory (Table 4 from Report)</div>
+      </div>
+      <div class="slide-content">
+        <div class="left-col" style="grid-column: span 2;">
+          <table class="clean-table">
+            <thead>
+              <tr>
+                <th>Mã Run / Nhánh Thực nghiệm</th>
+                <th>Cấu hình & Biến số Khảo sát</th>
+                <th>Tổng Bước Mẫu</th>
+                <th>Lap Time [s]</th>
+                <th>Tỷ lệ Vòng Sạch</th>
+                <th>Nhận định Kỹ thuật Chính</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="highlight-row">
+                <td class="label-col">ref_111s (Anchor Chính)</td>
+                <td>GT3, 35D pure, 3D act, $r_{\text{center}} = 0.04$</td>
+                <td>2.15M</td>
+                <td>Flying: 109.4s</td>
+                <td><span class="badge-clean success">18/20 (90%)</span></td>
+                <td>Mô hình chính: Khai thác gia tốc ngang tức thời 1.21G & trail-braking.</td>
+              </tr>
+              <tr>
+                <td class="label-col">PPO Seed 43 (Kiểm chứng)</td>
+                <td>Cùng cấu hình ref_111s, seed ngẫu nhiên khác</td>
+                <td>2.15M</td>
+                <td>Flying: 110.0s</td>
+                <td><span class="badge-clean success">19/20 (95%)</span></td>
+                <td>Xác nhận tính tái lập độc lập của thuật toán PPO trên seed mới.</td>
+              </tr>
+              <tr>
+                <td class="label-col">111s_no_rcenter (Ablation)</td>
+                <td>Bỏ phạt tim đường $c_{\text{center}} = 0.0$</td>
+                <td>2.15M</td>
+                <td>112.2s (DNF)</td>
+                <td><span class="badge-clean danger">0/20 (0%) S42</span></td>
+                <td>Tầm nhìn ngắn $\gamma=0.99$ khiến xe sa bẫy Early Apex và văng lề tại m 363.</td>
+              </tr>
+              <tr>
+                <td class="label-col">p2_line (Privileged Prior)</td>
+                <td>Nạp Racing Line và $v^*$ vào observation</td>
+                <td>2.66M</td>
+                <td>Best: 153.7s</td>
+                <td>Sạch ở 1.15M</td>
+                <td>Sạch sớm nhưng thoái hóa tốc độ dài hạn do giảm áp lực khám phá.</td>
+              </tr>
+              <tr>
+                <td class="label-col">run_a0_legacy (Baseline cũ)</td>
+                <td>Lỗi F1 (kẹt $\sigma$), thiếu bù Jacobian F2</td>
+                <td>3.38M</td>
+                <td>147.5s (DNF)</td>
+                <td><span class="badge-clean danger">0/20 (0%)</span></td>
+                <td>Lỗi gradient log-std khiến xe liên tục phanh ngẫu nhiên, không thể về đích.</td>
+              </tr>
+              <tr>
+                <td class="label-col">run_f1c (Khảo sát Downforce)</td>
+                <td>Xe F1 có Downforce nhân tạo $F_{\text{down}} \propto v^2$</td>
+                <td>1.00M</td>
+                <td>109.4s (3 làn)</td>
+                <td><span class="badge-clean info">2/2 (100%)</span></td>
+                <td>Lực ép khí động học mở rộng giới hạn ma sát ngang ở vận tốc cao.</td>
+              </tr>
+            </tbody>
+          </table>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;">
+            * Bảng số liệu đối sánh trích xuất từ <strong>Bảng 4 (REPORT.md)</strong>. Toàn bộ các mô hình đối chứng với mốc giải tích đều được kiểm soát nghiêm ngặt trên môi trường xe thể thao tiêu chuẩn <code>gt3_anchor</code>.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         SLIDE 14: THẢO LUẬN CHUYÊN SÂU
+         =================================================================== -->
+    <section class="slide" id="slide-14">
+      <div class="slide-header">
+        <div>
+          <div class="slide-tag">14 / Thảo luận & Phân tích Động học</div>
+          <h1 class="slide-title">Giải mã Động lực học & Hiện tượng Rung giật Pedal</h1>
+        </div>
+        <div class="slide-step">Trail-Braking, Model Mismatch & 5 Hz Chattering</div>
+      </div>
+      <div class="slide-content">
+        <div class="left-col">
+          <p class="lead">
+            Phân tích Telemetry chuyên sâu giải thích nguyên nhân khoa học giúp RL vượt qua nghiệm giải tích:
+          </p>
+          <ul class="bullet-list">
+            <li class="bullet-item">
+              <span class="bullet-icon">✦</span>
+              <div>
+                <strong>Bản chất Hiện tượng Vượt Mốc Giải tích (Model-Plant Mismatch):</strong> Mô hình chất điểm của Ghost Car giả định giới hạn ngang cố định $0.95\text{G}$. PPO tối ưu trực tiếp trên Bullet Physics nên khai thác được hiện tượng nén lò xo và dịch chuyển tải trọng: Phân vị $a_{\text{lat, p95}} = 0.99\text{G}$, cực đại đạt $1.21\text{G}$.
+              </div>
+            </li>
+            <li class="bullet-item">
+              <span class="bullet-icon">✦</span>
+              <div>
+                <strong>Kỹ thuật Trail-Braking Tự sinh:</strong> Telemetry cho thấy PPO vừa rà nhẹ phanh ($10-25\%$) vừa đánh lái vào cua để duy trì tải đè lên trục trước, tăng lực bám dẫn hướng của bánh trước.
+              </div>
+            </li>
+            <li class="bullet-item">
+              <span class="bullet-icon">✦</span>
+              <div>
+                <strong>Cơ chế Dao động Bàn đạp 5 Hz (PWM Chattering):</strong> Vector quan sát nạp `obs[6] = last_pedal` nhưng hàm thưởng chỉ phạt rung lái $(\Delta\delta)^2$ mà thiếu phạt vi phân $(\Delta\text{pedal})^2$. Tạo thành mạch hồi tiếp dao động 2 bước (bước chẵn đạp ga $+0.5$, bước lẻ rà phanh $-0.2$).
+              </div>
+            </li>
+          </ul>
+        </div>
+        <div class="right-col">
+          <div class="visual-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+            </svg>
+            <div class="visual-label">[Placeholder: Biểu đồ Telemetry Trail-Braking & PWM Chattering]</div>
+            <div class="visual-desc">Dữ liệu chồng vết ga/phanh tại góc cua Vale (m 2637): Vùng chồng lấn phanh-lái (Trail-braking) và dạng sóng răng cưa 5 Hz của lệnh điều khiển pedal.</div>
+            <div class="visual-details">
+              <span class="tag-pill">Trail-Braking</span>
+              <span class="tag-pill">5 Hz PWM Pedal</span>
+              <span class="tag-pill">Model Mismatch</span>
+              <span class="tag-pill">G-G Exploration</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         SLIDE 15: KẾT LUẬN & HƯỚNG PHÁT TRIỂN
+         =================================================================== -->
+    <section class="slide" id="slide-15">
+      <div class="slide-header">
+        <div>
+          <div class="slide-tag">15 / Kết luận & Hướng Phát triển</div>
+          <h1 class="slide-title">Tổng kết Đóng góp Khoa học & Tầm nhìn</h1>
+        </div>
+        <div class="slide-step">Key Academic Contributions & Future Horizons</div>
+      </div>
+      <div class="slide-content">
+        <div class="left-col">
+          <p class="lead">
+            Dự án hoàn thành toàn diện các mục tiêu nghiên cứu với cam kết liêm chính học thuật:
+          </p>
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <div class="metric-card highlight">
+              <h4>1. Sức mạnh Khám phá của Continuous PPO</h4>
+              <div class="metric-sub">
+                Chứng minh một tác tử RL không tiền nghiệm (Zero Racing Line Prior) hoàn toàn có thể tự học cách khai thác elip ma sát và kỹ thuật trail-braking để vượt qua nghiệm giải tích cổ điển $3.36\text{ s}$ trên sa bàn Silverstone.
+              </div>
+            </div>
+            <div class="metric-card">
+              <h4>2. Liêm chính Học thuật & Tính Tái lập</h4>
+              <div class="metric-sub">
+                Minh bạch giải thích kết quả dựa trên cơ sở vật lý (Model Mismatch); đóng băng môi trường xe chuẩn `gt3_anchor` và kiểm chứng thành công trên seed ngẫu nhiên độc lập ($95\%$ vòng sạch).
+              </div>
+            </div>
+            <div class="metric-card">
+              <h4>3. Hướng Mở rộng Tương lai</h4>
+              <div class="metric-sub">
+                Tích hợp hàm mất mát làm mượt CAPS (ICRA 2021) vào loss của Actor để dập tắt dao động pedal 5 Hz; áp dụng Xáo trộn Miền (Domain Randomization) chuẩn bị cho chuyển giao từ mô phỏng sang thực tế (Sim-to-Real).
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="right-col">
+          <div class="visual-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+            <div class="visual-label">[Placeholder: Tổng kết Đóng góp Dự án]</div>
+            <div class="visual-desc">Tác tử PPO ref_111s hoàn thành xuất sắc 20 episode kiểm thử độc lập dưới luật 4 bánh FIA với Flying Lap 109.44s.</div>
+            <div class="visual-details">
+              <span class="tag-pill">PPO Continuous</span>
+              <span class="tag-pill">Silverstone GT3</span>
+              <span class="tag-pill">109.44s Flying</span>
+              <span class="tag-pill">FIA Rule Verified</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Minimalist Bottom Controls -->
+  <div class="controls">
+    <button class="nav-btn" id="prev-btn" title="Slide trước (Phím mũi tên trái)">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M15 18l-6-6 6-6"/>
+      </svg>
+    </button>
+    <div class="slide-indicator" id="slide-num">1 / 15</div>
+    <button class="nav-btn" id="next-btn" title="Slide kế tiếp (Phím mũi tên phải hoặc Space)">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M9 18l6-6-6-6"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="hotkey-tip">Dùng phím &larr; / &rarr; hoặc Space để chuyển slide</div>
+
+  <script>
+    const slides = document.querySelectorAll('.slide');
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const slideNum = document.getElementById('slide-num');
+
+    let current = 0;
+    const total = slides.length;
+
+    function showSlide(index) {
+      if (index < 0) index = 0;
+      if (index >= total) index = total - 1;
+      current = index;
+
+      slides.forEach((s, idx) => {
+        if (idx === current) {
+          s.classList.add('active');
+        } else {
+          s.classList.remove('active');
+        }
+      });
+
+      slideNum.textContent = `${current + 1} / ${total}`;
+    }
+
+    prevBtn.addEventListener('click', () => showSlide(current - 1));
+    nextBtn.addEventListener('click', () => showSlide(current + 1));
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+        e.preventDefault();
+        showSlide(current + 1);
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        e.preventDefault();
+        showSlide(current - 1);
+      } else if (e.key === 'Home') {
+        e.preventDefault();
+        showSlide(0);
+      } else if (e.key === 'End') {
+        e.preventDefault();
+        showSlide(total - 1);
+      }
+    });
+  </script>
+</body>
+</html>
