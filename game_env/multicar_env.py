@@ -10,6 +10,7 @@ MultiCarRacingEnv: Đua 4-6 xe trên Silverstone half (mặc định 3 làn x 4.
 
 from typing import Dict, List, Optional, Tuple
 import numpy as np
+from numpy.typing import NDArray
 from gymnasium import spaces
 
 from metadrive.component.vehicle.vehicle_type import DefaultVehicle, MVehicle, SVehicle, LVehicle
@@ -21,7 +22,7 @@ BASE_OBS_DIM = 35
 OPPONENT_FEATURES = 5
 
 # Hằng số Racecraft & Overtake Dynamics (Nhánh finetune không phanh cưỡng bức)
-OVERTAKE_BONUS = 3.5            # Thưởng lớn khi vượt sạch qua xe trước
+OVERTAKE_BONUS = 5.0           # Tăng mạnh thưởng vượt sạch qua xe trước 
 OVERTAKE_COOLDOWN_STEPS = 15    # Cooldown ngắn (1.5s) để xe liên tục tranh chấp
 RESPAWN_IMMUNITY_STEPS = 120
 PROXIMITY_LONG_M = 4.5          # Chiều dài thân xe 4.5m
@@ -29,7 +30,6 @@ PROXIMITY_LAT_M = 1.20          # Thu hẹp vùng đệm ngang để thoải má
 PROXIMITY_PENALTY_COEF = 0.15   # Giảm phạt tiệm cận để agent dám so kè cự ly gần
 
 # Thưởng phong cách tay đua (Racecraft rewards)
-SLIPSTREAM_BONUS = 0.08         # Thưởng bám đuôi hút gió lấy đà
 SIDE_BY_SIDE_BONUS = 0.08       # Thưởng chạy song song không va chạm
 
 CAR_COLORS = [
@@ -51,6 +51,9 @@ VEHICLE_BODY_CLASSES = [DefaultVehicle, MVehicle, SVehicle, LVehicle]
 
 class RacerState:
     """Trạng thái riêng của từng xe trên đường đua"""
+    prev_action: NDArray[np.float32]
+    last_action: NDArray[np.float32]
+    last_applied: NDArray[np.float32]
 
     def __init__(self, car_id: int, car: BaseRaceVehicle, raw_vehicle, spawn_lat: float = 0.0):
         self.car_id = car_id
@@ -69,9 +72,9 @@ class RacerState:
         self.lap_start_step = 0
         self.respawn_step = -999   # Bước hồi sinh gần nhất (cửa sổ miễn trừ WI-L5)
         self.lap_times: List[float] = []
-        self.prev_action = np.zeros(3, dtype=np.float32)
-        self.last_action = np.zeros(3, dtype=np.float32)
-        self.last_applied = np.zeros(2, dtype=np.float32)
+        self.prev_action: NDArray[np.float32] = np.zeros(3, dtype=np.float32)
+        self.last_action: NDArray[np.float32] = np.zeros(3, dtype=np.float32)
+        self.last_applied: NDArray[np.float32] = np.zeros(2, dtype=np.float32)
         self.last_acc_long_g = 0.0
         self.last_acc_lat_g = 0.0
         self.stagnant_steps = 0
@@ -272,7 +275,7 @@ class MultiCarRacingEnv(MetaRacingEnv):
         - Chân ga và chân phanh được giải phóng 100% để agent tự do thể hiện kỹ năng phanh trễ
           (late braking), ôm apex và vít ga bứt tốc.
         - Chỉ hỗ trợ vi chỉnh góc lái (Steer Nudge) thông minh:
-          1. Khi áp sát xe trước (dx in [0.5m, 8.5m]): Chủ động tìm làn thoáng hơn để lách ra mở góc vượt (Slipstream pull-out).
+          1. Khi áp sát xe trước (dx in [0.5m, 8.5m]): Chủ động tìm làn thoáng hơn để lách ra mở góc vượt (Overtake pull-out).
           2. Khi chạy song song sườn xe (dx in [-2.5m, 3.5m]): Giữ khoảng cách sườn an toàn (|dy| >= 1.9m)
              để 2 xe có thể chạy cạnh nhau qua góc cua (Wheel-to-wheel racing) mà không bị cọ xát.
         """
@@ -683,7 +686,7 @@ class MultiCarRacingEnv(MetaRacingEnv):
             lat = np.array([-np.sin(h), np.cos(h)], dtype=np.float32)
             r_no_gap = self._compute_no_gap_reckless_penalty(st, fwd, vel)
 
-            # Thưởng phong cách đua xe thể thao (Slipstream & Wheel-to-wheel)
+            # Thưởng phong cách đua xe thể thao (Wheel-to-wheel side-by-side)
             r_racecraft = 0.0
             for ot in self.racers:
                 if ot is st or not ot.active:
@@ -691,11 +694,8 @@ class MultiCarRacingEnv(MetaRacingEnv):
                 rel_pos = ot.car.position - st.car.position
                 fwd_d = float(np.dot(rel_pos, fwd))
                 lat_d = float(np.dot(rel_pos, lat))
-                # Bám đuôi hút gió (Slipstream/Drafting): cự ly dọc 2m-10m, cùng làn (|lat_d| < 1.5m), tốc độ cao
-                if 2.0 <= fwd_d <= 10.0 and abs(lat_d) < 1.5 and speed_km_h > 40.0:
-                    r_racecraft += SLIPSTREAM_BONUS
                 # Chạy song song sạch sẽ (Wheel-to-wheel): ngang hàng, cách sườn an toàn
-                elif -2.5 <= fwd_d <= 2.5 and 1.8 <= abs(lat_d) <= 3.2 and speed_km_h > 40.0:
+                if -2.5 <= fwd_d <= 2.5 and 1.8 <= abs(lat_d) <= 3.2 and speed_km_h > 40.0:
                     r_racecraft += SIDE_BY_SIDE_BONUS
             st.contacts += int(new_contact)
             st.in_contact = contact

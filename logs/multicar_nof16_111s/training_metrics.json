@@ -1,0 +1,53 @@
+{
+  "samples": [
+    0
+  ],
+  "eval_finished": [
+    0
+  ],
+  "eval_outs": [
+    5
+  ],
+  "eval_stalls": [
+    1
+  ],
+  "eval_contacts": [
+    59
+  ],
+  "eval_overtakes": [
+    0
+  ],
+  "eval_completion": [
+    13.612180437619534
+  ],
+  "eval_mean_lap": [
+    0.0
+  ],
+  "eval_best_lap": [
+    0.0
+  ],
+  "pedal_sw_per_100": [
+    4.376134264269811
+  ],
+  "steer_rev_per_100": [
+    41.52841318061893
+  ],
+  "beta_p95_deg": [
+    8.834861750326068
+  ],
+  "policy_loss": [
+    0.0
+  ],
+  "value_loss": [
+    0.0
+  ],
+  "entropy": [
+    0.0
+  ],
+  "explained_var": [
+    0.0
+  ],
+  "train_laps": [
+    0
+  ]
+}

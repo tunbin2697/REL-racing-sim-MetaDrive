@@ -257,10 +257,11 @@ def main():
     if has_human_player:
         print("  - [Tay cầm Xbox]: Cần analog trái = Lái | Cò RT = Ga | Cò LT = Phanh | Nút Y = Hồi sinh xe")
         print("  - [Bàn phím]: [W] / [Mũi tên Lên] = Ga | [S] / [Mũi tên Xuống] = Phanh | [A]/[D] = Lái")
-        print("  - [Hồi sinh xe]: Phím [F] hoặc [Backspace] = Đặt lại xe về tim đường ngay lập tức")
+        print("  - [Hồi sinh xe]: Phím [Backspace] hoặc [X] = Đặt lại xe về tim đường ngay lập tức")
     print("  - [Camera 360]: Lia chuột tự do nhìn quanh xe 360 độ | [Chuột giữa]: Reset về chính diện (0 deg)")
-    print("  - [Đổi xe theo dõi]: Phím [C], [Tab], [N]: Xe kế tiếp | [M]: Xe trước | [0]: Xe dẫn đầu | [1]..[9]: Nhảy tới xe")
-    print("  - [Góc nhìn]: [B]: Xem toàn cảnh trên không (Bird-eye) | [Space]: Tạm dừng | [R]: Reset")
+    print("  - [Đổi xe theo dõi]: Phím [Tab] hoặc [N]: Xe kế tiếp | [M]: Xe trước | [0] hoặc [L]: Xe dẫn đầu")
+    print("  - [Góc nhìn]: [B]: Toàn cảnh Bird-eye | [Q]: Chase Cam")
+    print("  - [Hệ thống MetaDrive]: [F]: Bật/Tắt khóa FPS (Unlimited/Realtime) | [C]: Chụp ảnh | [P]: Tạm dừng | [R]: Reset")
     print("=" * 75)
 
     try:
@@ -278,44 +279,48 @@ def main():
                     keyboard_controller = KeyboardController(pygame_control=False)
 
                 if engine is not None:
-                    cam_controller = MultiCarCameraController(engine=engine, num_cars=args.num_cars)
+                    cam = MultiCarCameraController(engine=engine, num_cars=args.num_cars)
+                    cam_controller = cam
 
                     # Đăng ký phím bấm tương tác hệ thống
                     if hasattr(engine, "accept"):
-                        # Phím đổi xe: [C], [Tab], [N]: xe kế tiếp | [M]: xe trước | [0]: xe dẫn đầu
-                        engine.accept("c", lambda: cam_controller.cycle_car(1, env.racers, car_names))
-                        engine.accept("C", lambda: cam_controller.cycle_car(1, env.racers, car_names))
-                        engine.accept("tab", lambda: cam_controller.cycle_car(1, env.racers, car_names))
-                        engine.accept("n", lambda: cam_controller.cycle_car(1, env.racers, car_names))
-                        engine.accept("m", lambda: cam_controller.cycle_car(-1, env.racers, car_names))
-                        engine.accept("0", lambda: cam_controller.track_leader(env.standings(), env.racers, car_names))
-
-                        # Phím số 1..9 nhảy trực tiếp đến xe
-                        for k in range(min(args.num_cars, 9)):
-                            engine.accept(str(k + 1), lambda idx=k: cam_controller.track_car(idx, env.racers, car_names))
+                        # Phím đổi xe: [Tab] hoặc [N]: xe kế tiếp | [M]: xe trước | [0] hoặc [L]: xe dẫn đầu
+                        engine.accept("tab", lambda: cam.cycle_car(1, env.racers, car_names))
+                        engine.accept("n", lambda: cam.cycle_car(1, env.racers, car_names))
+                        engine.accept("N", lambda: cam.cycle_car(1, env.racers, car_names))
+                        engine.accept("m", lambda: cam.cycle_car(-1, env.racers, car_names))
+                        engine.accept("M", lambda: cam.cycle_car(-1, env.racers, car_names))
+                        engine.accept("0", lambda: cam.track_leader(env.standings(), env.racers, car_names))
+                        engine.accept("l", lambda: cam.track_leader(env.standings(), env.racers, car_names))
+                        engine.accept("L", lambda: cam.track_leader(env.standings(), env.racers, car_names))
 
                         # Chuột giữa (mouse2): Reset góc nhìn về 0 deg
-                        engine.accept("mouse2", cam_controller.reset_to_front)
+                        engine.accept("mouse2", cam.reset_to_front)
 
                         # Phím [B]: Toàn cảnh Bird-eye | [Q]: Chase Cam
-                        engine.accept("b", cam_controller.toggle_bird_eye)
-                        engine.accept("q", lambda: cam_controller.track_car(cam_controller.tracked_car_idx, env.racers, car_names))
+                        engine.accept("b", cam.toggle_bird_eye)
+                        engine.accept("B", cam.toggle_bird_eye)
+                        engine.accept("q", lambda: cam.track_car(cam.tracked_car_idx, env.racers, car_names))
+                        engine.accept("Q", lambda: cam.track_car(cam.tracked_car_idx, env.racers, car_names))
 
-                        # Phím hồi sinh xe: [F] hoặc [Backspace]
-                        engine.accept("f", lambda: env.respawn_car(0))
-                        engine.accept("F", lambda: env.respawn_car(0))
+                        # Phím hồi sinh xe: [Backspace] hoặc [X]
+                        # (TUYỆT ĐỐI KHÔNG gán [F] để giữ [F] nguyên bản cho MetaDrive bật/tắt giới hạn FPS force_fps.toggle)
                         engine.accept("backspace", lambda: env.respawn_car(0))
+                        engine.accept("x", lambda: env.respawn_car(0))
+                        engine.accept("X", lambda: env.respawn_car(0))
 
-                        # Phím [Space]: Tạm dừng | [R]: Reset vòng đua
+                        # Phím [P]: Tạm dừng | [R]: Reset vòng đua
                         def toggle_pause():
                             game_state["paused"] = not game_state["paused"]
                             print(f">> [TRẬN ĐẤU] {'TẠM DỪNG' if game_state['paused'] else 'TIẾP TỤC'}")
-                        engine.accept("space", toggle_pause)
+                        engine.accept("p", toggle_pause)
+                        engine.accept("P", toggle_pause)
 
                         def request_reset():
                             game_state["reset_requested"] = True
                             print(">> [TRẬN ĐẤU] Đã yêu cầu khởi động lại vòng đua mới...")
                         engine.accept("r", request_reset)
+                        engine.accept("R", request_reset)
 
                 initialized_controllers = True
 
@@ -425,7 +430,7 @@ def main():
                     "Telemetry": f"Vận tốc: {tracked_racer.speed_km_h:5.1f} km/h | Lap Time: {lap_time_str} | Gap: {gap_str}",
                     "Cơ cấu chấp hành": act_str,
                     "Vị trí thi đấu": f"Hạng P{order.index(cam_car) + 1}/{args.num_cars} | Còn lại: {active_count}/{args.num_cars} xe | Va chạm: {tracked_racer.contacts}",
-                    "Phím nóng": "[F] Hồi sinh xe | [C] Đổi xe cam | [B] Toàn cảnh | [Space] Tạm dừng",
+                    "Phím nóng": "[Backspace]/[X] Hồi sinh | [Tab]/[N] Đổi xe | [0] Dẫn đầu | [F] Bật/Tắt khóa FPS | [P] Tạm dừng",
                     "BẢNG XẾP HẠNG TOP": " | ".join(board_p1),
                 }
                 if board_p2:

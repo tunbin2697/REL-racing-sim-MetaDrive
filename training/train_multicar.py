@@ -249,32 +249,36 @@ def main():
             json.dump(metrics, f, indent=2)
 
     def score(res: Dict[str, Any]):
-        # Khi >= 5 xe về đích, ưu tiên giảm mạnh va chạm (contacts) và đạt 3 chỉ số mượt §6
-        finish_tier = min(res["finished"], 5)
+        # Điều kiện tiên quyết: Nếu không có bất kỳ xe nào về đích (0/N), đây là vòng thất bại hoàn toàn
+        if res["finished"] == 0:
+            return (-1, float(res["mean_completion"]))
+
+        # Khi có xe về đích: Ưu tiên số xe về đích -> số lần vượt sạch -> độ mượt §6 -> ít va chạm -> lap time nhanh
         smooth_ok = (
             int(res["pedal_sw_per_100"] <= 5.0)
             + int(res["steer_rev_per_100"] <= 40.0)
             + int(res["beta_p95_deg"] <= 4.0)
         )
         return (
-            finish_tier,
-            smooth_ok,
-            -(res["contacts"] // 10),
-            res["finished"],
-            -res["mean_lap"] if res["mean_lap"] > 0 else -1e9,
-            res["mean_completion"],
+            res["finished"],                          # 1. Số xe về đích (càng nhiều càng tốt)
+            res["overtakes"],                         # 2. Số pha vượt sạch (tôn vinh kỹ năng vượt)
+            smooth_ok,                                # 3. Đạt 3 chỉ số mượt mà §6
+            -(res["contacts"] // 10),                 # 4. Càng ít va chạm càng tốt
+            -res["mean_lap"] if res["mean_lap"] > 0 else -1e9,  # 5. Lap time trung bình
+            float(res["mean_completion"]),
         )
 
     res = run_race(env, agent, deterministic=True)
-    best_score = (-1,)
+    best_score = score(res)
     print(
         f"[Samples 0] Eval: về đích {res['finished']}/{args.num_cars} | văng {res['outs']} | chạm {res['contacts']} | vượt {res['overtakes']} | "
         f"lap TB {res['mean_lap']:.1f}s | "
         f"§6[pedal_sw={res['pedal_sw_per_100']:.1f} (<=5), steer_rev={res['steer_rev_per_100']:.1f} (<=40), β_p95={res['beta_p95_deg']:.1f}° (<=4°)]"
     )
     log_eval(0, res, {}, 0)
-    agent.save(os.path.join(args.save_dir, "best_agent.pt"))
     agent.save(os.path.join(args.save_dir, "init_warmstart_60d.pt"))
+    if res["finished"] > 0:
+        agent.save(os.path.join(args.save_dir, "best_agent.pt"))
 
     samples = 0
     update_idx = 0
@@ -355,7 +359,7 @@ def main():
                 f"§6[pedal_sw={res['pedal_sw_per_100']:.1f}, steer_rev={res['steer_rev_per_100']:.1f}, β_p95={res['beta_p95_deg']:.1f}°]"
             )
             agent.save(os.path.join(args.save_dir, "last_agent.pt"))
-            if score(res) > best_score:
+            if score(res) > best_score and res["finished"] > 0:
                 best_score = score(res)
                 agent.save(os.path.join(args.save_dir, "best_agent.pt"))
                 print(
