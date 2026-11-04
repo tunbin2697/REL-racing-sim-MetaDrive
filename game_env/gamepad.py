@@ -27,8 +27,8 @@ class XboxGamepadController:
     """Bộ điều khiển tay cầm Xbox gọn nhẹ, độc lập cho Windows."""
 
     DEADZONE: float = 0.05
-    STEER_EXPONENT: float = 1.8     # Đường cong phi tuyến: êm ái ở tâm (chỉnh làn mượt), gắt ở góc biên
-    STEER_SENSITIVITY: float = 0.85  # Giảm bớt 15% độ nhạy gắt tổng thể để phù hợp hành trình ngắn của analog
+    STEER_EXPONENT: float = 1.5     # Đường cong phi tuyến: nhạy hơn ở vùng giữa (trước đây 1.8) để bù xe hơi understeer
+    STEER_SENSITIVITY: float = 1.0   # Cho phép đánh lái full-lock (trước đây 0.85)
     INVERT_STEER: bool = True       # MetaDrive quy ước: rẽ trái là DƯƠNG (+), rẽ phải là ÂM (-)
 
     def __init__(self, device_id: int = 0):

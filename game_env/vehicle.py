@@ -236,7 +236,7 @@ class GT3RaceCar(BaseRaceVehicle):
             max_brake_force=650.0,
             max_steering_deg=20.0,
             wheel_friction=1.35,
-            front_wheel_friction=1.35,  # Đã sửa F16: đồng bộ ma sát 1.35 cả 4 bánh, triệt tiêu thiếu lái (understeer)
+            front_wheel_friction=0.90,  # Giữ đúng vật lý Phase 1 / bản 111s (cầu trước thực tế luôn 0.9, F16)
             max_steer_rate=0.18,
             length=4.50,
             width=1.85,
