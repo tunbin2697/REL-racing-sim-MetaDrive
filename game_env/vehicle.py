@@ -24,6 +24,10 @@ class VehicleConfig:
     length: float = 4.50               # Chiều dài xe (m)
     width: float = 1.85                # Chiều rộng xe (m)
     max_speed_km_h: float = 120.0      # Vận tốc giới hạn trần (km/h)
+    # Envelope gia tốc đo trên Bullet, chỉ benchmark/ghost đọc; PPO và vật lý xe không dùng.
+    envelope_a_lat: Optional[float] = None
+    envelope_a_brake: Optional[float] = None
+    envelope_a_engine: Optional[float] = None
 
 
 class BaseRaceVehicle:
@@ -161,8 +165,8 @@ class BaseRaceVehicle:
 
 class GT3RaceCar(BaseRaceVehicle):
     """Cấu hình xe đua thể thao chuyên nghiệp chuẩn GT3"""
-    def __init__(self):
-        super().__init__(VehicleConfig(
+    def __init__(self, config: Optional[VehicleConfig] = None):
+        super().__init__(config or VehicleConfig(
             name="GT3_RaceCar",
             mass=1100.0,
             max_engine_force=850.0,
@@ -193,6 +197,13 @@ class DefaultCivilianSedan(BaseRaceVehicle):
         ))
 
 
+def make_gt3_anchor_car() -> GT3RaceCar:
+    """Vật lý giống hệt GT3RaceCar, thêm envelope cho ghost hiệu chỉnh (D41: 0.95 G / 15.0 / 3.09 m/s^2)."""
+    cfg = VehicleConfig(**{**GT3RaceCar().cfg.__dict__, "name": "GT3_RaceCar_Anchor",
+                           "envelope_a_lat": 9.32, "envelope_a_brake": 15.0, "envelope_a_engine": 3.09})
+    return GT3RaceCar(cfg)
+
+
 def get_vehicle(name: Optional[str] = "gt3") -> BaseRaceVehicle:
     """
     Factory Function (Mẫu thiết kế Factory):
@@ -201,6 +212,8 @@ def get_vehicle(name: Optional[str] = "gt3") -> BaseRaceVehicle:
     """
     if name is None or str(name).lower() in ["gt3", "gt3_racecar", "racing"]:
         return GT3RaceCar()
+    elif str(name).lower() in ["gt3_anchor", "anchor"]:
+        return make_gt3_anchor_car()
     elif str(name).lower() in ["sedan", "default", "civilian"]:
         return DefaultCivilianSedan()
     else:

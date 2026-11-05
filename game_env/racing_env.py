@@ -77,6 +77,15 @@ class MetaRacingEnv(gym.Env):
         map_type: str = "silverstone",
         max_speed_km_h: float = 120.0,
         vehicle: Optional[BaseRaceVehicle] = None,
+        progress_coef: float = 0.05,
+        center_coef: float = 0.04,
+        steer_coef: float = 0.10,
+        idle_penalty: float = 0.15,
+        time_penalty: float = 0.0,
+        crash_base: float = 10.0,
+        crash_speed: float = 20.0,
+        finish_base: float = 100.0,
+        finish_time_scale: float = 1.0,
         **kwargs,
     ):
         super().__init__()
@@ -84,6 +93,18 @@ class MetaRacingEnv(gym.Env):
         # Thực thể phương tiện đua xe chuyên biệt (OOP Race Car Entity)
         self.car: BaseRaceVehicle = vehicle if vehicle is not None else GT3RaceCar()
         
+        # Hệ số reward cho ablation; mặc định là đúng công thức lúc train ref_111s (ee99f9d)
+        self.progress_coef = float(progress_coef)
+        self.center_coef = float(center_coef)
+        self.steer_coef = float(steer_coef)
+        self.idle_penalty = float(idle_penalty)
+        self.time_penalty = float(time_penalty)
+        self.crash_base = float(crash_base)
+        self.crash_speed = float(crash_speed)
+        self.finish_base = float(finish_base)
+        self.finish_time_scale = float(finish_time_scale)
+        self._benchmark_engine = None
+
         self.use_render = use_render
         self.window_size = window_size
         self.horizon = horizon
@@ -485,20 +506,21 @@ class MetaRacingEnv(gym.Env):
         # a. Thưởng tiến độ dọc tim đường Frenet s
         delta_s = current_s - self.last_s
         self.last_s = current_s
-        r_progress = 0.05 * max(0.0, float(delta_s))
+        r_progress = self.progress_coef * max(0.0, float(delta_s))
 
         # b. Phạt rung lắc đánh lái để vô-lăng mượt mà, ổn định trên đường thẳng
-        r_steer_smooth = -0.10 * float(delta_steer ** 2)
+        r_steer_smooth = -self.steer_coef * float(delta_steer ** 2)
 
         # c. Phạt lệch tim đường (Racing Line Centering): khuyến khích đi trong lòng đường, tránh bám mép cỏ
         lat_offset_val = float(obs[9]) * 4.5  # Khôi phục từ ego_state lat_offset / 4.5
-        r_center = -0.04 * float((lat_offset_val / 4.5) ** 2)
+        r_center = -self.center_coef * float((lat_offset_val / 4.5) ** 2)
 
         # d. Phạt đứng yên / quay mòng mòng tại chỗ (< 10 km/h)
-        r_idle = -0.15 if speed_km_h < 10.0 else 0.0
+        r_idle = -self.idle_penalty if speed_km_h < 10.0 else 0.0
+        r_time = -self.time_penalty
         
         # Hàm thưởng thuần túy Markov (Không mớm quy tắc tay ga/phanh):
-        micro_reward = r_progress + r_steer_smooth + r_center + r_idle
+        micro_reward = r_progress + r_steer_smooth + r_center + r_idle + r_time
         macro_reward = 0.0
         
         self.last_action = np.array(action, dtype=np.float32)
@@ -518,7 +540,7 @@ class MetaRacingEnv(gym.Env):
             
             # Phạt va chạm theo vận tốc: tốc độ càng cao phạt càng nặng (-10đ đến -30đ)
             speed_ratio = float(np.clip(speed_km_h / 120.0, 0.0, 1.0))
-            macro_reward = -10.0 - 20.0 * (speed_ratio ** 2)
+            macro_reward = -self.crash_base - self.crash_speed * (speed_ratio ** 2)
             
         elif is_stalled:
             terminated = True
@@ -537,7 +559,7 @@ class MetaRacingEnv(gym.Env):
             self.last_crash_history = []
             
             # Thưởng cán đích cơ bản + Thưởng mốc thời gian bậc thang (mỗi mốc 20s)
-            r_finish = 100.0
+            r_finish = self.finish_base
             if current_time < 140.0:
                 time_bonus = 50.0
             elif current_time < 160.0:
@@ -550,7 +572,7 @@ class MetaRacingEnv(gym.Env):
                 time_bonus = 10.0
             else:
                 time_bonus = 0.0
-            macro_reward = r_finish + time_bonus
+            macro_reward = r_finish + self.finish_time_scale * time_bonus
             
             if current_time < self.best_lap_time:
                 self.best_lap_time = current_time
@@ -577,6 +599,18 @@ class MetaRacingEnv(gym.Env):
         info["on_runoff"] = bool(on_runoff)
         
         return obs, float(total_reward), terminated, truncated, info
+
+    def get_benchmark_engine(self):
+        """Động cơ racing line + profile tốc độ cho ghost; chỉ dùng để đối chiếu, không vào obs hay reward"""
+        if self._benchmark_engine is None:
+            from game_env.benchmark import RacingBenchmarkEngine
+            if not self.circuit_initialized or self.num_track_points <= 1:
+                self._init_circuit_polyline()
+            self._benchmark_engine = RacingBenchmarkEngine(
+                track_xy=self.track_xy, track_theta=self.track_theta, track_kappa=self.track_kappa,
+                track_s=self.track_s, vehicle_cfg=self.car.cfg, track_width=9.0, preset_name="silverstone_half",
+            )
+        return self._benchmark_engine
 
     def render(self, *args, **kwargs):
         return self.env.render(*args, **kwargs)

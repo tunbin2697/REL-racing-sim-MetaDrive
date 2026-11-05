@@ -22,12 +22,14 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from game_env.racing_env import MetaRacingEnv
 from game_env.vehicle import get_vehicle
 from agents.ppo_agent import PPOAgent
+from agents.optimal_agent import OptimalRacingAgent
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Evaluate Trained RL Agent")
     parser.add_argument("--model", type=str, default="models/best_agent.pt", help="File weights cần đánh giá")
     parser.add_argument("--episodes", type=int, default=10, help="Số vòng đua thử nghiệm")
-    parser.add_argument("--vehicle", type=str, default="gt3", choices=["gt3", "sedan"], help="Loại xe đánh giá ('gt3' hoặc 'sedan')")
+    parser.add_argument("--agent", type=str, default="ppo", choices=["ppo", "optimal"], help="'ppo' hoặc 'optimal' (ghost, nên dùng với --vehicle gt3_anchor)")
+    parser.add_argument("--vehicle", type=str, default="gt3", choices=["gt3", "gt3_anchor", "sedan"], help="Loại xe đánh giá ('gt3' hoặc 'sedan')")
     parser.add_argument("--out", type=str, default="logs/evaluation_results.json", help="File lưu kết quả")
     return parser.parse_args()
 
@@ -50,7 +52,12 @@ def main():
     act_dim = int(act_shape[0]) if act_shape is not None else 2
 
     agent = PPOAgent(state_dim=obs_dim, action_dim=act_dim)
-    if os.path.exists(args.model):
+    ghost = None
+    if args.agent == "optimal":
+        env.reset(seed=env.start_seed)
+        ghost = OptimalRacingAgent.from_benchmark(env.get_benchmark_engine(), vehicle_cfg=race_car.cfg, v_norm=40.0)
+        print(f">> Ghost: T* = {ghost.theoretical_best_lap_time:.2f}s")
+    elif os.path.exists(args.model):
         agent.load(args.model)
         print(f">> Nạp thành công weights từ {args.model} (State Dim: {obs_dim})")
     else:
@@ -64,6 +71,8 @@ def main():
     max_speeds = []
     crashes = 0
     successes = 0
+    lap_times = []
+    crash_locations = []
 
     for ep in range(args.episodes):
         obs, info = env.reset(seed=env.start_seed + ep)
@@ -72,7 +81,12 @@ def main():
         speeds = []
         
         while True:
-            action, _, _ = agent.select_action(obs, deterministic=True)
+            if ghost is not None and ep_len == 0:
+                ghost.reset()
+            if ghost is not None:
+                action, _, _ = ghost.select_action(obs, vehicle=env.car)
+            else:
+                action, _, _ = agent.select_action(obs, deterministic=True)
             obs, reward, terminated, truncated, step_info = env.step(action)
             
             ep_ret += reward
@@ -92,8 +106,10 @@ def main():
                 
                 if crashed:
                     crashes += 1
+                    crash_locations.append(float(step_info.get("track_s", 0.0)))
                 if arrived:
                     successes += 1
+                    lap_times.append(float(step_info.get("lap_time", 0.0)))
                     
                 returns.append(ep_ret)
                 lengths.append(ep_len)
@@ -117,6 +133,13 @@ def main():
         "mean_speed_kmh": float(np.mean(mean_speeds)),
         "max_speed_kmh": float(np.max(max_speeds)),
         "mean_episode_length": float(np.mean(lengths)),
+        "agent": args.agent,
+        "model": args.model,
+        "lap_times": lap_times,
+        "lap_time_mean": float(np.mean(lap_times)) if lap_times else None,
+        "lap_time_std": float(np.std(lap_times, ddof=1)) if len(lap_times) > 1 else None,
+        "crash_locations": crash_locations,
+        "lap_definition": "ket thuc khi dat 98.5% quang duong, xuat phat dung",
     }
 
     os.makedirs(os.path.dirname(args.out), exist_ok=True)

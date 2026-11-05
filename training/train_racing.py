@@ -30,18 +30,31 @@ from game_env.racing_env import MetaRacingEnv
 from game_env.vehicle import get_vehicle
 from agents.ppo_agent import PPOAgent
 
+def _atomic_json(obj, path):
+    """Ghi JSON qua file tạm để bị ngắt giữa chừng cũng không hỏng file cũ"""
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(obj, f, indent=2)
+    os.replace(tmp, path)
+
+
 def save_metrics_json(metrics_data, log_dir="logs"):
-    """Ghi log JSON số liệu huấn luyện để hỗ trợ resume (siêu nhẹ, không tốn tài nguyên)"""
-    try:
-        json_path = os.path.join(log_dir, "training_metrics.json")
-        with open(json_path, "w", encoding="utf-8") as f:
-            json.dump(metrics_data, f, indent=2)
-    except Exception as e:
-        pass
+    """Ghi log JSON số liệu huấn luyện để hỗ trợ resume"""
+    os.makedirs(log_dir, exist_ok=True)
+    _atomic_json(metrics_data, os.path.join(log_dir, "training_metrics.json"))
+
+
+def save_resume_point(agent, save_dir, state):
+    """Lưu last_agent.pt (kèm optimizer) rồi mới tới train_state.json; state là mốc resume hợp lệ cuối cùng"""
+    tmp = os.path.join(save_dir, "last_agent.tmp.pt")
+    agent.save(tmp)
+    os.replace(tmp, os.path.join(save_dir, "last_agent.pt"))
+    _atomic_json(state, os.path.join(save_dir, "train_state.json"))
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description="PPO Racing Training in MetaDrive 3D")
-    parser.add_argument("--total-steps", type=int, default=1000000, help="Tổng số bước mô phỏng tối đa (mặc định 1M steps)")
+    parser.add_argument("--total-steps", type=int, default=3082240, help="Tổng số bước mô phỏng tối đa (ablation: 3.082.240, mốc lưu best của ref_111s; run gốc chạy 4M)")
     parser.add_argument("--rollout-len", type=int, default=2048, help="Độ dài rollout thu thập trước mỗi lần update (mặc định 2048)")
     parser.add_argument("--batch-size", type=int, default=64, help="Kích thước minibatch PPO")
     parser.add_argument("--lr", type=float, default=3e-4, help="Learning rate")
@@ -58,6 +71,17 @@ def parse_args():
     parser.add_argument("--steps-to-run", type=int, default=None, help="Số bước muốn chạy thêm khi resume")
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
     parser.add_argument("--vehicle", type=str, default="gt3", choices=["gt3", "sedan"], help="Loại xe đua ('gt3' hoặc 'sedan' đối chứng)")
+    # Hệ số reward cho ablation; mặc định là đúng công thức lúc train ref_111s
+    parser.add_argument("--progress-coef", type=float, default=0.05, help="Thưởng tiến độ mỗi mét")
+    parser.add_argument("--center-coef", type=float, default=0.04, help="Phạt lệch tim đường -c*(lat/4.5)^2")
+    parser.add_argument("--steer-coef", type=float, default=0.10, help="Phạt đánh lái -c*(dsteer)^2")
+    parser.add_argument("--idle-penalty", type=float, default=0.15, help="Phạt khi dưới 10 km/h")
+    parser.add_argument("--time-penalty", type=float, default=0.0, help="Phạt thời gian mỗi bước (ref_111s không có)")
+    parser.add_argument("--crash-base", type=float, default=10.0, help="Phạt va chạm phần cố định")
+    parser.add_argument("--crash-speed", type=float, default=20.0, help="Phạt va chạm phần theo (v/120)^2")
+    parser.add_argument("--finish-base", type=float, default=100.0, help="Thưởng về đích phần cố định")
+    parser.add_argument("--finish-time-scale", type=float, default=1.0, help="Nhân với thưởng bậc thang theo lap time")
+    parser.add_argument("--auto-resume", action="store_true", help="Tự resume từ save-dir nếu đã có last_agent.pt và train_state.json")
     parser.add_argument("--save-dir", type=str, default="models", help="Thư mục lưu weights")
     parser.add_argument("--log-dir", type=str, default="logs", help="Thư mục lưu log số liệu")
     parser.add_argument("--tb-logdir", type=str, default="runs", help="Thư mục lưu TensorBoard logs")
@@ -145,6 +169,17 @@ def main():
     args = parse_args()
     os.makedirs(args.save_dir, exist_ok=True)
     os.makedirs(args.log_dir, exist_ok=True)
+
+    train_state = None
+    state_file = os.path.join(args.save_dir, "train_state.json")
+    last_file = os.path.join(args.save_dir, "last_agent.pt")
+    if args.auto_resume and os.path.exists(state_file) and os.path.exists(last_file):
+        with open(state_file, "r", encoding="utf-8") as f:
+            train_state = json.load(f)
+        if train_state.get("finished"):
+            print(f">> Run đã xong ở step {train_state['global_step']}, không chạy lại.")
+            return
+        args.resume = last_file
     
     print("=" * 70)
     print(">> BAT DAU HUAN LUYEN PPO CONTINUOUS 3D RACING AGENT (METADRIVE)")
@@ -176,6 +211,15 @@ def main():
         map_config=args.map,
         start_seed=args.seed,
         vehicle=race_car,
+        progress_coef=args.progress_coef,
+        center_coef=args.center_coef,
+        steer_coef=args.steer_coef,
+        idle_penalty=args.idle_penalty,
+        time_penalty=args.time_penalty,
+        crash_base=args.crash_base,
+        crash_speed=args.crash_speed,
+        finish_base=args.finish_base,
+        finish_time_scale=args.finish_time_scale,
     )
     
     obs_shape = env.observation_space.shape
@@ -211,8 +255,10 @@ def main():
         "policy_loss": [],
         "value_loss": [],
         "entropy": [],
+        "eval_time": [],
         "total_finishes": 0,
         "resume_marks": [],
+        "args": vars(args),
     }
 
     # Xử lý Resume checkpoint hoặc Nạp Warmup
@@ -235,6 +281,19 @@ def main():
                 if metrics.get("eval_completion"):
                     best_eval_completion = float(max(metrics["eval_completion"]))
                 total_finishes = int(metrics.get("total_finishes", 0))
+                if train_state is not None:
+                    # Bỏ các eval ghi sau mốc resume hợp lệ cuối cùng, khôi phục nhịp eval và kỷ lục lưu best
+                    global_step = int(train_state["global_step"])
+                    keep = sum(1 for st in metrics["steps"] if st <= global_step)
+                    n_steps = len(metrics["steps"])
+                    for k, v in metrics.items():
+                        if isinstance(v, list) and len(v) == n_steps:
+                            metrics[k] = v[:keep]
+                    update_idx = int(train_state["update_idx"])
+                    best_eval_completion = float(train_state["best_eval_completion"])
+                    best_eval_lap_time = float(train_state["best_eval_lap_time"])
+                    best_eval_speed = float(train_state["best_eval_speed"])
+                    total_finishes = int(train_state["total_finishes"])
                 print(f">> RESUME: Đã nạp lại lịch sử metrics! Bắt đầu từ Step {global_step} | Finishes cũ: {total_finishes} | Best Completion cũ: {best_eval_completion:.1f}%")
             except Exception as e:
                 print(f">> [CẢNH BÁO] Không thể nạp metrics_file cũ: {e}")
@@ -289,6 +348,7 @@ def main():
         metrics["eval_return"].append(eval_res["mean_return"])
         metrics["eval_completion"].append(eval_res["mean_completion"])
         metrics["eval_speed"].append(eval_res["mean_speed"])
+        metrics["eval_time"].append(eval_res["mean_time"])
         metrics["crash_rate"].append(eval_res["crash_rate"])
         metrics["policy_loss"].append(0.0)
         metrics["value_loss"].append(0.0)
@@ -368,6 +428,7 @@ def main():
             metrics["eval_return"].append(eval_res["mean_return"])
             metrics["eval_completion"].append(eval_res["mean_completion"])
             metrics["eval_speed"].append(eval_res["mean_speed"])
+            metrics["eval_time"].append(eval_res["mean_time"])
             metrics["crash_rate"].append(eval_res["crash_rate"])
             metrics["policy_loss"].append(train_info["policy_loss"])
             metrics["value_loss"].append(train_info["value_loss"])
@@ -416,8 +477,17 @@ def main():
                 agent.save(best_model_path)
                 print(f"  🏆 [VALID RECORD - BEST AGENT SAVED] {best_model_path} ({record_msg})")
 
-            # Lưu metrics JSON định kỳ
+            # Lưu metrics JSON định kỳ và mốc resume
             save_metrics_json(metrics, log_dir=args.log_dir)
+            save_resume_point(agent, args.save_dir, {
+                "global_step": global_step,
+                "update_idx": update_idx,
+                "best_eval_completion": best_eval_completion,
+                "best_eval_lap_time": best_eval_lap_time,
+                "best_eval_speed": best_eval_speed,
+                "total_finishes": total_finishes,
+                "finished": global_step >= target_total_steps,
+            })
             
             # Ghi log liên tục lên TensorBoard Dashboard
             writer.add_scalar("Performance/Eval_Return", eval_res["mean_return"], global_step)

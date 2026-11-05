@@ -51,3 +51,9 @@ AGENTS.md
 GEMINI.md
 .antigravity/
 .agents/
+
+# Ablation reward: bỏ log phụ và mốc resume
+logs/abl_*/tb/
+logs/abl_*/console.txt
+models/abl_*/last_agent*.pt
+models/abl_*/train_state.json
