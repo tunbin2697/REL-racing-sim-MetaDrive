@@ -2,7 +2,8 @@
 MultiCarRacingEnv: Đua 4-6 xe trên Silverstone half (mặc định 3 làn x 4.5m = 13.5m)
 - Xây dựng trên nền nhánh feature/111s-honest-anchor (obs ego 35D và vật lý xe của ref_111s).
 - Xe 0 là agent MetaDrive (camera bám theo, dùng cho người chơi tay cầm hoặc AI-0), xe 1..N-1 spawn thêm vào engine.
-- Va chạm vật lý Bullet thật giữa các xe; va chạm bị phạt đối xứng + vùng đệm an toàn (proximity) + thưởng vượt sạch (WI-L5).
+- Va chạm vật lý Bullet thật giữa các xe; va chạm bị phạt đối xứng + vùng đệm an toàn (proximity).
+- Env không can thiệp vào action của agent. Số pha vượt sạch chỉ được đếm để đo, không có thưởng.
 - Lưới xuất phát phía sau vạch x = 60m: mặc định xếp ngang hàng (abreast) hoặc so le kiểu F1 (staggered).
 - Quan sát: 35D (ego chuẩn ref_111s nguyên bản) + 5K đối thủ gần nhất (dx, dy, dvx, dvy trong hệ trục xe + cờ có xe) = 60D.
 - Hỗ trợ phạt mượt lái (steer_smooth_coef = c1) và mượt bàn đạp (pedal_smooth_coef = c2) theo CAPS (§4.2).
@@ -20,16 +21,11 @@ from game_env.vehicle import BaseRaceVehicle, GT3RaceCar
 BASE_OBS_DIM = 35
 OPPONENT_FEATURES = 5
 
-# Hằng số Racecraft & Overtake Dynamics (Nhánh finetune không phanh cưỡng bức)
-OVERTAKE_BONUS = 5.0           # Tăng mạnh thưởng vượt sạch qua xe trước
-OVERTAKE_COOLDOWN_STEPS = 15    # Cooldown ngắn (1.5s) để xe liên tục tranh chấp
-RESPAWN_IMMUNITY_STEPS = 120
+OVERTAKE_COOLDOWN_STEPS = 15    # Không đếm lại pha vượt cùng cặp xe trong 1.5s
+RESPAWN_IMMUNITY_STEPS = 120    # Không đếm pha vượt qua xe vừa hồi sinh
 PROXIMITY_LONG_M = 4.5          # Chiều dài thân xe 4.5m
 PROXIMITY_LAT_M = 1.20          # Thu hẹp vùng đệm ngang để thoải mái so kè sườn xe
 PROXIMITY_PENALTY_COEF = 0.15   # Giảm phạt tiệm cận để agent dám so kè cự ly gần
-
-# Thưởng phong cách tay đua (Racecraft rewards)
-SIDE_BY_SIDE_BONUS = 0.08       # Thưởng chạy song song không va chạm
 
 CAR_COLORS = [
     (0.00, 0.95, 0.20),  # 0: Xanh lá neon thể thao
@@ -61,7 +57,6 @@ class RacerState:
         self.current_track_idx = 0
         self.last_s = 0.0
         self.lat_offset = float(spawn_lat)
-        self.steer_nudge = 0.0
         self.progress = 0.0        # Quãng đường tiến tới tích lũy kể từ lúc xuất phát (m)
         self.start_s = 0.0         # Tọa độ Frenet ô xuất phát (âm khi xếp lưới sau vạch)
         self.prev_race_dist = 0.0  # Vị trí đường đua ở bước trước (dùng xét vượt xe WI-L5)
@@ -259,69 +254,6 @@ class MultiCarRacingEnv(MetaRacingEnv):
     def active_mask(self) -> np.ndarray:
         return np.array([st.active for st in self.racers], dtype=bool)
 
-    def _apply_racing_etiquette(self, st: RacerState, action: np.ndarray) -> np.ndarray:
-        """
-        Racecraft & Overtaking Dynamics Shield:
-        - HOÀN TOÀN GỠ BỎ LUẬT ĐẠP PHANH VÀ CẮT GA CƯỠNG BỨC.
-        - Chân ga và chân phanh được giải phóng 100% để agent tự do thể hiện kỹ năng phanh trễ
-          (late braking), ôm apex và vít ga bứt tốc.
-        - Chỉ hỗ trợ vi chỉnh góc lái (Steer Nudge) thông minh:
-          1. Khi áp sát xe trước (dx in [0.5m, 8.5m]): Chủ động tìm làn thoáng hơn để lách ra mở góc vượt (Overtake pull-out).
-          2. Khi chạy song song sườn xe (dx in [-2.5m, 3.5m]): Giữ khoảng cách sườn an toàn (|dy| >= 1.9m)
-             để 2 xe có thể chạy cạnh nhau qua góc cua (Wheel-to-wheel racing) mà không bị cọ xát.
-        """
-        act = np.array(action, dtype=np.float32, copy=True)
-        pos = st.car.position
-        vel = st.car.velocity
-        heading = st.car.heading_theta
-        fwd = np.array([np.cos(heading), np.sin(heading)], dtype=np.float32)
-        lat = np.array([-np.sin(heading), np.cos(heading)], dtype=np.float32)
-
-        raw_nudge = 0.0
-
-        for ot in self.racers:
-            if ot is st or not ot.active:
-                continue
-            rel = ot.car.position - pos
-            dx = float(np.dot(rel, fwd))
-            dy = float(np.dot(rel, lat))
-
-            # 1. TÌNH HUỐNG CHẠY SONG SONG (Side-by-side Wheel-to-wheel racing)
-            # Cả 2 xe đang ngang hàng nhau trên đường cua: đẩy nhẹ sườn xe để tránh cọ quệt
-            if -2.5 <= dx <= 3.5 and abs(dy) < 2.0:
-                dir_away = -1.0 if dy >= 0.0 else 1.0
-                overlap_urgency = max(0.0, 1.0 - abs(dy) / 2.0)
-                # Chỉ né nếu còn đất trong giới hạn mép đường
-                if (dir_away > 0 and st.lat_offset < self.preset.half_width - 1.2) or                    (dir_away < 0 and st.lat_offset > -self.preset.half_width + 1.2):
-                    raw_nudge += dir_away * 0.05 * overlap_urgency
-
-            # 2. TÌNH HUỐNG ÁP SÁT ĐUÔI ĐỂ VƯỢT (Overtake Slingshot & Pull-out)
-            # Xe sau tiếp cận xe trước ở cự ly dọc [0.5m, 8.5m]: chủ động đánh lái sang làn thoáng để vượt
-            elif 0.5 <= dx <= 8.5 and abs(dy) < 1.60:
-                rel_v = ot.car.velocity - vel
-                closing_speed = max(0.0, -float(np.dot(rel_v, fwd)))
-
-                # Chọn hướng vượt: ưu tiên hướng lệch sẵn của xe hoặc hướng còn nhiều đất hơn
-                if abs(dy) > 0.20:
-                    overtake_dir = -1.0 if dy > 0.0 else 1.0
-                else:
-                    # Nếu đang chụm thẳng tim xe trước: lách về phía tâm đường hoặc phía trống
-                    overtake_dir = -1.0 if st.lat_offset > 0.0 else 1.0
-
-                # Kiểm tra mép đường trước khi lách
-                can_go = (overtake_dir > 0 and st.lat_offset < self.preset.half_width - 1.5) or                          (overtake_dir < 0 and st.lat_offset > -self.preset.half_width + 1.5)
-                if can_go:
-                    approach_factor = float(np.clip((8.5 - dx) / 4.0 + 0.10 * closing_speed, 0.2, 1.0))
-                    raw_nudge += overtake_dir * 0.07 * approach_factor
-
-        # Lọc thông thấp mượt mà để bánh lái không giật cục và không phá vỡ góc ôm cua
-        st.steer_nudge = float(0.75 * st.steer_nudge + 0.25 * np.clip(raw_nudge, -0.08, 0.08))
-        act[0] = float(np.clip(act[0] + st.steer_nudge, -1.0, 1.0))
-
-        # TUYỆT ĐỐI KHÔNG CAN THIỆP CHÂN GA (act[1]) VÀ CHÂN PHANH (act[2])!
-        # Trả lại 100% quyền kiểm soát pedal cho Agent/Người chơi để tự do phanh trễ và vít ga.
-        return act
-
     def _check_car_track_limits(self, st: RacerState) -> Tuple[bool, bool]:
         """Kiểm tra luật 4 bánh FIA cho từng xe; va chạm giữa các xe chỉ phạt ở reward, không loại xe"""
         wheels = st.car.get_wheel_positions()
@@ -448,7 +380,6 @@ class MultiCarRacingEnv(MetaRacingEnv):
         st.current_track_idx = idx
         st.last_s = float(self.track_s[idx])
         st.lat_offset = chosen_lat
-        st.steer_nudge = 0.0
         st.prev_race_dist = self.race_distance(st)
         st.lap_target = st.progress + self.circuit_length
         st.current_lap = 1
@@ -488,7 +419,6 @@ class MultiCarRacingEnv(MetaRacingEnv):
         st.active = True
         st.termination_reason = ""
         st.respawn_step = self.current_step
-        st.steer_nudge = 0.0
         st.in_contact = False
         st.stagnant_steps = 0
         st.last_s = float(self.track_s[idx])
@@ -497,72 +427,6 @@ class MultiCarRacingEnv(MetaRacingEnv):
         st.last_action = np.zeros(3, dtype=np.float32)
         st.last_applied = np.zeros(2, dtype=np.float32)
         print(f">> [HỒI SINH] Xe #{car_id + 1} đã được hồi sinh an toàn ngay trên tim đường đua!")
-
-    def _compute_no_gap_reckless_penalty(self, st: RacerState, fwd: np.ndarray, vel: np.ndarray) -> float:
-        """
-        Quy tắc 'Keep It Simple':
-        Nếu phía trước cả line trong và ngoài đều KHÔNG có đủ khoảng trống cho 1 thân xe (max_gap < 2.1m)
-        mà xe sau vẫn cố tình duy trì vận tốc lao tới (closing_speed > 2.0 m/s) hoặc gây va chạm:
-        -> Phạt hành vi liều lĩnh (Reckless Entry Penalty).
-        """
-        front_cars = []
-        pos = st.car.position
-        for ot in self.racers:
-            if ot is st or not ot.active:
-                continue
-            rel_pos = ot.car.position - pos
-            dx = float(np.dot(rel_pos, fwd))
-            if 0.8 <= dx <= 7.5:
-                rel_v = ot.car.velocity - vel
-                closing_speed = max(0.0, -float(np.dot(rel_v, fwd)))
-                front_cars.append((ot, dx, closing_speed))
-
-        if not front_cars:
-            return 0.0
-
-        half_w = float(self.preset.half_width)
-        car_half_w = 1.85 / 2.0  # Nửa thân xe GT3
-
-        # Gom các khoảng bị chiếm dụng trên mặt cắt ngang [-half_w, +half_w]
-        occupied = []
-        for ot, _, _ in front_cars:
-            y = float(ot.lat_offset)
-            occupied.append((y - car_half_w, y + car_half_w))
-
-        # Hợp nhất các đoạn chiếm dụng
-        occupied.sort(key=lambda x: x[0])
-        merged = []
-        for interval in occupied:
-            if not merged:
-                merged.append(list(interval))
-            else:
-                if interval[0] <= merged[-1][1]:
-                    merged[-1][1] = max(merged[-1][1], interval[1])
-                else:
-                    merged.append(list(interval))
-
-        # Tính các khoảng trống còn lại trên lòng đường
-        free_gaps = []
-        free_gaps.append(max(0.0, merged[0][0] - (-half_w)))
-        for k in range(len(merged) - 1):
-            free_gaps.append(max(0.0, merged[k + 1][0] - merged[k][1]))
-        free_gaps.append(max(0.0, half_w - merged[-1][1]))
-
-        max_gap = max(free_gaps) if free_gaps else 0.0
-
-        # Nếu khoảng trống lớn nhất không đủ cho 1 xe (yêu cầu tối thiểu 2.10m)
-        MIN_PASSING_GAP = 2.10
-        if max_gap < MIN_PASSING_GAP:
-            max_closing = max(cs for _, _, cs in front_cars)
-            # Lao tới quá nhanh khi cửa đã bị bịt kín
-            if max_closing > 2.0:
-                urgency = min(2.0, (max_closing - 2.0) / 2.0 + 0.5)
-                return -1.50 * urgency
-            # Hoặc đâm vào xe khác khi cửa đóng
-            if st.car.crash_vehicle:
-                return -2.50
-
-        return 0.0
 
     def step(self, actions: np.ndarray):
         """
@@ -576,16 +440,14 @@ class MultiCarRacingEnv(MetaRacingEnv):
         delta_pedals = np.zeros(self.num_cars, dtype=np.float32)
         net_pedals = np.zeros(self.num_cars, dtype=np.float32)
         applied = [np.zeros(2, dtype=np.float32) for _ in range(self.num_cars)]
-        effective_actions = np.copy(actions)
 
-        # 1. Cơ cấu chấp hành (kèm bộ đệm an toàn cục bộ + slew rate limiter + bộ trộn bàn đạp)
+        # 1. Cơ cấu chấp hành (slew rate limiter + bộ trộn bàn đạp)
         for i, st in enumerate(self.racers):
             if not st.active:
                 continue
             st.prev_race_dist = self.race_distance(st)
             prev_pedal = float(st.car.last_pedal)
-            effective_actions[i] = self._apply_racing_etiquette(st, actions[i])
-            applied[i], delta_steers[i], net_pedals[i] = st.car.process_action(effective_actions[i])
+            applied[i], delta_steers[i], net_pedals[i] = st.car.process_action(actions[i])
             delta_pedals[i] = float(net_pedals[i] - prev_pedal)
             if i > 0:
                 st.raw_vehicle.before_step(applied[i])
@@ -614,7 +476,7 @@ class MultiCarRacingEnv(MetaRacingEnv):
             st.on_runoff = on_runoff
 
             # Ghi nhận lịch sử phục vụ đo chỉ số §6 (F20): steer, pedal, góc trượt beta khi v > 40 km/h
-            st.steer_cmd_history.append(float(effective_actions[i][0]))
+            st.steer_cmd_history.append(float(actions[i][0]))
             st.pedal_history.append(float(net_pedals[i]))
             if speed_km_h > 40.0:
                 vel = st.car.velocity
@@ -639,7 +501,7 @@ class MultiCarRacingEnv(MetaRacingEnv):
                 st.stagnant_steps = 0
             is_stalled = st.stagnant_steps >= 120
 
-            # Hàm thưởng giống MetaRacingEnv + phạt mượt lái/pedal (§4.2) + phạt va chạm & vùng đệm an toàn (§4.3)
+            # Hàm thưởng: tiến độ, phạt mượt lái/pedal (§4.2), phạt va chạm & vùng đệm an toàn (§4.3)
             r_progress = self.preset.progress_coef * max(0.0, float(delta_s))
             r_steer_smooth = -self.steer_smooth_coef * float(delta_steers[i] ** 2)
             r_pedal_smooth = -self.pedal_smooth_coef * float(delta_pedals[i] ** 2)
@@ -651,29 +513,12 @@ class MultiCarRacingEnv(MetaRacingEnv):
             r_contact = -self.collision_penalty if new_contact else (-0.25 * self.collision_penalty if contact else 0.0)
             r_proximity = self._proximity_penalty(st)
 
-            vel = st.car.velocity
-            h = float(st.car.heading_theta)
-            fwd = np.array([np.cos(h), np.sin(h)], dtype=np.float32)
-            lat = np.array([-np.sin(h), np.cos(h)], dtype=np.float32)
-            r_no_gap = self._compute_no_gap_reckless_penalty(st, fwd, vel)
-
-            # Thưởng phong cách đua xe thể thao (Wheel-to-wheel side-by-side)
-            r_racecraft = 0.0
-            for ot in self.racers:
-                if ot is st or not ot.active:
-                    continue
-                rel_pos = ot.car.position - st.car.position
-                fwd_d = float(np.dot(rel_pos, fwd))
-                lat_d = float(np.dot(rel_pos, lat))
-                # Chạy song song sạch sẽ (Wheel-to-wheel): ngang hàng, cách sườn an toàn
-                if -2.5 <= fwd_d <= 2.5 and 1.8 <= abs(lat_d) <= 3.2 and speed_km_h > 40.0:
-                    r_racecraft += SIDE_BY_SIDE_BONUS
             st.contacts += int(new_contact)
             st.in_contact = contact
             macro = 0.0
 
             st.prev_action = st.last_action.copy()
-            st.last_action = np.array(effective_actions[i], dtype=np.float32)
+            st.last_action = np.array(actions[i], dtype=np.float32)
             st.last_applied = applied[i].copy()
 
             if is_full_out:
@@ -699,7 +544,7 @@ class MultiCarRacingEnv(MetaRacingEnv):
                     st.lap_start_step = self.current_step
                     st.lap_target += self.circuit_length
 
-            rewards[i] = r_progress + r_steer_smooth + r_pedal_smooth + r_idle + r_time + r_contact + r_proximity + r_racecraft + r_no_gap + macro
+            rewards[i] = r_progress + r_steer_smooth + r_pedal_smooth + r_idle + r_time + r_contact + r_proximity + macro
             infos[i].update({
                 "speed_km_h": speed_km_h,
                 "track_s": current_s,
@@ -711,7 +556,7 @@ class MultiCarRacingEnv(MetaRacingEnv):
                 "termination_reason": st.termination_reason,
             })
 
-        # 3. Thưởng vượt sạch theo WI-L5 (D25): A vượt B mà không chạm xe, không lấn lề, có cooldown 50 bước
+        # 3. Đếm pha vượt sạch: A vượt B mà không chạm xe, không lấn lề
         for i, st_a in enumerate(self.racers):
             if not st_a.active or st_a.in_contact or st_a.on_runoff:
                 continue
@@ -727,7 +572,6 @@ class MultiCarRacingEnv(MetaRacingEnv):
                 if prev_a < prev_b and (prev_b - prev_a) < 30.0 and cur_a > cur_b:
                     last_ov = self.overtake_cooldown.get((i, j), -999)
                     if self.current_step - last_ov >= OVERTAKE_COOLDOWN_STEPS:
-                        rewards[i] += OVERTAKE_BONUS
                         st_a.overtakes += 1
                         self.overtake_cooldown[(i, j)] = self.current_step
 

@@ -21,8 +21,7 @@ training/train_multicar.py   Huấn luyện self-play
 demo/race_multicar.py        Demo 3D: người chơi hoặc khán giả
 tests/test_env_regression.py Kiểm thử hồi quy env
 models/
-  ref_111s/best_agent.pt            Mô hình tham chiếu đơn xe (35D)
-  multicar_final_1M/agent_1000k.pt  Mô hình multicar của Phát (60D), học trong env có shield nhả ga
+  ref_111s/best_agent.pt   Mô hình tham chiếu đơn xe (35D), điểm xuất phát duy nhất
 ```
 
 ## Cài đặt
@@ -38,16 +37,16 @@ pip install -r requirements.txt
 
 ```powershell
 # Đua với AI bằng tay cầm hoặc bàn phím
-python demo/race_multicar.py --model models/multicar_final_1M/agent_1000k.pt
+python demo/race_multicar.py --model models/ref_111s/best_agent.pt
 
 # Chỉ xem AI đua
-python demo/race_multicar.py --spectate --model models/multicar_final_1M/agent_1000k.pt
+python demo/race_multicar.py --spectate --model models/ref_111s/best_agent.pt
 
 # Huấn luyện từ ref_111s (35D -> 60D: 25 cột đối thủ khởi tạo bằng 0)
 python training/train_multicar.py --init-model models/ref_111s/best_agent.pt --preset-smooth A --grid staggered --lr 5e-5 --total-samples 2000000 --save-dir models/multicar_run --log-dir logs/multicar_run
 
 # Huấn luyện tiếp từ checkpoint 60D
-python training/train_multicar.py --resume models/multicar_final_1M/agent_1000k.pt --preset-smooth A --grid staggered --lr 5e-5 --total-samples 2000000 --save-dir models/multicar_run --log-dir logs/multicar_run
+python training/train_multicar.py --resume models/multicar_run/last_agent.pt --preset-smooth A --grid staggered --lr 5e-5 --total-samples 2000000 --save-dir models/multicar_run2 --log-dir logs/multicar_run2
 ```
 
 Phím điều khiển trong demo được ghi ở đầu file `demo/race_multicar.py`.
@@ -67,7 +66,7 @@ Test chạy 6 xe trong 250 bước và so khớp tuyệt đối obs, reward, v�
 - **Hành động 3D:** lái, ga, phanh trong [-1, 1], giới hạn tốc độ quay vô lăng.
 - **Kết thúc:** cả 4 bánh ra khỏi mặt nhựa, lật xe, hoặc dưới 10 km/h trong 120 bước.
 
-Reward và các quy tắc hỗ trợ hiện tại nằm ở `MultiCarRacingEnv.step()` và `_apply_racing_etiquette()`.
+Reward nằm ở `MultiCarRacingEnv.step()`. Env không can thiệp vào action của agent.
 
 ## Nơi lưu phần còn lại
 
@@ -79,3 +78,4 @@ Nhánh này chỉ giữ phần cần cho demo. Mọi thứ đã bỏ vẫn còn 
 | Ablation reward | `exp/111s-reward-ablation` |
 | Multicar của Phát trước các lần finetune | `feature/multicar-demo-phat` |
 | Phase 1/2, ghost, benchmark, script chẩn đoán, các run finetune cũ | commit `fdfdaeb` trên nhánh này |
+| Các luật đua cũ (nudge, thưởng song song, phạt no-gap) | commit `b6786c4` trên nhánh này |
