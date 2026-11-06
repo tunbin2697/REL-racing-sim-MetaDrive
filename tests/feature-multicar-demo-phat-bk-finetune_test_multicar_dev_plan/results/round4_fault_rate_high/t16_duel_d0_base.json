@@ -1,0 +1,110 @@
+{
+ "config": "d0_base",
+ "rows": [
+  {
+   "kind": "lockup",
+   "at": 0.15,
+   "gap_m": 57.23944091796875,
+   "held": [],
+   "contacts": 0,
+   "outs": []
+  },
+  {
+   "kind": "understeer",
+   "at": 0.15,
+   "gap_m": 57.23944091796875,
+   "held": [],
+   "contacts": 0,
+   "outs": []
+  },
+  {
+   "kind": "oversteer",
+   "at": 0.15,
+   "gap_m": 57.23944091796875,
+   "held": [],
+   "contacts": 0,
+   "outs": []
+  },
+  {
+   "kind": "lockup",
+   "at": 0.35,
+   "gap_m": 56.7476806640625,
+   "held": [
+    {
+     "a": 1,
+     "b": 0,
+     "t": 512,
+     "frac": 0.413,
+     "corner": false,
+     "touched": false
+    }
+   ],
+   "contacts": 0,
+   "outs": []
+  },
+  {
+   "kind": "understeer",
+   "at": 0.35,
+   "gap_m": 56.7476806640625,
+   "held": [],
+   "contacts": 0,
+   "outs": []
+  },
+  {
+   "kind": "oversteer",
+   "at": 0.35,
+   "gap_m": 56.7476806640625,
+   "held": [],
+   "contacts": 0,
+   "outs": []
+  },
+  {
+   "kind": "lockup",
+   "at": 0.55,
+   "gap_m": 75.4095458984375,
+   "held": [],
+   "contacts": 0,
+   "outs": []
+  },
+  {
+   "kind": "understeer",
+   "at": 0.55,
+   "gap_m": 75.4095458984375,
+   "held": [],
+   "contacts": 0,
+   "outs": []
+  },
+  {
+   "kind": "oversteer",
+   "at": 0.55,
+   "gap_m": 75.4095458984375,
+   "held": [],
+   "contacts": 0,
+   "outs": []
+  },
+  {
+   "kind": "lockup",
+   "at": 0.75,
+   "gap_m": 119.088134765625,
+   "held": [],
+   "contacts": 0,
+   "outs": []
+  },
+  {
+   "kind": "understeer",
+   "at": 0.75,
+   "gap_m": 119.088134765625,
+   "held": [],
+   "contacts": 0,
+   "outs": []
+  },
+  {
+   "kind": "oversteer",
+   "at": 0.75,
+   "gap_m": 119.088134765625,
+   "held": [],
+   "contacts": 0,
+   "outs": []
+  }
+ ]
+}

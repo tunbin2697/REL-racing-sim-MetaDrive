@@ -1,0 +1,347 @@
+{
+ "config": "c3_attack",
+ "rows": [
+  {
+   "frac": 0.12,
+   "kind": "brake50",
+   "dur": 1.0,
+   "gap_m": -1.0,
+   "held": [],
+   "contacts": 2,
+   "outs": [
+    {
+     "car": 0,
+     "reason": "crash_or_track_limit",
+     "frac": 0.095,
+     "t": 176,
+     "contact_3s": false,
+     "kmh": 55.5
+    },
+    {
+     "car": 1,
+     "reason": "crash_or_track_limit",
+     "frac": 0.095,
+     "t": 203,
+     "contact_3s": false,
+     "kmh": 52.4
+    }
+   ]
+  },
+  {
+   "frac": 0.12,
+   "kind": "brake50",
+   "dur": 1.5,
+   "gap_m": -1.0,
+   "held": [],
+   "contacts": 2,
+   "outs": [
+    {
+     "car": 0,
+     "reason": "crash_or_track_limit",
+     "frac": 0.095,
+     "t": 176,
+     "contact_3s": false,
+     "kmh": 56.3
+    },
+    {
+     "car": 1,
+     "reason": "crash_or_track_limit",
+     "frac": 0.095,
+     "t": 203,
+     "contact_3s": false,
+     "kmh": 52.4
+    }
+   ]
+  },
+  {
+   "frac": 0.22,
+   "kind": "brake50",
+   "dur": 1.0,
+   "gap_m": 28.0,
+   "held": [],
+   "contacts": 2,
+   "outs": [
+    {
+     "car": 1,
+     "reason": "crash_or_track_limit",
+     "frac": 0.094,
+     "t": 201,
+     "contact_3s": false,
+     "kmh": 51.2
+    }
+   ]
+  },
+  {
+   "frac": 0.22,
+   "kind": "brake50",
+   "dur": 1.5,
+   "gap_m": 28.0,
+   "held": [],
+   "contacts": 2,
+   "outs": [
+    {
+     "car": 1,
+     "reason": "crash_or_track_limit",
+     "frac": 0.093,
+     "t": 201,
+     "contact_3s": false,
+     "kmh": 51.3
+    }
+   ]
+  },
+  {
+   "frac": 0.32,
+   "kind": "brake50",
+   "dur": 1.0,
+   "gap_m": 556.6,
+   "held": [],
+   "contacts": 0,
+   "outs": [
+    {
+     "car": 1,
+     "reason": "crash_or_track_limit",
+     "frac": 0.125,
+     "t": 218,
+     "contact_3s": false,
+     "kmh": 47.0
+    }
+   ]
+  },
+  {
+   "frac": 0.32,
+   "kind": "brake50",
+   "dur": 1.5,
+   "gap_m": 556.6,
+   "held": [],
+   "contacts": 0,
+   "outs": [
+    {
+     "car": 1,
+     "reason": "crash_or_track_limit",
+     "frac": 0.125,
+     "t": 218,
+     "contact_3s": false,
+     "kmh": 47.0
+    }
+   ]
+  },
+  {
+   "frac": 0.42,
+   "kind": "brake50",
+   "dur": 1.0,
+   "gap_m": 930.8,
+   "held": [],
+   "contacts": 2,
+   "outs": [
+    {
+     "car": 0,
+     "reason": "crash_or_track_limit",
+     "frac": 0.095,
+     "t": 197,
+     "contact_3s": false,
+     "kmh": 56.8
+    }
+   ]
+  },
+  {
+   "frac": 0.42,
+   "kind": "brake50",
+   "dur": 1.5,
+   "gap_m": 930.8,
+   "held": [],
+   "contacts": 0,
+   "outs": [
+    {
+     "car": 0,
+     "reason": "crash_or_track_limit",
+     "frac": 0.095,
+     "t": 198,
+     "contact_3s": false,
+     "kmh": 56.6
+    }
+   ]
+  },
+  {
+   "frac": 0.52,
+   "kind": "brake50",
+   "dur": 1.0,
+   "gap_m": -1.0,
+   "held": [],
+   "contacts": 2,
+   "outs": [
+    {
+     "car": 0,
+     "reason": "crash_or_track_limit",
+     "frac": 0.093,
+     "t": 170,
+     "contact_3s": true,
+     "kmh": 53.0
+    }
+   ]
+  },
+  {
+   "frac": 0.52,
+   "kind": "brake50",
+   "dur": 1.5,
+   "gap_m": -1.0,
+   "held": [],
+   "contacts": 2,
+   "outs": [
+    {
+     "car": 0,
+     "reason": "crash_or_track_limit",
+     "frac": 0.092,
+     "t": 168,
+     "contact_3s": true,
+     "kmh": 52.2
+    },
+    {
+     "car": 1,
+     "reason": "crash_or_track_limit",
+     "frac": 0.095,
+     "t": 184,
+     "contact_3s": false,
+     "kmh": 53.3
+    }
+   ]
+  },
+  {
+   "frac": 0.62,
+   "kind": "brake50",
+   "dur": 1.0,
+   "gap_m": -1.0,
+   "held": [],
+   "contacts": 4,
+   "outs": [
+    {
+     "car": 0,
+     "reason": "stalled",
+     "frac": 0.084,
+     "t": 269,
+     "contact_3s": false,
+     "kmh": 0.9
+    },
+    {
+     "car": 1,
+     "reason": "stalled",
+     "frac": 0.083,
+     "t": 270,
+     "contact_3s": false,
+     "kmh": 1.0
+    }
+   ]
+  },
+  {
+   "frac": 0.62,
+   "kind": "brake50",
+   "dur": 1.5,
+   "gap_m": -1.0,
+   "held": [],
+   "contacts": 4,
+   "outs": [
+    {
+     "car": 0,
+     "reason": "stalled",
+     "frac": 0.084,
+     "t": 269,
+     "contact_3s": false,
+     "kmh": 1.0
+    },
+    {
+     "car": 1,
+     "reason": "stalled",
+     "frac": 0.083,
+     "t": 270,
+     "contact_3s": false,
+     "kmh": 1.0
+    }
+   ]
+  },
+  {
+   "frac": 0.72,
+   "kind": "brake50",
+   "dur": 1.0,
+   "gap_m": 1162.0,
+   "held": [],
+   "contacts": 0,
+   "outs": [
+    {
+     "car": 1,
+     "reason": "crash_or_track_limit",
+     "frac": 0.314,
+     "t": 398,
+     "contact_3s": false,
+     "kmh": 88.4
+    }
+   ]
+  },
+  {
+   "frac": 0.72,
+   "kind": "brake50",
+   "dur": 1.5,
+   "gap_m": 1162.0,
+   "held": [],
+   "contacts": 0,
+   "outs": [
+    {
+     "car": 1,
+     "reason": "crash_or_track_limit",
+     "frac": 0.314,
+     "t": 401,
+     "contact_3s": false,
+     "kmh": 111.4
+    }
+   ]
+  },
+  {
+   "frac": 0.82,
+   "kind": "brake50",
+   "dur": 1.0,
+   "gap_m": -1.0,
+   "held": [],
+   "contacts": 4,
+   "outs": [
+    {
+     "car": 1,
+     "reason": "crash_or_track_limit",
+     "frac": 0.093,
+     "t": 167,
+     "contact_3s": true,
+     "kmh": 56.9
+    },
+    {
+     "car": 0,
+     "reason": "crash_or_track_limit",
+     "frac": 0.095,
+     "t": 183,
+     "contact_3s": false,
+     "kmh": 52.0
+    }
+   ]
+  },
+  {
+   "frac": 0.82,
+   "kind": "brake50",
+   "dur": 1.5,
+   "gap_m": -1.0,
+   "held": [],
+   "contacts": 4,
+   "outs": [
+    {
+     "car": 0,
+     "reason": "crash_or_track_limit",
+     "frac": 0.096,
+     "t": 187,
+     "contact_3s": false,
+     "kmh": 53.1
+    }
+   ]
+  }
+ ],
+ "adapter": {
+  "plan_ms_per_step": 3.052688911588453,
+  "engaged_share": 0.3655755792570798,
+  "attacks_started": 37,
+  "attacks_passed": 5
+ }
+}

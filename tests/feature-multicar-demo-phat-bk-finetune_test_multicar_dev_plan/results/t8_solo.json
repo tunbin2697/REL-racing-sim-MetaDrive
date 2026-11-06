@@ -1,0 +1,510 @@
+{
+ "plain": [
+  {
+   "steps": 1141,
+   "finished": 1,
+   "outs": [],
+   "contacts": 0,
+   "contact_types": {
+    "rear": 0,
+    "side": 0
+   },
+   "contact_episodes": 0,
+   "start_passes": 0,
+   "held": [],
+   "env_overtakes": 0,
+   "mean_lap": 114.10000000000001,
+   "best_lap": 114.10000000000001,
+   "pedal_sw": 5.258545135845749,
+   "steer_rev": 40.22787028921998,
+   "beta": 4.47643178740684,
+   "follow_dy": [],
+   "follow_closing": []
+  },
+  {
+   "steps": 1153,
+   "finished": 1,
+   "outs": [],
+   "contacts": 0,
+   "contact_types": {
+    "rear": 0,
+    "side": 0
+   },
+   "contact_episodes": 0,
+   "start_passes": 0,
+   "held": [],
+   "env_overtakes": 0,
+   "mean_lap": 115.30000000000001,
+   "best_lap": 115.30000000000001,
+   "pedal_sw": 6.071118820468343,
+   "steer_rev": 37.0338248048569,
+   "beta": 4.50610132077286,
+   "follow_dy": [],
+   "follow_closing": []
+  },
+  {
+   "steps": 1137,
+   "finished": 1,
+   "outs": [],
+   "contacts": 0,
+   "contact_types": {
+    "rear": 0,
+    "side": 0
+   },
+   "contact_episodes": 0,
+   "start_passes": 0,
+   "held": [],
+   "env_overtakes": 0,
+   "mean_lap": 113.7,
+   "best_lap": 113.7,
+   "pedal_sw": 5.980650835532102,
+   "steer_rev": 40.89709762532981,
+   "beta": 4.314615247626913,
+   "follow_dy": [],
+   "follow_closing": []
+  },
+  {
+   "steps": 1137,
+   "finished": 1,
+   "outs": [],
+   "contacts": 0,
+   "contact_types": {
+    "rear": 0,
+    "side": 0
+   },
+   "contact_episodes": 0,
+   "start_passes": 0,
+   "held": [],
+   "env_overtakes": 0,
+   "mean_lap": 113.7,
+   "best_lap": 113.7,
+   "pedal_sw": 8.619173262972735,
+   "steer_rev": 39.92963940193492,
+   "beta": 3.7894404049885577,
+   "follow_dy": [],
+   "follow_closing": []
+  },
+  {
+   "steps": 1136,
+   "finished": 1,
+   "outs": [],
+   "contacts": 0,
+   "contact_types": {
+    "rear": 0,
+    "side": 0
+   },
+   "contact_episodes": 0,
+   "start_passes": 0,
+   "held": [],
+   "env_overtakes": 0,
+   "mean_lap": 113.60000000000001,
+   "best_lap": 113.60000000000001,
+   "pedal_sw": 5.457746478873239,
+   "steer_rev": 36.53169014084507,
+   "beta": 4.043279564902447,
+   "follow_dy": [],
+   "follow_closing": []
+  },
+  {
+   "steps": 1145,
+   "finished": 1,
+   "outs": [],
+   "contacts": 0,
+   "contact_types": {
+    "rear": 0,
+    "side": 0
+   },
+   "contact_episodes": 0,
+   "start_passes": 0,
+   "held": [],
+   "env_overtakes": 0,
+   "mean_lap": 114.5,
+   "best_lap": 114.5,
+   "pedal_sw": 6.2882096069869,
+   "steer_rev": 36.24454148471616,
+   "beta": 3.974344985109963,
+   "follow_dy": [],
+   "follow_closing": []
+  },
+  {
+   "steps": 1140,
+   "finished": 1,
+   "outs": [],
+   "contacts": 0,
+   "contact_types": {
+    "rear": 0,
+    "side": 0
+   },
+   "contact_episodes": 0,
+   "start_passes": 0,
+   "held": [],
+   "env_overtakes": 0,
+   "mean_lap": 114.0,
+   "best_lap": 114.0,
+   "pedal_sw": 5.43859649122807,
+   "steer_rev": 39.3859649122807,
+   "beta": 4.014926348145086,
+   "follow_dy": [],
+   "follow_closing": []
+  },
+  {
+   "steps": 1141,
+   "finished": 1,
+   "outs": [],
+   "contacts": 0,
+   "contact_types": {
+    "rear": 0,
+    "side": 0
+   },
+   "contact_episodes": 0,
+   "start_passes": 0,
+   "held": [],
+   "env_overtakes": 0,
+   "mean_lap": 114.10000000000001,
+   "best_lap": 114.10000000000001,
+   "pedal_sw": 5.784399649430324,
+   "steer_rev": 40.05258545135846,
+   "beta": 3.9747094736446016,
+   "follow_dy": [],
+   "follow_closing": []
+  },
+  {
+   "steps": 1140,
+   "finished": 1,
+   "outs": [],
+   "contacts": 0,
+   "contact_types": {
+    "rear": 0,
+    "side": 0
+   },
+   "contact_episodes": 0,
+   "start_passes": 0,
+   "held": [],
+   "env_overtakes": 0,
+   "mean_lap": 114.0,
+   "best_lap": 114.0,
+   "pedal_sw": 5.263157894736842,
+   "steer_rev": 39.3859649122807,
+   "beta": 3.521588616233904,
+   "follow_dy": [],
+   "follow_closing": []
+  },
+  {
+   "steps": 1146,
+   "finished": 1,
+   "outs": [],
+   "contacts": 0,
+   "contact_types": {
+    "rear": 0,
+    "side": 0
+   },
+   "contact_episodes": 0,
+   "start_passes": 0,
+   "held": [],
+   "env_overtakes": 0,
+   "mean_lap": 114.60000000000001,
+   "best_lap": 114.60000000000001,
+   "pedal_sw": 5.06108202443281,
+   "steer_rev": 39.09249563699825,
+   "beta": 3.8451993813549525,
+   "follow_dy": [],
+   "follow_closing": []
+  },
+  {
+   "steps": 1144,
+   "finished": 1,
+   "outs": [],
+   "contacts": 0,
+   "contact_types": {
+    "rear": 0,
+    "side": 0
+   },
+   "contact_episodes": 0,
+   "start_passes": 0,
+   "held": [],
+   "env_overtakes": 0,
+   "mean_lap": 114.4,
+   "best_lap": 114.4,
+   "pedal_sw": 7.517482517482517,
+   "steer_rev": 39.51048951048951,
+   "beta": 3.979328046669275,
+   "follow_dy": [],
+   "follow_closing": []
+  },
+  {
+   "steps": 1143,
+   "finished": 1,
+   "outs": [],
+   "contacts": 0,
+   "contact_types": {
+    "rear": 0,
+    "side": 0
+   },
+   "contact_episodes": 0,
+   "start_passes": 0,
+   "held": [],
+   "env_overtakes": 0,
+   "mean_lap": 114.30000000000001,
+   "best_lap": 114.30000000000001,
+   "pedal_sw": 5.42432195975503,
+   "steer_rev": 39.37007874015748,
+   "beta": 4.323762456678837,
+   "follow_dy": [],
+   "follow_closing": []
+  }
+ ],
+ "mpc": [
+  {
+   "steps": 1140,
+   "finished": 1,
+   "outs": [],
+   "contacts": 0,
+   "contact_types": {
+    "rear": 0,
+    "side": 0
+   },
+   "contact_episodes": 0,
+   "start_passes": 0,
+   "held": [],
+   "env_overtakes": 0,
+   "mean_lap": 114.0,
+   "best_lap": 114.0,
+   "pedal_sw": 5.43859649122807,
+   "steer_rev": 39.122807017543856,
+   "beta": 4.2332678852384875,
+   "follow_dy": [],
+   "follow_closing": []
+  },
+  {
+   "steps": 1143,
+   "finished": 1,
+   "outs": [],
+   "contacts": 0,
+   "contact_types": {
+    "rear": 0,
+    "side": 0
+   },
+   "contact_episodes": 0,
+   "start_passes": 0,
+   "held": [],
+   "env_overtakes": 0,
+   "mean_lap": 114.30000000000001,
+   "best_lap": 114.30000000000001,
+   "pedal_sw": 5.94925634295713,
+   "steer_rev": 37.270341207349084,
+   "beta": 4.392269538240677,
+   "follow_dy": [],
+   "follow_closing": []
+  },
+  {
+   "steps": 1144,
+   "finished": 1,
+   "outs": [],
+   "contacts": 0,
+   "contact_types": {
+    "rear": 0,
+    "side": 0
+   },
+   "contact_episodes": 0,
+   "start_passes": 0,
+   "held": [],
+   "env_overtakes": 0,
+   "mean_lap": 114.4,
+   "best_lap": 114.4,
+   "pedal_sw": 5.594405594405594,
+   "steer_rev": 40.99650349650349,
+   "beta": 4.0492427498732075,
+   "follow_dy": [],
+   "follow_closing": []
+  },
+  {
+   "steps": 1142,
+   "finished": 1,
+   "outs": [],
+   "contacts": 0,
+   "contact_types": {
+    "rear": 0,
+    "side": 0
+   },
+   "contact_episodes": 0,
+   "start_passes": 0,
+   "held": [],
+   "env_overtakes": 0,
+   "mean_lap": 114.2,
+   "best_lap": 114.2,
+   "pedal_sw": 5.604203152364273,
+   "steer_rev": 39.05429071803853,
+   "beta": 4.24016251899099,
+   "follow_dy": [],
+   "follow_closing": []
+  },
+  {
+   "steps": 1139,
+   "finished": 1,
+   "outs": [],
+   "contacts": 0,
+   "contact_types": {
+    "rear": 0,
+    "side": 0
+   },
+   "contact_episodes": 0,
+   "start_passes": 0,
+   "held": [],
+   "env_overtakes": 0,
+   "mean_lap": 113.9,
+   "best_lap": 113.9,
+   "pedal_sw": 6.321334503950834,
+   "steer_rev": 38.45478489903424,
+   "beta": 3.9499061365287615,
+   "follow_dy": [],
+   "follow_closing": []
+  },
+  {
+   "steps": 1146,
+   "finished": 1,
+   "outs": [],
+   "contacts": 0,
+   "contact_types": {
+    "rear": 0,
+    "side": 0
+   },
+   "contact_episodes": 0,
+   "start_passes": 0,
+   "held": [],
+   "env_overtakes": 0,
+   "mean_lap": 114.60000000000001,
+   "best_lap": 114.60000000000001,
+   "pedal_sw": 5.2356020942408374,
+   "steer_rev": 38.481675392670155,
+   "beta": 3.978703200973959,
+   "follow_dy": [],
+   "follow_closing": []
+  },
+  {
+   "steps": 1145,
+   "finished": 1,
+   "outs": [],
+   "contacts": 0,
+   "contact_types": {
+    "rear": 0,
+    "side": 0
+   },
+   "contact_episodes": 0,
+   "start_passes": 0,
+   "held": [],
+   "env_overtakes": 0,
+   "mean_lap": 114.5,
+   "best_lap": 114.5,
+   "pedal_sw": 5.414847161572053,
+   "steer_rev": 39.21397379912664,
+   "beta": 4.005302657175868,
+   "follow_dy": [],
+   "follow_closing": []
+  },
+  {
+   "steps": 1150,
+   "finished": 1,
+   "outs": [],
+   "contacts": 0,
+   "contact_types": {
+    "rear": 0,
+    "side": 0
+   },
+   "contact_episodes": 0,
+   "start_passes": 0,
+   "held": [],
+   "env_overtakes": 0,
+   "mean_lap": 115.0,
+   "best_lap": 115.0,
+   "pedal_sw": 6.260869565217392,
+   "steer_rev": 38.43478260869565,
+   "beta": 3.9504861380907186,
+   "follow_dy": [],
+   "follow_closing": []
+  },
+  {
+   "steps": 1139,
+   "finished": 1,
+   "outs": [],
+   "contacts": 0,
+   "contact_types": {
+    "rear": 0,
+    "side": 0
+   },
+   "contact_episodes": 0,
+   "start_passes": 0,
+   "held": [],
+   "env_overtakes": 0,
+   "mean_lap": 113.9,
+   "best_lap": 113.9,
+   "pedal_sw": 5.7945566286215975,
+   "steer_rev": 38.8937664618086,
+   "beta": 4.0593186066312335,
+   "follow_dy": [],
+   "follow_closing": []
+  },
+  {
+   "steps": 1141,
+   "finished": 1,
+   "outs": [],
+   "contacts": 0,
+   "contact_types": {
+    "rear": 0,
+    "side": 0
+   },
+   "contact_episodes": 0,
+   "start_passes": 0,
+   "held": [],
+   "env_overtakes": 0,
+   "mean_lap": 114.10000000000001,
+   "best_lap": 114.10000000000001,
+   "pedal_sw": 5.959684487291849,
+   "steer_rev": 39.17616126205083,
+   "beta": 4.315318473825219,
+   "follow_dy": [],
+   "follow_closing": []
+  },
+  {
+   "steps": 1144,
+   "finished": 1,
+   "outs": [],
+   "contacts": 0,
+   "contact_types": {
+    "rear": 0,
+    "side": 0
+   },
+   "contact_episodes": 0,
+   "start_passes": 0,
+   "held": [],
+   "env_overtakes": 0,
+   "mean_lap": 114.4,
+   "best_lap": 114.4,
+   "pedal_sw": 6.118881118881119,
+   "steer_rev": 39.77272727272727,
+   "beta": 4.175606110260474,
+   "follow_dy": [],
+   "follow_closing": []
+  },
+  {
+   "steps": 1142,
+   "finished": 1,
+   "outs": [],
+   "contacts": 0,
+   "contact_types": {
+    "rear": 0,
+    "side": 0
+   },
+   "contact_episodes": 0,
+   "start_passes": 0,
+   "held": [],
+   "env_overtakes": 0,
+   "mean_lap": 114.2,
+   "best_lap": 114.2,
+   "pedal_sw": 5.604203152364273,
+   "steer_rev": 38.61646234676007,
+   "beta": 4.460027863489827,
+   "follow_dy": [],
+   "follow_closing": []
+  }
+ ]
+}

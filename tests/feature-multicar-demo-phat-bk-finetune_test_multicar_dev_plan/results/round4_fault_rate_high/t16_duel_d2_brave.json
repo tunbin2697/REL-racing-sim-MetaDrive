@@ -1,0 +1,137 @@
+{
+ "config": "d2_brave",
+ "rows": [
+  {
+   "kind": "lockup",
+   "at": 0.15,
+   "gap_m": 26.727203369140625,
+   "held": [],
+   "contacts": 0,
+   "outs": []
+  },
+  {
+   "kind": "understeer",
+   "at": 0.15,
+   "gap_m": 26.727203369140625,
+   "held": [
+    {
+     "a": 1,
+     "b": 0,
+     "t": 413,
+     "frac": 0.345,
+     "corner": true,
+     "touched": false
+    }
+   ],
+   "contacts": 0,
+   "outs": []
+  },
+  {
+   "kind": "oversteer",
+   "at": 0.15,
+   "gap_m": 26.727203369140625,
+   "held": [],
+   "contacts": 4,
+   "outs": []
+  },
+  {
+   "kind": "lockup",
+   "at": 0.35,
+   "gap_m": 24.3204345703125,
+   "held": [],
+   "contacts": 0,
+   "outs": []
+  },
+  {
+   "kind": "understeer",
+   "at": 0.35,
+   "gap_m": 24.3204345703125,
+   "held": [],
+   "contacts": 17,
+   "outs": []
+  },
+  {
+   "kind": "oversteer",
+   "at": 0.35,
+   "gap_m": 24.3204345703125,
+   "held": [],
+   "contacts": 2,
+   "outs": []
+  },
+  {
+   "kind": "lockup",
+   "at": 0.55,
+   "gap_m": 13.99658203125,
+   "held": [],
+   "contacts": 2,
+   "outs": []
+  },
+  {
+   "kind": "understeer",
+   "at": 0.55,
+   "gap_m": 13.99658203125,
+   "held": [],
+   "contacts": 4,
+   "outs": [
+    {
+     "car": 0,
+     "reason": "stalled",
+     "frac": 0.328,
+     "t": 551,
+     "contact_3s": false,
+     "kmh": 0.4
+    }
+   ]
+  },
+  {
+   "kind": "oversteer",
+   "at": 0.55,
+   "gap_m": 13.99658203125,
+   "held": [],
+   "contacts": 12,
+   "outs": [
+    {
+     "car": 0,
+     "reason": "crash_or_track_limit",
+     "frac": 0.572,
+     "t": 720,
+     "contact_3s": true,
+     "kmh": 54.7
+    }
+   ]
+  },
+  {
+   "kind": "lockup",
+   "at": 0.75,
+   "gap_m": 77.056396484375,
+   "held": [],
+   "contacts": 0,
+   "outs": []
+  },
+  {
+   "kind": "understeer",
+   "at": 0.75,
+   "gap_m": 77.056396484375,
+   "held": [],
+   "contacts": 0,
+   "outs": []
+  },
+  {
+   "kind": "oversteer",
+   "at": 0.75,
+   "gap_m": 77.056396484375,
+   "held": [],
+   "contacts": 2,
+   "outs": [
+    {
+     "car": 1,
+     "reason": "crash_or_track_limit",
+     "frac": 0.909,
+     "t": 1050,
+     "contact_3s": false,
+     "kmh": 28.4
+    }
+   ]
+  }
+ ]
+}

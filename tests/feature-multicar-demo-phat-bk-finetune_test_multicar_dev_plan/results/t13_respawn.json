@@ -1,0 +1,84 @@
+{
+ "rows": [
+  {
+   "case": "roi_xuong_thap",
+   "fix": false,
+   "done_after_damage": true,
+   "done_again": 0,
+   "steps_ok": 30,
+   "z": 0.54,
+   "pitch": 0.1,
+   "roll": -0.0
+  },
+  {
+   "case": "roi_xuong_thap",
+   "fix": true,
+   "done_after_damage": true,
+   "done_again": 0,
+   "steps_ok": 30,
+   "z": 0.54,
+   "pitch": 0.1,
+   "roll": -0.0
+  },
+  {
+   "case": "lat_ngang_60do",
+   "fix": false,
+   "done_after_damage": true,
+   "done_again": 0,
+   "steps_ok": 30,
+   "z": 0.54,
+   "pitch": 0.1,
+   "roll": -0.0
+  },
+  {
+   "case": "lat_ngang_60do",
+   "fix": true,
+   "done_after_damage": true,
+   "done_again": 0,
+   "steps_ok": 30,
+   "z": 0.54,
+   "pitch": 0.1,
+   "roll": -0.0
+  },
+  {
+   "case": "chuc_dau_60do",
+   "fix": false,
+   "done_after_damage": false,
+   "done_again": 0,
+   "steps_ok": 30,
+   "z": 0.54,
+   "pitch": 0.1,
+   "roll": -0.0
+  },
+  {
+   "case": "chuc_dau_60do",
+   "fix": true,
+   "done_after_damage": false,
+   "done_again": 0,
+   "steps_ok": 30,
+   "z": 0.54,
+   "pitch": 0.1,
+   "roll": -0.0
+  },
+  {
+   "case": "khong_hong",
+   "fix": false,
+   "done_after_damage": false,
+   "done_again": 0,
+   "steps_ok": 30,
+   "z": 0.54,
+   "pitch": 0.1,
+   "roll": -0.0
+  },
+  {
+   "case": "khong_hong",
+   "fix": true,
+   "done_after_damage": false,
+   "done_again": 0,
+   "steps_ok": 30,
+   "z": 0.54,
+   "pitch": 0.1,
+   "roll": -0.0
+  }
+ ]
+}

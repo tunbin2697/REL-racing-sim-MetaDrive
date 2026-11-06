@@ -1,0 +1,227 @@
+{
+ "config": "c1_grid",
+ "rows": [
+  {
+   "frac": 0.12,
+   "kind": "brake50",
+   "dur": 1.0,
+   "gap_m": 23.5,
+   "held": [],
+   "contacts": 0,
+   "outs": []
+  },
+  {
+   "frac": 0.12,
+   "kind": "brake50",
+   "dur": 1.5,
+   "gap_m": 23.5,
+   "held": [],
+   "contacts": 0,
+   "outs": []
+  },
+  {
+   "frac": 0.22,
+   "kind": "brake50",
+   "dur": 1.0,
+   "gap_m": 37.1,
+   "held": [],
+   "contacts": 0,
+   "outs": [
+    {
+     "car": 0,
+     "reason": "stalled",
+     "frac": 0.236,
+     "t": 453,
+     "contact_3s": false,
+     "kmh": 0.2
+    }
+   ]
+  },
+  {
+   "frac": 0.22,
+   "kind": "brake50",
+   "dur": 1.5,
+   "gap_m": 37.1,
+   "held": [
+    {
+     "a": 1,
+     "b": 0,
+     "t": 329,
+     "frac": 0.27,
+     "corner": false,
+     "touched": false
+    }
+   ],
+   "contacts": 0,
+   "outs": []
+  },
+  {
+   "frac": 0.32,
+   "kind": "brake50",
+   "dur": 1.0,
+   "gap_m": 29.4,
+   "held": [],
+   "contacts": 2,
+   "outs": []
+  },
+  {
+   "frac": 0.32,
+   "kind": "brake50",
+   "dur": 1.5,
+   "gap_m": 29.4,
+   "held": [],
+   "contacts": 4,
+   "outs": [
+    {
+     "car": 0,
+     "reason": "stalled",
+     "frac": 0.326,
+     "t": 550,
+     "contact_3s": false,
+     "kmh": 0.1
+    }
+   ]
+  },
+  {
+   "frac": 0.42,
+   "kind": "brake50",
+   "dur": 1.0,
+   "gap_m": 49.1,
+   "held": [],
+   "contacts": 0,
+   "outs": []
+  },
+  {
+   "frac": 0.42,
+   "kind": "brake50",
+   "dur": 1.5,
+   "gap_m": 49.1,
+   "held": [
+    {
+     "a": 1,
+     "b": 0,
+     "t": 583,
+     "frac": 0.488,
+     "corner": false,
+     "touched": false
+    }
+   ],
+   "contacts": 0,
+   "outs": []
+  },
+  {
+   "frac": 0.52,
+   "kind": "brake50",
+   "dur": 1.0,
+   "gap_m": 71.8,
+   "held": [],
+   "contacts": 0,
+   "outs": []
+  },
+  {
+   "frac": 0.52,
+   "kind": "brake50",
+   "dur": 1.5,
+   "gap_m": 71.8,
+   "held": [
+    {
+     "a": 1,
+     "b": 0,
+     "t": 656,
+     "frac": 0.564,
+     "corner": true,
+     "touched": false
+    }
+   ],
+   "contacts": 0,
+   "outs": []
+  },
+  {
+   "frac": 0.62,
+   "kind": "brake50",
+   "dur": 1.0,
+   "gap_m": 23.8,
+   "held": [],
+   "contacts": 0,
+   "outs": []
+  },
+  {
+   "frac": 0.62,
+   "kind": "brake50",
+   "dur": 1.5,
+   "gap_m": 23.8,
+   "held": [],
+   "contacts": 6,
+   "outs": [
+    {
+     "car": 0,
+     "reason": "stalled",
+     "frac": 0.628,
+     "t": 877,
+     "contact_3s": false,
+     "kmh": 1.0
+    }
+   ]
+  },
+  {
+   "frac": 0.72,
+   "kind": "brake50",
+   "dur": 1.0,
+   "gap_m": 45.0,
+   "held": [],
+   "contacts": 4,
+   "outs": []
+  },
+  {
+   "frac": 0.72,
+   "kind": "brake50",
+   "dur": 1.5,
+   "gap_m": 45.0,
+   "held": [],
+   "contacts": 0,
+   "outs": []
+  },
+  {
+   "frac": 0.82,
+   "kind": "brake50",
+   "dur": 1.0,
+   "gap_m": 56.6,
+   "held": [],
+   "contacts": 0,
+   "outs": []
+  },
+  {
+   "frac": 0.82,
+   "kind": "brake50",
+   "dur": 1.5,
+   "gap_m": 56.6,
+   "held": [
+    {
+     "a": 1,
+     "b": 0,
+     "t": 963,
+     "frac": 0.846,
+     "corner": false,
+     "touched": false
+    }
+   ],
+   "contacts": 2,
+   "outs": [
+    {
+     "car": 0,
+     "reason": "stalled",
+     "frac": 0.828,
+     "t": 1082,
+     "contact_3s": false,
+     "kmh": 1.0
+    }
+   ]
+  }
+ ],
+ "adapter": {
+  "plan_ms_per_step": 3.0867387258618986,
+  "engaged_share": 0.4267015131882371,
+  "attacks_started": 0,
+  "attacks_passed": 0
+ }
+}

@@ -161,10 +161,10 @@ class GT3RaceCar(BaseRaceVehicle):
             name="GT3_RaceCar",
             mass=1100.0,
             max_engine_force=850.0,
-            max_brake_force=650.0,
+            max_brake_force=250.0,      # 650 của bản 111s làm xe chúc đầu 24°, đuôi nhấc 0.37m; 250: 17°, 0.19m
             max_steering_deg=20.0,
             wheel_friction=1.35,
-            front_wheel_friction=0.90,  # Giữ đúng vật lý Phase 1 / bản 111s (cầu trước thực tế luôn 0.9, F16)
+            front_wheel_friction=0.95,  # 0.9 của bản 111s (F16) hơi thiếu lái; ref_111s không lái được từ 1.1 trở lên
             max_steer_rate=0.18,
             length=4.50,
             width=1.85,

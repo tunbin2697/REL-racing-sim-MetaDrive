@@ -1,0 +1,355 @@
+{
+ "rows": [
+  {
+   "offset": "0.0",
+   "seed": 0,
+   "finished": 1,
+   "lap": 114.10000000000001,
+   "outs": [],
+   "steer_rev": 40.22787028921998,
+   "beta": 4.47643178740684,
+   "lat_err_mean": -0.003,
+   "lat_err_rms": 0.113
+  },
+  {
+   "offset": "0.0",
+   "seed": 1,
+   "finished": 1,
+   "lap": 115.30000000000001,
+   "outs": [],
+   "steer_rev": 37.0338248048569,
+   "beta": 4.50610132077286,
+   "lat_err_mean": -0.15,
+   "lat_err_rms": 0.968
+  },
+  {
+   "offset": "0.0",
+   "seed": 2,
+   "finished": 1,
+   "lap": 113.7,
+   "outs": [],
+   "steer_rev": 40.89709762532981,
+   "beta": 4.314615247626913,
+   "lat_err_mean": -0.098,
+   "lat_err_rms": 0.51
+  },
+  {
+   "offset": "1.5",
+   "seed": 0,
+   "finished": 1,
+   "lap": 114.5,
+   "outs": [],
+   "steer_rev": 39.65065502183406,
+   "beta": 3.520416549997809,
+   "lat_err_mean": -0.42,
+   "lat_err_rms": 1.375
+  },
+  {
+   "offset": "1.5",
+   "seed": 1,
+   "finished": 1,
+   "lap": 114.60000000000001,
+   "outs": [],
+   "steer_rev": 40.31413612565445,
+   "beta": 3.8716765193677256,
+   "lat_err_mean": -0.106,
+   "lat_err_rms": 0.694
+  },
+  {
+   "offset": "1.5",
+   "seed": 2,
+   "finished": 1,
+   "lap": 113.80000000000001,
+   "outs": [],
+   "steer_rev": 38.664323374340945,
+   "beta": 4.118711896245339,
+   "lat_err_mean": -0.22,
+   "lat_err_rms": 0.816
+  },
+  {
+   "offset": "-1.5",
+   "seed": 0,
+   "finished": 1,
+   "lap": 114.4,
+   "outs": [],
+   "steer_rev": 44.05594405594406,
+   "beta": 3.665280804160026,
+   "lat_err_mean": 0.174,
+   "lat_err_rms": 0.807
+  },
+  {
+   "offset": "-1.5",
+   "seed": 1,
+   "finished": 1,
+   "lap": 114.4,
+   "outs": [],
+   "steer_rev": 41.6958041958042,
+   "beta": 4.1163247316541325,
+   "lat_err_mean": 0.138,
+   "lat_err_rms": 0.616
+  },
+  {
+   "offset": "-1.5",
+   "seed": 2,
+   "finished": 1,
+   "lap": 114.4,
+   "outs": [],
+   "steer_rev": 38.111888111888106,
+   "beta": 3.562917669939508,
+   "lat_err_mean": 0.157,
+   "lat_err_rms": 0.984
+  },
+  {
+   "offset": "3.0",
+   "seed": 0,
+   "finished": 1,
+   "lap": 114.5,
+   "outs": [],
+   "steer_rev": 39.21397379912664,
+   "beta": 3.964187188436925,
+   "lat_err_mean": -0.816,
+   "lat_err_rms": 1.922
+  },
+  {
+   "offset": "3.0",
+   "seed": 1,
+   "finished": 1,
+   "lap": 114.60000000000001,
+   "outs": [],
+   "steer_rev": 40.139616055846425,
+   "beta": 3.565687821406314,
+   "lat_err_mean": -0.773,
+   "lat_err_rms": 1.944
+  },
+  {
+   "offset": "3.0",
+   "seed": 2,
+   "finished": 1,
+   "lap": 114.10000000000001,
+   "outs": [],
+   "steer_rev": 38.562664329535494,
+   "beta": 3.9157946298003035,
+   "lat_err_mean": -0.672,
+   "lat_err_rms": 1.521
+  },
+  {
+   "offset": "-3.0",
+   "seed": 0,
+   "finished": 1,
+   "lap": 114.80000000000001,
+   "outs": [],
+   "steer_rev": 41.55052264808362,
+   "beta": 3.771818104380144,
+   "lat_err_mean": 0.494,
+   "lat_err_rms": 1.213
+  },
+  {
+   "offset": "-3.0",
+   "seed": 1,
+   "finished": 1,
+   "lap": 113.9,
+   "outs": [],
+   "steer_rev": 38.19139596136962,
+   "beta": 3.5825240097365842,
+   "lat_err_mean": 0.534,
+   "lat_err_rms": 1.311
+  },
+  {
+   "offset": "-3.0",
+   "seed": 2,
+   "finished": 1,
+   "lap": 114.2,
+   "outs": [],
+   "steer_rev": 39.229422066549915,
+   "beta": 3.8554831848461992,
+   "lat_err_mean": 0.45,
+   "lat_err_rms": 1.131
+  },
+  {
+   "offset": "4.5",
+   "seed": 0,
+   "finished": 0,
+   "lap": 0.0,
+   "outs": [
+    {
+     "car": 0,
+     "reason": "crash_or_track_limit",
+     "frac": 0.137,
+     "t": 218,
+     "contact_3s": false,
+     "kmh": 63.2
+    }
+   ],
+   "steer_rev": 40.825688073394495,
+   "beta": 4.8170707496978515,
+   "lat_err_mean": -1.115,
+   "lat_err_rms": 1.651
+  },
+  {
+   "offset": "4.5",
+   "seed": 1,
+   "finished": 0,
+   "lap": 0.0,
+   "outs": [
+    {
+     "car": 0,
+     "reason": "crash_or_track_limit",
+     "frac": 0.139,
+     "t": 231,
+     "contact_3s": false,
+     "kmh": 65.3
+    }
+   ],
+   "steer_rev": 42.857142857142854,
+   "beta": 2.1295230819305564,
+   "lat_err_mean": -2.01,
+   "lat_err_rms": 3.498
+  },
+  {
+   "offset": "4.5",
+   "seed": 2,
+   "finished": 0,
+   "lap": 0.0,
+   "outs": [
+    {
+     "car": 0,
+     "reason": "crash_or_track_limit",
+     "frac": 0.372,
+     "t": 486,
+     "contact_3s": false,
+     "kmh": 74.4
+    }
+   ],
+   "steer_rev": 35.59670781893004,
+   "beta": 2.5648244515787417,
+   "lat_err_mean": -1.213,
+   "lat_err_rms": 2.668
+  },
+  {
+   "offset": "-4.5",
+   "seed": 0,
+   "finished": 0,
+   "lap": 0.0,
+   "outs": [
+    {
+     "car": 0,
+     "reason": "crash_or_track_limit",
+     "frac": 0.091,
+     "t": 144,
+     "contact_3s": false,
+     "kmh": 82.2
+    }
+   ],
+   "steer_rev": 35.41666666666667,
+   "beta": 1.013699018734025,
+   "lat_err_mean": 1.512,
+   "lat_err_rms": 1.981
+  },
+  {
+   "offset": "-4.5",
+   "seed": 1,
+   "finished": 1,
+   "lap": 114.9,
+   "outs": [],
+   "steer_rev": 38.207136640557,
+   "beta": 3.8841389447954016,
+   "lat_err_mean": 0.826,
+   "lat_err_rms": 1.668
+  },
+  {
+   "offset": "-4.5",
+   "seed": 2,
+   "finished": 0,
+   "lap": 0.0,
+   "outs": [
+    {
+     "car": 0,
+     "reason": "crash_or_track_limit",
+     "frac": 0.092,
+     "t": 145,
+     "contact_3s": false,
+     "kmh": 80.7
+    }
+   ],
+   "steer_rev": 35.86206896551724,
+   "beta": 0.9701642251514475,
+   "lat_err_mean": 1.549,
+   "lat_err_rms": 1.996
+  },
+  {
+   "offset": "swing2",
+   "seed": 0,
+   "finished": 1,
+   "lap": 115.10000000000001,
+   "outs": [],
+   "steer_rev": 47.17636837532581,
+   "beta": 3.7516282584006198,
+   "lat_err_mean": -0.145,
+   "lat_err_rms": 1.621
+  },
+  {
+   "offset": "swing2",
+   "seed": 1,
+   "finished": 1,
+   "lap": 115.10000000000001,
+   "outs": [],
+   "steer_rev": 45.525629887054734,
+   "beta": 3.947533981130226,
+   "lat_err_mean": -0.415,
+   "lat_err_rms": 1.725
+  },
+  {
+   "offset": "swing2",
+   "seed": 2,
+   "finished": 1,
+   "lap": 115.7,
+   "outs": [],
+   "steer_rev": 46.06741573033708,
+   "beta": 3.857891316081356,
+   "lat_err_mean": -0.315,
+   "lat_err_rms": 2.123
+  },
+  {
+   "offset": "swing4",
+   "seed": 0,
+   "finished": 1,
+   "lap": 116.7,
+   "outs": [],
+   "steer_rev": 48.58611825192802,
+   "beta": 5.621946781792037,
+   "lat_err_mean": -0.867,
+   "lat_err_rms": 2.96
+  },
+  {
+   "offset": "swing4",
+   "seed": 1,
+   "finished": 1,
+   "lap": 117.30000000000001,
+   "outs": [],
+   "steer_rev": 44.84228473998295,
+   "beta": 3.8521333810139042,
+   "lat_err_mean": -0.441,
+   "lat_err_rms": 3.119
+  },
+  {
+   "offset": "swing4",
+   "seed": 2,
+   "finished": 0,
+   "lap": 0.0,
+   "outs": [
+    {
+     "car": 0,
+     "reason": "crash_or_track_limit",
+     "frac": 0.927,
+     "t": 1089,
+     "contact_3s": false,
+     "kmh": 61.9
+    }
+   ],
+   "steer_rev": 47.56657483930211,
+   "beta": 5.343003748306441,
+   "lat_err_mean": -0.676,
+   "lat_err_rms": 2.725
+  }
+ ]
+}

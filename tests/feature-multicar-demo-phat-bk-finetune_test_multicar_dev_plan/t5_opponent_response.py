@@ -7,6 +7,7 @@ import sys
 import numpy as np
 import torch
 from common import make_env, load_policy, run_race, save, BASE_OBS_DIM
+from game_env.multicar_env import OPPONENT_DX_NORM, OPPONENT_DY_NORM, OPPONENT_DV_NORM
 
 model = sys.argv[1]
 env = make_env(num_cars=1)
@@ -20,8 +21,6 @@ def collect(e, obs, step):
 
 
 lap = run_race(env, agent, seed=0, on_step=collect)
-rng_range = env.opponent_range
-kappa_idx = 14
 env.close()
 S = np.array(states, dtype=np.float32)
 speeds = S[:, 0] * 40.0
@@ -43,7 +42,7 @@ for dx in (6.0, 10.0, 20.0, 40.0):
     for dy in (0.0, 2.0, -2.0, 3.5):
         for closing in (0.0, 5.0, 10.0):
             X = S.copy()
-            X[:, BASE_OBS_DIM:BASE_OBS_DIM + 5] = [dx / rng_range, dy / rng_range, -closing / 20.0, 0.0, 1.0]
+            X[:, BASE_OBS_DIM:BASE_OBS_DIM + 5] = [dx / OPPONENT_DX_NORM, dy / OPPONENT_DY_NORM, -closing / OPPONENT_DV_NORM, 0.0, 1.0]
             steer, pedal = mean_action(X)
             rows.append({"dx": dx, "dy": dy, "closing": closing,
                          "steer_mean_abs": round(float(np.mean(np.abs(steer - base_steer))), 4),

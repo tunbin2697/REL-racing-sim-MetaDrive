@@ -1,0 +1,321 @@
+{
+ "which": "ref",
+ "rows": [
+  {
+   "frac": 0.12,
+   "kind": null,
+   "dur": 0.0,
+   "gap_m": 14.4,
+   "leader": 0,
+   "held": [],
+   "contacts": 0,
+   "contact_episodes": 0,
+   "outs": [],
+   "finished": 2
+  },
+  {
+   "frac": 0.12,
+   "kind": "brake50",
+   "dur": 1.0,
+   "gap_m": 14.4,
+   "leader": 0,
+   "held": [
+    {
+     "a": 1,
+     "b": 0,
+     "t": 205,
+     "frac": 0.14,
+     "corner": true,
+     "touched": false
+    }
+   ],
+   "contacts": 0,
+   "contact_episodes": 0,
+   "outs": [],
+   "finished": 0
+  },
+  {
+   "frac": 0.12,
+   "kind": "brake50",
+   "dur": 1.5,
+   "gap_m": 14.4,
+   "leader": 0,
+   "held": [],
+   "contacts": 2,
+   "contact_episodes": 2,
+   "outs": [],
+   "finished": 0
+  },
+  {
+   "frac": 0.22,
+   "kind": null,
+   "dur": 0.0,
+   "gap_m": 43.1,
+   "leader": 0,
+   "held": [],
+   "contacts": 0,
+   "contact_episodes": 0,
+   "outs": [],
+   "finished": 2
+  },
+  {
+   "frac": 0.22,
+   "kind": "brake50",
+   "dur": 1.0,
+   "gap_m": 43.1,
+   "leader": 0,
+   "held": [],
+   "contacts": 10,
+   "contact_episodes": 8,
+   "outs": [],
+   "finished": 0
+  },
+  {
+   "frac": 0.22,
+   "kind": "brake50",
+   "dur": 1.5,
+   "gap_m": 43.1,
+   "leader": 0,
+   "held": [],
+   "contacts": 0,
+   "contact_episodes": 0,
+   "outs": [],
+   "finished": 0
+  },
+  {
+   "frac": 0.32,
+   "kind": null,
+   "dur": 0.0,
+   "gap_m": 26.0,
+   "leader": 0,
+   "held": [],
+   "contacts": 0,
+   "contact_episodes": 0,
+   "outs": [],
+   "finished": 2
+  },
+  {
+   "frac": 0.32,
+   "kind": "brake50",
+   "dur": 1.0,
+   "gap_m": 26.0,
+   "leader": 0,
+   "held": [],
+   "contacts": 2,
+   "contact_episodes": 2,
+   "outs": [],
+   "finished": 0
+  },
+  {
+   "frac": 0.32,
+   "kind": "brake50",
+   "dur": 1.5,
+   "gap_m": 26.0,
+   "leader": 0,
+   "held": [],
+   "contacts": 2,
+   "contact_episodes": 2,
+   "outs": [],
+   "finished": 0
+  },
+  {
+   "frac": 0.42,
+   "kind": null,
+   "dur": 0.0,
+   "gap_m": 41.1,
+   "leader": 0,
+   "held": [],
+   "contacts": 0,
+   "contact_episodes": 0,
+   "outs": [],
+   "finished": 2
+  },
+  {
+   "frac": 0.42,
+   "kind": "brake50",
+   "dur": 1.0,
+   "gap_m": 41.1,
+   "leader": 0,
+   "held": [],
+   "contacts": 21,
+   "contact_episodes": 8,
+   "outs": [],
+   "finished": 0
+  },
+  {
+   "frac": 0.42,
+   "kind": "brake50",
+   "dur": 1.5,
+   "gap_m": 41.1,
+   "leader": 0,
+   "held": [],
+   "contacts": 0,
+   "contact_episodes": 0,
+   "outs": [],
+   "finished": 0
+  },
+  {
+   "frac": 0.52,
+   "kind": null,
+   "dur": 0.0,
+   "gap_m": 39.7,
+   "leader": 0,
+   "held": [],
+   "contacts": 0,
+   "contact_episodes": 0,
+   "outs": [],
+   "finished": 2
+  },
+  {
+   "frac": 0.52,
+   "kind": "brake50",
+   "dur": 1.0,
+   "gap_m": 39.7,
+   "leader": 0,
+   "held": [],
+   "contacts": 2,
+   "contact_episodes": 2,
+   "outs": [],
+   "finished": 0
+  },
+  {
+   "frac": 0.52,
+   "kind": "brake50",
+   "dur": 1.5,
+   "gap_m": 39.7,
+   "leader": 0,
+   "held": [],
+   "contacts": 2,
+   "contact_episodes": 2,
+   "outs": [],
+   "finished": 0
+  },
+  {
+   "frac": 0.62,
+   "kind": null,
+   "dur": 0.0,
+   "gap_m": 37.5,
+   "leader": 0,
+   "held": [],
+   "contacts": 0,
+   "contact_episodes": 0,
+   "outs": [],
+   "finished": 2
+  },
+  {
+   "frac": 0.62,
+   "kind": "brake50",
+   "dur": 1.0,
+   "gap_m": 37.5,
+   "leader": 0,
+   "held": [],
+   "contacts": 4,
+   "contact_episodes": 4,
+   "outs": [],
+   "finished": 0
+  },
+  {
+   "frac": 0.62,
+   "kind": "brake50",
+   "dur": 1.5,
+   "gap_m": 37.5,
+   "leader": 0,
+   "held": [],
+   "contacts": 4,
+   "contact_episodes": 4,
+   "outs": [],
+   "finished": 0
+  },
+  {
+   "frac": 0.72,
+   "kind": null,
+   "dur": 0.0,
+   "gap_m": 40.0,
+   "leader": 0,
+   "held": [],
+   "contacts": 0,
+   "contact_episodes": 0,
+   "outs": [],
+   "finished": 2
+  },
+  {
+   "frac": 0.72,
+   "kind": "brake50",
+   "dur": 1.0,
+   "gap_m": 40.0,
+   "leader": 0,
+   "held": [],
+   "contacts": 16,
+   "contact_episodes": 8,
+   "outs": [],
+   "finished": 0
+  },
+  {
+   "frac": 0.72,
+   "kind": "brake50",
+   "dur": 1.5,
+   "gap_m": 40.0,
+   "leader": 0,
+   "held": [],
+   "contacts": 2,
+   "contact_episodes": 2,
+   "outs": [
+    {
+     "car": 0,
+     "reason": "crash_or_track_limit",
+     "frac": 0.74,
+     "t": 882,
+     "contact_3s": true,
+     "kmh": 9.0
+    }
+   ],
+   "finished": 0
+  },
+  {
+   "frac": 0.82,
+   "kind": null,
+   "dur": 0.0,
+   "gap_m": 24.1,
+   "leader": 0,
+   "held": [],
+   "contacts": 0,
+   "contact_episodes": 0,
+   "outs": [],
+   "finished": 2
+  },
+  {
+   "frac": 0.82,
+   "kind": "brake50",
+   "dur": 1.0,
+   "gap_m": 24.1,
+   "leader": 0,
+   "held": [],
+   "contacts": 2,
+   "contact_episodes": 2,
+   "outs": [],
+   "finished": 2
+  },
+  {
+   "frac": 0.82,
+   "kind": "brake50",
+   "dur": 1.5,
+   "gap_m": 24.1,
+   "leader": 0,
+   "held": [
+    {
+     "a": 1,
+     "b": 0,
+     "t": 957,
+     "frac": 0.847,
+     "corner": false,
+     "touched": false
+    }
+   ],
+   "contacts": 2,
+   "contact_episodes": 2,
+   "outs": [],
+   "finished": 2
+  }
+ ],
+ "adapter": null
+}

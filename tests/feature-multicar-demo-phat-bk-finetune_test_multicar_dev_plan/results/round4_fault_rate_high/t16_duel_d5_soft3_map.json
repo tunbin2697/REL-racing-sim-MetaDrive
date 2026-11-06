@@ -1,0 +1,128 @@
+{
+ "config": "d5_soft3_map",
+ "rows": [
+  {
+   "kind": "lockup",
+   "at": 0.15,
+   "gap_m": 22.456451416015625,
+   "held": [
+    {
+     "a": 1,
+     "b": 0,
+     "t": 391,
+     "frac": 0.325,
+     "corner": false,
+     "touched": false
+    }
+   ],
+   "contacts": 0,
+   "outs": []
+  },
+  {
+   "kind": "understeer",
+   "at": 0.15,
+   "gap_m": 22.456451416015625,
+   "held": [
+    {
+     "a": 1,
+     "b": 0,
+     "t": 411,
+     "frac": 0.344,
+     "corner": true,
+     "touched": false
+    }
+   ],
+   "contacts": 0,
+   "outs": []
+  },
+  {
+   "kind": "oversteer",
+   "at": 0.15,
+   "gap_m": 22.456451416015625,
+   "held": [],
+   "contacts": 0,
+   "outs": []
+  },
+  {
+   "kind": "lockup",
+   "at": 0.35,
+   "gap_m": 17.1143798828125,
+   "held": [],
+   "contacts": 2,
+   "outs": []
+  },
+  {
+   "kind": "understeer",
+   "at": 0.35,
+   "gap_m": 17.1143798828125,
+   "held": [],
+   "contacts": 2,
+   "outs": []
+  },
+  {
+   "kind": "oversteer",
+   "at": 0.35,
+   "gap_m": 17.1143798828125,
+   "held": [],
+   "contacts": 4,
+   "outs": []
+  },
+  {
+   "kind": "lockup",
+   "at": 0.55,
+   "gap_m": 27.45654296875,
+   "held": [],
+   "contacts": 0,
+   "outs": [
+    {
+     "car": 1,
+     "reason": "crash_or_track_limit",
+     "frac": 0.575,
+     "t": 690,
+     "contact_3s": false,
+     "kmh": 75.0
+    }
+   ]
+  },
+  {
+   "kind": "understeer",
+   "at": 0.55,
+   "gap_m": 27.45654296875,
+   "held": [],
+   "contacts": 0,
+   "outs": []
+  },
+  {
+   "kind": "oversteer",
+   "at": 0.55,
+   "gap_m": 27.45654296875,
+   "held": [],
+   "contacts": 0,
+   "outs": []
+  },
+  {
+   "kind": "lockup",
+   "at": 0.75,
+   "gap_m": 47.034423828125,
+   "held": [],
+   "contacts": 0,
+   "outs": []
+  },
+  {
+   "kind": "understeer",
+   "at": 0.75,
+   "gap_m": 47.034423828125,
+   "held": [],
+   "contacts": 0,
+   "outs": []
+  },
+  {
+   "kind": "oversteer",
+   "at": 0.75,
+   "gap_m": 47.034423828125,
+   "held": [],
+   "contacts": 0,
+   "outs": []
+  }
+ ]
+}

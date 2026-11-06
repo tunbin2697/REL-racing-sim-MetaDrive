@@ -1,0 +1,918 @@
+{
+ "config": "d2_brave",
+ "laps": 5,
+ "fault": "grip",
+ "races": [
+  {
+   "steps": 5968,
+   "finished": 6,
+   "outs": [
+    {
+     "car": 4,
+     "reason": "crash_or_track_limit",
+     "frac": 0.082,
+     "t": 156,
+     "contact_3s": true,
+     "kmh": 55.6
+    },
+    {
+     "car": 5,
+     "reason": "crash_or_track_limit",
+     "frac": 0.083,
+     "t": 160,
+     "contact_3s": true,
+     "kmh": 39.0
+    },
+    {
+     "car": 4,
+     "reason": "crash_or_track_limit",
+     "frac": 0.093,
+     "t": 189,
+     "contact_3s": true,
+     "kmh": 53.8
+    },
+    {
+     "car": 5,
+     "reason": "crash_or_track_limit",
+     "frac": 0.098,
+     "t": 214,
+     "contact_3s": false,
+     "kmh": 48.2
+    },
+    {
+     "car": 3,
+     "reason": "crash_or_track_limit",
+     "frac": 0.099,
+     "t": 226,
+     "contact_3s": false,
+     "kmh": 50.8
+    },
+    {
+     "car": 3,
+     "reason": "crash_or_track_limit",
+     "frac": 0.1,
+     "t": 230,
+     "contact_3s": true,
+     "kmh": 7.5
+    },
+    {
+     "car": 3,
+     "reason": "crash_or_track_limit",
+     "frac": 0.1,
+     "t": 234,
+     "contact_3s": true,
+     "kmh": 6.0
+    },
+    {
+     "car": 3,
+     "reason": "crash_or_track_limit",
+     "frac": 0.1,
+     "t": 238,
+     "contact_3s": true,
+     "kmh": 4.5
+    },
+    {
+     "car": 3,
+     "reason": "crash_or_track_limit",
+     "frac": 0.101,
+     "t": 243,
+     "contact_3s": true,
+     "kmh": 7.7
+    },
+    {
+     "car": 3,
+     "reason": "crash_or_track_limit",
+     "frac": 0.101,
+     "t": 247,
+     "contact_3s": true,
+     "kmh": 5.9
+    },
+    {
+     "car": 3,
+     "reason": "crash_or_track_limit",
+     "frac": 0.101,
+     "t": 253,
+     "contact_3s": true,
+     "kmh": 5.4
+    },
+    {
+     "car": 1,
+     "reason": "crash_or_track_limit",
+     "frac": 1.096,
+     "t": 1384,
+     "contact_3s": false,
+     "kmh": 60.8
+    },
+    {
+     "car": 4,
+     "reason": "crash_or_track_limit",
+     "frac": 2.914,
+     "t": 3644,
+     "contact_3s": true,
+     "kmh": 88.4
+    }
+   ],
+   "contacts": 60,
+   "contact_types": {
+    "rear": 33,
+    "side": 27
+   },
+   "contact_episodes": 27,
+   "start_passes": 1,
+   "held": [
+    {
+     "a": 4,
+     "b": 5,
+     "t": 789,
+     "frac": 0.518,
+     "corner": true,
+     "touched": false
+    },
+    {
+     "a": 4,
+     "b": 5,
+     "t": 2225,
+     "frac": 1.662,
+     "corner": false,
+     "touched": false
+    },
+    {
+     "a": 5,
+     "b": 4,
+     "t": 3186,
+     "frac": 2.523,
+     "corner": true,
+     "touched": false
+    }
+   ],
+   "env_overtakes": 4,
+   "mean_lap": 107.3,
+   "best_lap": 105.9,
+   "pedal_sw": 5.298478534489878,
+   "steer_rev": 40.57942889191535,
+   "beta": 2.2547142026524143,
+   "all_laps": [
+    127.0,
+    107.4,
+    107.9,
+    107.60000000000001,
+    107.0,
+    124.10000000000001,
+    128.0,
+    113.0,
+    108.9,
+    108.0,
+    117.5,
+    106.4,
+    106.2,
+    105.30000000000001,
+    105.9,
+    133.6,
+    114.80000000000001,
+    114.4,
+    108.2,
+    107.7,
+    136.70000000000002,
+    124.7,
+    117.2,
+    108.5,
+    107.2,
+    138.1,
+    126.4,
+    116.7,
+    107.60000000000001,
+    108.0
+   ]
+  },
+  {
+   "steps": 5901,
+   "finished": 6,
+   "outs": [
+    {
+     "car": 3,
+     "reason": "crash_or_track_limit",
+     "frac": 0.054,
+     "t": 131,
+     "contact_3s": false,
+     "kmh": 74.9
+    },
+    {
+     "car": 2,
+     "reason": "crash_or_track_limit",
+     "frac": 0.118,
+     "t": 188,
+     "contact_3s": false,
+     "kmh": 45.2
+    },
+    {
+     "car": 0,
+     "reason": "crash_or_track_limit",
+     "frac": 1.107,
+     "t": 1302,
+     "contact_3s": false,
+     "kmh": 75.6
+    },
+    {
+     "car": 4,
+     "reason": "crash_or_track_limit",
+     "frac": 1.118,
+     "t": 1528,
+     "contact_3s": false,
+     "kmh": 24.5
+    },
+    {
+     "car": 3,
+     "reason": "crash_or_track_limit",
+     "frac": 1.358,
+     "t": 1853,
+     "contact_3s": false,
+     "kmh": 64.1
+    },
+    {
+     "car": 3,
+     "reason": "crash_or_track_limit",
+     "frac": 2.313,
+     "t": 2955,
+     "contact_3s": false,
+     "kmh": 113.3
+    }
+   ],
+   "contacts": 20,
+   "contact_types": {
+    "rear": 12,
+    "side": 8
+   },
+   "contact_episodes": 16,
+   "start_passes": 0,
+   "held": [
+    {
+     "a": 0,
+     "b": 2,
+     "t": 922,
+     "frac": 0.816,
+     "corner": true,
+     "touched": false
+    },
+    {
+     "a": 4,
+     "b": 5,
+     "t": 931,
+     "frac": 0.64,
+     "corner": true,
+     "touched": false
+    }
+   ],
+   "env_overtakes": 2,
+   "mean_lap": 107.25,
+   "best_lap": 105.5,
+   "pedal_sw": 5.058908858695799,
+   "steer_rev": 40.140647731101055,
+   "beta": 2.2151741348744953,
+   "all_laps": [
+    118.0,
+    115.60000000000001,
+    107.4,
+    107.4,
+    107.7,
+    122.30000000000001,
+    116.10000000000001,
+    107.80000000000001,
+    107.5,
+    107.5,
+    116.9,
+    107.2,
+    105.7,
+    106.30000000000001,
+    105.5,
+    140.70000000000002,
+    121.80000000000001,
+    112.0,
+    108.0,
+    107.60000000000001,
+    135.8,
+    113.80000000000001,
+    106.9,
+    107.2,
+    107.30000000000001,
+    137.1,
+    123.30000000000001,
+    108.7,
+    107.60000000000001,
+    107.9
+   ]
+  },
+  {
+   "steps": 5920,
+   "finished": 6,
+   "outs": [
+    {
+     "car": 4,
+     "reason": "crash_or_track_limit",
+     "frac": 0.104,
+     "t": 170,
+     "contact_3s": false,
+     "kmh": 58.2
+    },
+    {
+     "car": 3,
+     "reason": "crash_or_track_limit",
+     "frac": 0.097,
+     "t": 197,
+     "contact_3s": false,
+     "kmh": 23.1
+    },
+    {
+     "car": 5,
+     "reason": "crash_or_track_limit",
+     "frac": 0.573,
+     "t": 803,
+     "contact_3s": true,
+     "kmh": 66.2
+    },
+    {
+     "car": 1,
+     "reason": "crash_or_track_limit",
+     "frac": 0.91,
+     "t": 1166,
+     "contact_3s": false,
+     "kmh": 43.8
+    }
+   ],
+   "contacts": 28,
+   "contact_types": {
+    "rear": 20,
+    "side": 8
+   },
+   "contact_episodes": 24,
+   "start_passes": 1,
+   "held": [
+    {
+     "a": 3,
+     "b": 5,
+     "t": 1319,
+     "frac": 0.986,
+     "corner": false,
+     "touched": false
+    },
+    {
+     "a": 5,
+     "b": 3,
+     "t": 1412,
+     "frac": 1.026,
+     "corner": false,
+     "touched": false
+    }
+   ],
+   "env_overtakes": 3,
+   "mean_lap": 107.2,
+   "best_lap": 105.80000000000001,
+   "pedal_sw": 5.176776678686704,
+   "steer_rev": 40.42976577269715,
+   "beta": 2.1949405436313736,
+   "all_laps": [
+    125.9,
+    107.30000000000001,
+    107.4,
+    107.7,
+    107.2,
+    137.3,
+    108.80000000000001,
+    108.60000000000001,
+    107.60000000000001,
+    107.10000000000001,
+    114.60000000000001,
+    105.5,
+    105.7,
+    105.80000000000001,
+    105.80000000000001,
+    141.3,
+    115.4,
+    115.5,
+    108.0,
+    107.9,
+    121.2,
+    106.60000000000001,
+    106.7,
+    107.0,
+    107.4,
+    141.20000000000002,
+    117.80000000000001,
+    117.7,
+    107.5,
+    107.80000000000001
+   ]
+  },
+  {
+   "steps": 6066,
+   "finished": 6,
+   "outs": [
+    {
+     "car": 4,
+     "reason": "crash_or_track_limit",
+     "frac": 0.054,
+     "t": 124,
+     "contact_3s": true,
+     "kmh": 52.5
+    },
+    {
+     "car": 3,
+     "reason": "crash_or_track_limit",
+     "frac": 0.052,
+     "t": 131,
+     "contact_3s": false,
+     "kmh": 45.5
+    },
+    {
+     "car": 5,
+     "reason": "crash_or_track_limit",
+     "frac": 0.095,
+     "t": 196,
+     "contact_3s": false,
+     "kmh": 30.4
+    },
+    {
+     "car": 4,
+     "reason": "crash_or_track_limit",
+     "frac": 0.096,
+     "t": 240,
+     "contact_3s": false,
+     "kmh": 70.8
+    },
+    {
+     "car": 5,
+     "reason": "crash_or_track_limit",
+     "frac": 0.098,
+     "t": 244,
+     "contact_3s": true,
+     "kmh": 6.6
+    },
+    {
+     "car": 5,
+     "reason": "crash_or_track_limit",
+     "frac": 0.098,
+     "t": 251,
+     "contact_3s": true,
+     "kmh": 5.9
+    },
+    {
+     "car": 5,
+     "reason": "crash_or_track_limit",
+     "frac": 0.098,
+     "t": 255,
+     "contact_3s": true,
+     "kmh": 9.2
+    },
+    {
+     "car": 3,
+     "reason": "crash_or_track_limit",
+     "frac": 0.096,
+     "t": 263,
+     "contact_3s": false,
+     "kmh": 48.8
+    },
+    {
+     "car": 3,
+     "reason": "crash_or_track_limit",
+     "frac": 0.096,
+     "t": 268,
+     "contact_3s": true,
+     "kmh": 4.0
+    },
+    {
+     "car": 0,
+     "reason": "crash_or_track_limit",
+     "frac": 0.332,
+     "t": 430,
+     "contact_3s": false,
+     "kmh": 83.8
+    },
+    {
+     "car": 4,
+     "reason": "crash_or_track_limit",
+     "frac": 0.314,
+     "t": 552,
+     "contact_3s": false,
+     "kmh": 109.7
+    },
+    {
+     "car": 3,
+     "reason": "stalled",
+     "frac": 0.33,
+     "t": 749,
+     "contact_3s": false,
+     "kmh": 0.0
+    },
+    {
+     "car": 4,
+     "reason": "stalled",
+     "frac": 0.331,
+     "t": 749,
+     "contact_3s": false,
+     "kmh": 0.4
+    },
+    {
+     "car": 3,
+     "reason": "crash_or_track_limit",
+     "frac": 1.124,
+     "t": 1703,
+     "contact_3s": false,
+     "kmh": 52.3
+    },
+    {
+     "car": 4,
+     "reason": "crash_or_track_limit",
+     "frac": 1.116,
+     "t": 1712,
+     "contact_3s": false,
+     "kmh": 20.0
+    },
+    {
+     "car": 5,
+     "reason": "crash_or_track_limit",
+     "frac": 1.571,
+     "t": 1961,
+     "contact_3s": false,
+     "kmh": 80.4
+    },
+    {
+     "car": 3,
+     "reason": "crash_or_track_limit",
+     "frac": 2.924,
+     "t": 3733,
+     "contact_3s": false,
+     "kmh": 26.7
+    },
+    {
+     "car": 3,
+     "reason": "crash_or_track_limit",
+     "frac": 3.348,
+     "t": 4254,
+     "contact_3s": false,
+     "kmh": 59.6
+    }
+   ],
+   "contacts": 47,
+   "contact_types": {
+    "rear": 36,
+    "side": 10
+   },
+   "contact_episodes": 22,
+   "start_passes": 1,
+   "held": [
+    {
+     "a": 5,
+     "b": 0,
+     "t": 1753,
+     "frac": 1.411,
+     "corner": false,
+     "touched": false
+    },
+    {
+     "a": 4,
+     "b": 3,
+     "t": 2555,
+     "frac": 1.898,
+     "corner": false,
+     "touched": false
+    }
+   ],
+   "env_overtakes": 3,
+   "mean_lap": 107.31666666666668,
+   "best_lap": 106.0,
+   "pedal_sw": 4.957196759679246,
+   "steer_rev": 39.98629873576925,
+   "beta": 2.2367937318022078,
+   "all_laps": [
+    126.0,
+    115.10000000000001,
+    107.30000000000001,
+    107.30000000000001,
+    108.0,
+    123.5,
+    107.60000000000001,
+    108.10000000000001,
+    107.80000000000001,
+    107.30000000000001,
+    115.2,
+    106.10000000000001,
+    105.7,
+    105.30000000000001,
+    106.0,
+    155.70000000000002,
+    118.0,
+    113.10000000000001,
+    112.4,
+    107.4,
+    154.10000000000002,
+    117.9,
+    111.5,
+    109.7,
+    107.60000000000001,
+    129.0,
+    117.2,
+    107.80000000000001,
+    107.4,
+    107.60000000000001
+   ]
+  },
+  {
+   "steps": 5994,
+   "finished": 6,
+   "outs": [
+    {
+     "car": 4,
+     "reason": "crash_or_track_limit",
+     "frac": 0.104,
+     "t": 167,
+     "contact_3s": false,
+     "kmh": 72.1
+    },
+    {
+     "car": 1,
+     "reason": "crash_or_track_limit",
+     "frac": 0.094,
+     "t": 191,
+     "contact_3s": false,
+     "kmh": 53.3
+    },
+    {
+     "car": 0,
+     "reason": "crash_or_track_limit",
+     "frac": 1.321,
+     "t": 1674,
+     "contact_3s": true,
+     "kmh": 84.2
+    },
+    {
+     "car": 1,
+     "reason": "crash_or_track_limit",
+     "frac": 1.325,
+     "t": 1684,
+     "contact_3s": true,
+     "kmh": 60.2
+    },
+    {
+     "car": 1,
+     "reason": "stalled",
+     "frac": 1.326,
+     "t": 1804,
+     "contact_3s": false,
+     "kmh": 0.0
+    },
+    {
+     "car": 3,
+     "reason": "stalled",
+     "frac": 1.324,
+     "t": 1813,
+     "contact_3s": true,
+     "kmh": 0.4
+    },
+    {
+     "car": 0,
+     "reason": "stalled",
+     "frac": 1.324,
+     "t": 1818,
+     "contact_3s": true,
+     "kmh": 0.0
+    },
+    {
+     "car": 3,
+     "reason": "crash_or_track_limit",
+     "frac": 1.324,
+     "t": 1819,
+     "contact_3s": true,
+     "kmh": 6.5
+    },
+    {
+     "car": 3,
+     "reason": "crash_or_track_limit",
+     "frac": 1.324,
+     "t": 1824,
+     "contact_3s": true,
+     "kmh": 0.9
+    },
+    {
+     "car": 0,
+     "reason": "crash_or_track_limit",
+     "frac": 1.358,
+     "t": 1965,
+     "contact_3s": true,
+     "kmh": 49.4
+    },
+    {
+     "car": 4,
+     "reason": "crash_or_track_limit",
+     "frac": 1.814,
+     "t": 2149,
+     "contact_3s": false,
+     "kmh": 62.0
+    }
+   ],
+   "contacts": 50,
+   "contact_types": {
+    "rear": 30,
+    "side": 17
+   },
+   "contact_episodes": 34,
+   "start_passes": 2,
+   "held": [
+    {
+     "a": 1,
+     "b": 3,
+     "t": 318,
+     "frac": 0.154,
+     "corner": false,
+     "touched": false
+    },
+    {
+     "a": 0,
+     "b": 5,
+     "t": 659,
+     "frac": 0.521,
+     "corner": true,
+     "touched": false
+    },
+    {
+     "a": 0,
+     "b": 3,
+     "t": 3171,
+     "frac": 2.449,
+     "corner": false,
+     "touched": true
+    }
+   ],
+   "env_overtakes": 4,
+   "mean_lap": 108.33333333333333,
+   "best_lap": 105.9,
+   "pedal_sw": 5.23537542485883,
+   "steer_rev": 40.52341118498247,
+   "beta": 2.1466278236332172,
+   "all_laps": [
+    129.9,
+    138.20000000000002,
+    109.30000000000001,
+    106.9,
+    107.0,
+    131.9,
+    126.10000000000001,
+    106.9,
+    107.9,
+    107.60000000000001,
+    112.60000000000001,
+    105.80000000000001,
+    105.5,
+    105.2,
+    105.9,
+    133.5,
+    131.0,
+    120.60000000000001,
+    107.4,
+    106.9,
+    123.80000000000001,
+    116.2,
+    107.4,
+    107.30000000000001,
+    111.30000000000001,
+    127.7,
+    108.10000000000001,
+    107.2,
+    108.10000000000001,
+    111.30000000000001
+   ]
+  },
+  {
+   "steps": 5882,
+   "finished": 6,
+   "outs": [
+    {
+     "car": 4,
+     "reason": "crash_or_track_limit",
+     "frac": 0.105,
+     "t": 178,
+     "contact_3s": false,
+     "kmh": 64.0
+    },
+    {
+     "car": 3,
+     "reason": "crash_or_track_limit",
+     "frac": 0.095,
+     "t": 187,
+     "contact_3s": false,
+     "kmh": 52.0
+    },
+    {
+     "car": 0,
+     "reason": "crash_or_track_limit",
+     "frac": 0.318,
+     "t": 405,
+     "contact_3s": false,
+     "kmh": 74.2
+    },
+    {
+     "car": 5,
+     "reason": "crash_or_track_limit",
+     "frac": 1.313,
+     "t": 1662,
+     "contact_3s": true,
+     "kmh": 110.9
+    },
+    {
+     "car": 4,
+     "reason": "crash_or_track_limit",
+     "frac": 2.921,
+     "t": 3380,
+     "contact_3s": false,
+     "kmh": 79.0
+    },
+    {
+     "car": 4,
+     "reason": "crash_or_track_limit",
+     "frac": 3.342,
+     "t": 3917,
+     "contact_3s": false,
+     "kmh": 67.6
+    }
+   ],
+   "contacts": 32,
+   "contact_types": {
+    "rear": 28,
+    "side": 4
+   },
+   "contact_episodes": 30,
+   "start_passes": 1,
+   "held": [
+    {
+     "a": 1,
+     "b": 5,
+     "t": 570,
+     "frac": 0.399,
+     "corner": false,
+     "touched": false
+    },
+    {
+     "a": 3,
+     "b": 5,
+     "t": 598,
+     "frac": 0.417,
+     "corner": false,
+     "touched": false
+    },
+    {
+     "a": 5,
+     "b": 3,
+     "t": 713,
+     "frac": 0.522,
+     "corner": true,
+     "touched": false
+    },
+    {
+     "a": 5,
+     "b": 4,
+     "t": 844,
+     "frac": 0.631,
+     "corner": false,
+     "touched": false
+    }
+   ],
+   "env_overtakes": 6,
+   "mean_lap": 107.11666666666667,
+   "best_lap": 105.5,
+   "pedal_sw": 5.230500938446544,
+   "steer_rev": 41.08034659303914,
+   "beta": 2.2859731704648234,
+   "all_laps": [
+    127.30000000000001,
+    107.4,
+    107.30000000000001,
+    107.2,
+    107.4,
+    135.70000000000002,
+    121.0,
+    116.7,
+    107.0,
+    107.80000000000001,
+    120.0,
+    105.60000000000001,
+    105.7,
+    106.0,
+    105.5,
+    137.8,
+    107.60000000000001,
+    108.4,
+    113.4,
+    107.5,
+    132.3,
+    108.10000000000001,
+    112.10000000000001,
+    110.7,
+    107.30000000000001,
+    130.1,
+    124.80000000000001,
+    113.7,
+    107.5,
+    107.2
+   ]
+  }
+ ],
+ "faults_per_race": 28.833333333333332
+}

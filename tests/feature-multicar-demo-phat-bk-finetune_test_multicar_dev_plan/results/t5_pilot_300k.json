@@ -1,0 +1,492 @@
+{
+ "model": "pilot_300k",
+ "n_states": 19,
+ "base_steer_std": 0.3917,
+ "logstd": [
+  -1.775,
+  -0.705,
+  -0.71
+ ],
+ "rows": [
+  {
+   "dx": 6.0,
+   "dy": 0.0,
+   "closing": 0.0,
+   "steer_mean_abs": 0.0298,
+   "steer_toward_clear": 0.0,
+   "pedal_mean": -0.0258,
+   "pedal_p05": -0.0844,
+   "steer_p95_abs": 0.0665
+  },
+  {
+   "dx": 6.0,
+   "dy": 0.0,
+   "closing": 5.0,
+   "steer_mean_abs": 0.0354,
+   "steer_toward_clear": 0.0,
+   "pedal_mean": -0.0418,
+   "pedal_p05": -0.1558,
+   "steer_p95_abs": 0.108
+  },
+  {
+   "dx": 6.0,
+   "dy": 0.0,
+   "closing": 10.0,
+   "steer_mean_abs": 0.0426,
+   "steer_toward_clear": 0.0,
+   "pedal_mean": -0.0753,
+   "pedal_p05": -0.2509,
+   "steer_p95_abs": 0.1464
+  },
+  {
+   "dx": 6.0,
+   "dy": 2.0,
+   "closing": 0.0,
+   "steer_mean_abs": 0.0244,
+   "steer_toward_clear": 0.0142,
+   "pedal_mean": -0.0301,
+   "pedal_p05": -0.1136,
+   "steer_p95_abs": 0.062
+  },
+  {
+   "dx": 6.0,
+   "dy": 2.0,
+   "closing": 5.0,
+   "steer_mean_abs": 0.0348,
+   "steer_toward_clear": 0.0141,
+   "pedal_mean": -0.0495,
+   "pedal_p05": -0.2176,
+   "steer_p95_abs": 0.0991
+  },
+  {
+   "dx": 6.0,
+   "dy": 2.0,
+   "closing": 10.0,
+   "steer_mean_abs": 0.0437,
+   "steer_toward_clear": 0.0132,
+   "pedal_mean": -0.0848,
+   "pedal_p05": -0.3867,
+   "steer_p95_abs": 0.1134
+  },
+  {
+   "dx": 6.0,
+   "dy": -2.0,
+   "closing": 0.0,
+   "steer_mean_abs": 0.0356,
+   "steer_toward_clear": -0.0295,
+   "pedal_mean": -0.0214,
+   "pedal_p05": -0.0979,
+   "steer_p95_abs": 0.0693
+  },
+  {
+   "dx": 6.0,
+   "dy": -2.0,
+   "closing": 5.0,
+   "steer_mean_abs": 0.0375,
+   "steer_toward_clear": -0.0302,
+   "pedal_mean": -0.0418,
+   "pedal_p05": -0.1352,
+   "steer_p95_abs": 0.1029
+  },
+  {
+   "dx": 6.0,
+   "dy": -2.0,
+   "closing": 10.0,
+   "steer_mean_abs": 0.0428,
+   "steer_toward_clear": -0.0309,
+   "pedal_mean": -0.0686,
+   "pedal_p05": -0.2289,
+   "steer_p95_abs": 0.1407
+  },
+  {
+   "dx": 6.0,
+   "dy": 3.5,
+   "closing": 0.0,
+   "steer_mean_abs": 0.0219,
+   "steer_toward_clear": 0.0075,
+   "pedal_mean": -0.0328,
+   "pedal_p05": -0.1388,
+   "steer_p95_abs": 0.0597
+  },
+  {
+   "dx": 6.0,
+   "dy": 3.5,
+   "closing": 5.0,
+   "steer_mean_abs": 0.034,
+   "steer_toward_clear": 0.007,
+   "pedal_mean": -0.0556,
+   "pedal_p05": -0.3165,
+   "steer_p95_abs": 0.0795
+  },
+  {
+   "dx": 6.0,
+   "dy": 3.5,
+   "closing": 10.0,
+   "steer_mean_abs": 0.0456,
+   "steer_toward_clear": 0.0063,
+   "pedal_mean": -0.0879,
+   "pedal_p05": -0.5234,
+   "steer_p95_abs": 0.1093
+  },
+  {
+   "dx": 10.0,
+   "dy": 0.0,
+   "closing": 0.0,
+   "steer_mean_abs": 0.0355,
+   "steer_toward_clear": 0.0,
+   "pedal_mean": -0.0297,
+   "pedal_p05": -0.1016,
+   "steer_p95_abs": 0.0822
+  },
+  {
+   "dx": 10.0,
+   "dy": 0.0,
+   "closing": 5.0,
+   "steer_mean_abs": 0.0379,
+   "steer_toward_clear": 0.0,
+   "pedal_mean": -0.0522,
+   "pedal_p05": -0.1602,
+   "steer_p95_abs": 0.1244
+  },
+  {
+   "dx": 10.0,
+   "dy": 0.0,
+   "closing": 10.0,
+   "steer_mean_abs": 0.045,
+   "steer_toward_clear": 0.0,
+   "pedal_mean": -0.0823,
+   "pedal_p05": -0.2948,
+   "steer_p95_abs": 0.1603
+  },
+  {
+   "dx": 10.0,
+   "dy": 2.0,
+   "closing": 0.0,
+   "steer_mean_abs": 0.0303,
+   "steer_toward_clear": 0.02,
+   "pedal_mean": -0.0344,
+   "pedal_p05": -0.1217,
+   "steer_p95_abs": 0.0794
+  },
+  {
+   "dx": 10.0,
+   "dy": 2.0,
+   "closing": 5.0,
+   "steer_mean_abs": 0.0378,
+   "steer_toward_clear": 0.0198,
+   "pedal_mean": -0.0551,
+   "pedal_p05": -0.2586,
+   "steer_p95_abs": 0.117
+  },
+  {
+   "dx": 10.0,
+   "dy": 2.0,
+   "closing": 10.0,
+   "steer_mean_abs": 0.0456,
+   "steer_toward_clear": 0.0193,
+   "pedal_mean": -0.092,
+   "pedal_p05": -0.4451,
+   "steer_p95_abs": 0.1288
+  },
+  {
+   "dx": 10.0,
+   "dy": -2.0,
+   "closing": 0.0,
+   "steer_mean_abs": 0.0405,
+   "steer_toward_clear": -0.035,
+   "pedal_mean": -0.025,
+   "pedal_p05": -0.1004,
+   "steer_p95_abs": 0.0809
+  },
+  {
+   "dx": 10.0,
+   "dy": -2.0,
+   "closing": 5.0,
+   "steer_mean_abs": 0.0405,
+   "steer_toward_clear": -0.0361,
+   "pedal_mean": -0.0469,
+   "pedal_p05": -0.1411,
+   "steer_p95_abs": 0.1155
+  },
+  {
+   "dx": 10.0,
+   "dy": -2.0,
+   "closing": 10.0,
+   "steer_mean_abs": 0.0467,
+   "steer_toward_clear": -0.0379,
+   "pedal_mean": -0.0756,
+   "pedal_p05": -0.2425,
+   "steer_p95_abs": 0.1511
+  },
+  {
+   "dx": 10.0,
+   "dy": 3.5,
+   "closing": 0.0,
+   "steer_mean_abs": 0.026,
+   "steer_toward_clear": 0.0132,
+   "pedal_mean": -0.0372,
+   "pedal_p05": -0.1456,
+   "steer_p95_abs": 0.0645
+  },
+  {
+   "dx": 10.0,
+   "dy": 3.5,
+   "closing": 5.0,
+   "steer_mean_abs": 0.0367,
+   "steer_toward_clear": 0.0127,
+   "pedal_mean": -0.0614,
+   "pedal_p05": -0.3252,
+   "steer_p95_abs": 0.0855
+  },
+  {
+   "dx": 10.0,
+   "dy": 3.5,
+   "closing": 10.0,
+   "steer_mean_abs": 0.0468,
+   "steer_toward_clear": 0.0121,
+   "pedal_mean": -0.0948,
+   "pedal_p05": -0.5837,
+   "steer_p95_abs": 0.1053
+  },
+  {
+   "dx": 20.0,
+   "dy": 0.0,
+   "closing": 0.0,
+   "steer_mean_abs": 0.048,
+   "steer_toward_clear": 0.0,
+   "pedal_mean": -0.0432,
+   "pedal_p05": -0.1258,
+   "steer_p95_abs": 0.1128
+  },
+  {
+   "dx": 20.0,
+   "dy": 0.0,
+   "closing": 5.0,
+   "steer_mean_abs": 0.0468,
+   "steer_toward_clear": 0.0,
+   "pedal_mean": -0.0717,
+   "pedal_p05": -0.2427,
+   "steer_p95_abs": 0.1496
+  },
+  {
+   "dx": 20.0,
+   "dy": 0.0,
+   "closing": 10.0,
+   "steer_mean_abs": 0.0552,
+   "steer_toward_clear": 0.0,
+   "pedal_mean": -0.1145,
+   "pedal_p05": -0.4632,
+   "steer_p95_abs": 0.18
+  },
+  {
+   "dx": 20.0,
+   "dy": 2.0,
+   "closing": 0.0,
+   "steer_mean_abs": 0.0437,
+   "steer_toward_clear": 0.034,
+   "pedal_mean": -0.0485,
+   "pedal_p05": -0.15,
+   "steer_p95_abs": 0.1187
+  },
+  {
+   "dx": 20.0,
+   "dy": 2.0,
+   "closing": 5.0,
+   "steer_mean_abs": 0.0443,
+   "steer_toward_clear": 0.0337,
+   "pedal_mean": -0.0793,
+   "pedal_p05": -0.3,
+   "steer_p95_abs": 0.158
+  },
+  {
+   "dx": 20.0,
+   "dy": 2.0,
+   "closing": 10.0,
+   "steer_mean_abs": 0.0548,
+   "steer_toward_clear": 0.0347,
+   "pedal_mean": -0.1233,
+   "pedal_p05": -0.5544,
+   "steer_p95_abs": 0.1682
+  },
+  {
+   "dx": 20.0,
+   "dy": -2.0,
+   "closing": 0.0,
+   "steer_mean_abs": 0.0516,
+   "steer_toward_clear": -0.0488,
+   "pedal_mean": -0.0443,
+   "pedal_p05": -0.13,
+   "steer_p95_abs": 0.1158
+  },
+  {
+   "dx": 20.0,
+   "dy": -2.0,
+   "closing": 5.0,
+   "steer_mean_abs": 0.0516,
+   "steer_toward_clear": -0.0511,
+   "pedal_mean": -0.0666,
+   "pedal_p05": -0.1999,
+   "steer_p95_abs": 0.1362
+  },
+  {
+   "dx": 20.0,
+   "dy": -2.0,
+   "closing": 10.0,
+   "steer_mean_abs": 0.0584,
+   "steer_toward_clear": -0.0554,
+   "pedal_mean": -0.109,
+   "pedal_p05": -0.3518,
+   "steer_p95_abs": 0.1693
+  },
+  {
+   "dx": 20.0,
+   "dy": 3.5,
+   "closing": 0.0,
+   "steer_mean_abs": 0.0393,
+   "steer_toward_clear": 0.0274,
+   "pedal_mean": -0.0518,
+   "pedal_p05": -0.1662,
+   "steer_p95_abs": 0.1008
+  },
+  {
+   "dx": 20.0,
+   "dy": 3.5,
+   "closing": 5.0,
+   "steer_mean_abs": 0.0443,
+   "steer_toward_clear": 0.0265,
+   "pedal_mean": -0.0801,
+   "pedal_p05": -0.3504,
+   "steer_p95_abs": 0.1157
+  },
+  {
+   "dx": 20.0,
+   "dy": 3.5,
+   "closing": 10.0,
+   "steer_mean_abs": 0.0543,
+   "steer_toward_clear": 0.0268,
+   "pedal_mean": -0.1298,
+   "pedal_p05": -0.6256,
+   "steer_p95_abs": 0.1291
+  },
+  {
+   "dx": 40.0,
+   "dy": 0.0,
+   "closing": 0.0,
+   "steer_mean_abs": 0.0721,
+   "steer_toward_clear": 0.0,
+   "pedal_mean": -0.1033,
+   "pedal_p05": -0.3721,
+   "steer_p95_abs": 0.1566
+  },
+  {
+   "dx": 40.0,
+   "dy": 0.0,
+   "closing": 5.0,
+   "steer_mean_abs": 0.0757,
+   "steer_toward_clear": 0.0,
+   "pedal_mean": -0.1561,
+   "pedal_p05": -0.5399,
+   "steer_p95_abs": 0.1804
+  },
+  {
+   "dx": 40.0,
+   "dy": 0.0,
+   "closing": 10.0,
+   "steer_mean_abs": 0.0792,
+   "steer_toward_clear": 0.0,
+   "pedal_mean": -0.2287,
+   "pedal_p05": -0.7903,
+   "steer_p95_abs": 0.2282
+  },
+  {
+   "dx": 40.0,
+   "dy": 2.0,
+   "closing": 0.0,
+   "steer_mean_abs": 0.0664,
+   "steer_toward_clear": 0.0596,
+   "pedal_mean": -0.1058,
+   "pedal_p05": -0.409,
+   "steer_p95_abs": 0.1641
+  },
+  {
+   "dx": 40.0,
+   "dy": 2.0,
+   "closing": 5.0,
+   "steer_mean_abs": 0.0692,
+   "steer_toward_clear": 0.0615,
+   "pedal_mean": -0.159,
+   "pedal_p05": -0.5789,
+   "steer_p95_abs": 0.1873
+  },
+  {
+   "dx": 40.0,
+   "dy": 2.0,
+   "closing": 10.0,
+   "steer_mean_abs": 0.0784,
+   "steer_toward_clear": 0.066,
+   "pedal_mean": -0.232,
+   "pedal_p05": -0.7949,
+   "steer_p95_abs": 0.2247
+  },
+  {
+   "dx": 40.0,
+   "dy": -2.0,
+   "closing": 0.0,
+   "steer_mean_abs": 0.079,
+   "steer_toward_clear": -0.079,
+   "pedal_mean": -0.102,
+   "pedal_p05": -0.3846,
+   "steer_p95_abs": 0.1678
+  },
+  {
+   "dx": 40.0,
+   "dy": -2.0,
+   "closing": 5.0,
+   "steer_mean_abs": 0.0838,
+   "steer_toward_clear": -0.0838,
+   "pedal_mean": -0.1542,
+   "pedal_p05": -0.482,
+   "steer_p95_abs": 0.2031
+  },
+  {
+   "dx": 40.0,
+   "dy": -2.0,
+   "closing": 10.0,
+   "steer_mean_abs": 0.0898,
+   "steer_toward_clear": -0.0898,
+   "pedal_mean": -0.225,
+   "pedal_p05": -0.7604,
+   "steer_p95_abs": 0.2571
+  },
+  {
+   "dx": 40.0,
+   "dy": 3.5,
+   "closing": 0.0,
+   "steer_mean_abs": 0.0618,
+   "steer_toward_clear": 0.0529,
+   "pedal_mean": -0.1077,
+   "pedal_p05": -0.4202,
+   "steer_p95_abs": 0.1735
+  },
+  {
+   "dx": 40.0,
+   "dy": 3.5,
+   "closing": 5.0,
+   "steer_mean_abs": 0.0663,
+   "steer_toward_clear": 0.054,
+   "pedal_mean": -0.161,
+   "pedal_p05": -0.5874,
+   "steer_p95_abs": 0.1968
+  },
+  {
+   "dx": 40.0,
+   "dy": 3.5,
+   "closing": 10.0,
+   "steer_mean_abs": 0.0782,
+   "steer_toward_clear": 0.0582,
+   "pedal_mean": -0.2336,
+   "pedal_p05": -0.7784,
+   "steer_p95_abs": 0.2176
+  }
+ ]
+}

@@ -43,7 +43,7 @@ def summary(label, races, cars=6):
 
 
 print("=== T1 baseline")
-for m in ("ref_111s", "final_1000k"):
+for m in ("ref_111s", "final_1000k", "pilot_100k", "pilot_200k", "pilot_300k"):
     d = load(f"t1_{m}")
     if d:
         det = d["deterministic"]
@@ -66,7 +66,7 @@ for c in ("l2", "l3", "l3_norm45"):
         summary(c + " pack", d["pack"])
 
 print("\n=== T3 mistake cost (solo)")
-for m in ("ref_111s", "final_1000k"):
+for m in ("ref_111s", "final_1000k", "pilot_100k", "pilot_200k", "pilot_300k"):
     d = load(f"t3_{m}")
     if d:
         print(m, "clean lap", d["clean_lap"], "finished", d["clean_finished"])
@@ -76,7 +76,7 @@ for m in ("ref_111s", "final_1000k"):
             print(f"  {kind} {dur}s: survive {len(loss)}/{len(rows)}, loss mean {np.mean(loss) if loss else 0:.2f}s range {min(loss) if loss else 0:.2f}..{max(loss) if loss else 0:.2f}, out at {[r['frac'] for r in rows if r['loss'] is None]}")
 
 print("\n=== T4 duel")
-for m in ("ref_111s", "final_1000k"):
+for m in ("ref_111s", "final_1000k", "pilot_100k", "pilot_200k", "pilot_300k"):
     d = load(f"t4_duel_{m}")
     if d:
         print(m, "gap at mistake m:", sorted({r["gap_m"] for r in d["rows"]}))
@@ -91,7 +91,7 @@ for f in sorted(glob.glob(os.path.join(R, "t4_pack_*.json"))):
     summary(f"{d['model']} {d['kind']} {d['dur']}s", d["races"])
 
 print("\n=== T5 opponent response")
-for m in ("ref_111s", "final_1000k"):
+for m in ("ref_111s", "final_1000k", "pilot_100k", "pilot_200k", "pilot_300k"):
     d = load(f"t5_{m}")
     if d:
         print(m, "logstd", d["logstd"], "base steer std", d["base_steer_std"])
@@ -103,3 +103,10 @@ print("\n=== T6 train traffic")
 d = load("t6_final_1000k")
 if d:
     print(json.dumps({k: v for k, v in d.items() if k != "model"}))
+
+print("\n=== T7 checkpoint diag")
+for f in sorted(glob.glob(os.path.join(R, "t7_*.json"))):
+    d = json.load(open(f, encoding="utf-8"))
+    summary(d["model"] + " solo", d["solo"], cars=1)
+    summary(d["model"] + " pack", d["pack"])
+    summary(d["model"] + " pack_blind", d["pack_blind"])

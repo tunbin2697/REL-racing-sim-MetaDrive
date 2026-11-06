@@ -1,0 +1,12 @@
+{
+ "delay": 0.4,
+ "strength": 1.0,
+ "races": 6,
+ "finished": 6,
+ "lap": 114.05,
+ "beta": 2.1348053863720056,
+ "steer_rev": 39.602018578874954,
+ "pedal_sw": 7.0430443581364175,
+ "events_per_lap": 17.5,
+ "outs": []
+}

@@ -1,0 +1,1591 @@
+{
+ "engine": "1000",
+ "config": "d3_narrow",
+ "laps": 10,
+ "fault": "grip",
+ "races": [
+  {
+   "steps": 10960,
+   "finished": 6,
+   "outs": [
+    {
+     "car": 4,
+     "reason": "crash_or_track_limit",
+     "frac": 0.317,
+     "t": 396,
+     "contact_3s": false,
+     "kmh": 108.1
+    },
+    {
+     "car": 1,
+     "reason": "crash_or_track_limit",
+     "frac": 0.603,
+     "t": 777,
+     "contact_3s": false,
+     "kmh": 91.0
+    },
+    {
+     "car": 4,
+     "reason": "crash_or_track_limit",
+     "frac": 1.921,
+     "t": 2127,
+     "contact_3s": false,
+     "kmh": 78.0
+    },
+    {
+     "car": 1,
+     "reason": "crash_or_track_limit",
+     "frac": 3.123,
+     "t": 3506,
+     "contact_3s": false,
+     "kmh": 52.8
+    }
+   ],
+   "contacts": 18,
+   "contact_types": {
+    "rear": 12,
+    "side": 6
+   },
+   "contact_episodes": 12,
+   "start_passes": 0,
+   "held": [
+    {
+     "a": 5,
+     "b": 1,
+     "t": 8782,
+     "frac": 8.063,
+     "corner": false,
+     "touched": false
+    },
+    {
+     "a": 1,
+     "b": 5,
+     "t": 9205,
+     "frac": 8.408,
+     "corner": false,
+     "touched": false
+    }
+   ],
+   "env_overtakes": 2,
+   "mean_lap": 106.45,
+   "best_lap": 105.4,
+   "pedal_sw": 5.946101844044062,
+   "steer_rev": 39.75048969788304,
+   "beta": 2.1921028318854883,
+   "fault_log": [
+    {
+     "t": 156,
+     "car": 0,
+     "kind": "oversteer"
+    },
+    {
+     "t": 164,
+     "car": 4,
+     "kind": "lockup"
+    },
+    {
+     "t": 164,
+     "car": 5,
+     "kind": "lockup"
+    },
+    {
+     "t": 184,
+     "car": 2,
+     "kind": "understeer"
+    },
+    {
+     "t": 199,
+     "car": 1,
+     "kind": "understeer"
+    },
+    {
+     "t": 209,
+     "car": 3,
+     "kind": "lockup"
+    },
+    {
+     "t": 2181,
+     "car": 0,
+     "kind": "lockup"
+    },
+    {
+     "t": 2224,
+     "car": 2,
+     "kind": "oversteer"
+    },
+    {
+     "t": 2262,
+     "car": 4,
+     "kind": "lockup"
+    },
+    {
+     "t": 2294,
+     "car": 3,
+     "kind": "oversteer"
+    },
+    {
+     "t": 2312,
+     "car": 1,
+     "kind": "understeer"
+    },
+    {
+     "t": 3693,
+     "car": 5,
+     "kind": "lockup"
+    },
+    {
+     "t": 4328,
+     "car": 2,
+     "kind": "understeer"
+    },
+    {
+     "t": 4362,
+     "car": 0,
+     "kind": "understeer"
+    },
+    {
+     "t": 4424,
+     "car": 3,
+     "kind": "oversteer"
+    },
+    {
+     "t": 4469,
+     "car": 4,
+     "kind": "oversteer"
+    },
+    {
+     "t": 4487,
+     "car": 1,
+     "kind": "understeer"
+    },
+    {
+     "t": 6445,
+     "car": 2,
+     "kind": "understeer"
+    },
+    {
+     "t": 6506,
+     "car": 0,
+     "kind": "oversteer"
+    },
+    {
+     "t": 6533,
+     "car": 3,
+     "kind": "lockup"
+    },
+    {
+     "t": 6592,
+     "car": 4,
+     "kind": "oversteer"
+    },
+    {
+     "t": 6636,
+     "car": 1,
+     "kind": "oversteer"
+    },
+    {
+     "t": 8711,
+     "car": 3,
+     "kind": "oversteer"
+    },
+    {
+     "t": 8726,
+     "car": 4,
+     "kind": "understeer"
+    },
+    {
+     "t": 8754,
+     "car": 1,
+     "kind": "lockup"
+    },
+    {
+     "t": 8812,
+     "car": 5,
+     "kind": "understeer"
+    },
+    {
+     "t": 9161,
+     "car": 5,
+     "kind": "lockup"
+    }
+   ],
+   "all_laps": [
+    110.5,
+    106.60000000000001,
+    111.30000000000001,
+    105.7,
+    107.0,
+    106.80000000000001,
+    106.60000000000001,
+    106.5,
+    106.4,
+    106.80000000000001,
+    122.4,
+    106.60000000000001,
+    107.7,
+    109.80000000000001,
+    107.60000000000001,
+    106.7,
+    106.4,
+    107.2,
+    110.2,
+    106.80000000000001,
+    114.2,
+    105.5,
+    105.2,
+    105.7,
+    106.4,
+    105.30000000000001,
+    106.0,
+    105.60000000000001,
+    105.10000000000001,
+    105.4,
+    118.60000000000001,
+    108.0,
+    106.9,
+    106.10000000000001,
+    106.60000000000001,
+    106.10000000000001,
+    109.60000000000001,
+    106.4,
+    107.10000000000001,
+    106.80000000000001,
+    116.30000000000001,
+    108.9,
+    108.9,
+    110.0,
+    105.60000000000001,
+    106.80000000000001,
+    106.9,
+    107.0,
+    107.0,
+    106.60000000000001,
+    123.60000000000001,
+    107.2,
+    106.60000000000001,
+    110.5,
+    107.7,
+    107.30000000000001,
+    106.4,
+    106.10000000000001,
+    114.30000000000001,
+    106.30000000000001
+   ]
+  },
+  {
+   "steps": 10830,
+   "finished": 6,
+   "outs": [
+    {
+     "car": 5,
+     "reason": "crash_or_track_limit",
+     "frac": 0.117,
+     "t": 267,
+     "contact_3s": false,
+     "kmh": 39.1
+    },
+    {
+     "car": 3,
+     "reason": "crash_or_track_limit",
+     "frac": 1.916,
+     "t": 2099,
+     "contact_3s": false,
+     "kmh": 80.0
+    },
+    {
+     "car": 0,
+     "reason": "crash_or_track_limit",
+     "frac": 8.919,
+     "t": 9551,
+     "contact_3s": false,
+     "kmh": 73.1
+    }
+   ],
+   "contacts": 12,
+   "contact_types": {
+    "rear": 12,
+    "side": 0
+   },
+   "contact_episodes": 6,
+   "start_passes": 1,
+   "held": [],
+   "env_overtakes": 1,
+   "mean_lap": 106.30000000000001,
+   "best_lap": 105.0,
+   "pedal_sw": 5.915666140946619,
+   "steer_rev": 39.77772491160683,
+   "beta": 2.168526964672567,
+   "fault_log": [
+    {
+     "t": 150,
+     "car": 3,
+     "kind": "oversteer"
+    },
+    {
+     "t": 151,
+     "car": 2,
+     "kind": "oversteer"
+    },
+    {
+     "t": 152,
+     "car": 0,
+     "kind": "understeer"
+    },
+    {
+     "t": 164,
+     "car": 5,
+     "kind": "lockup"
+    },
+    {
+     "t": 166,
+     "car": 4,
+     "kind": "lockup"
+    },
+    {
+     "t": 199,
+     "car": 1,
+     "kind": "understeer"
+    },
+    {
+     "t": 2167,
+     "car": 2,
+     "kind": "oversteer"
+    },
+    {
+     "t": 2186,
+     "car": 0,
+     "kind": "lockup"
+    },
+    {
+     "t": 2226,
+     "car": 4,
+     "kind": "oversteer"
+    },
+    {
+     "t": 2266,
+     "car": 3,
+     "kind": "oversteer"
+    },
+    {
+     "t": 2291,
+     "car": 1,
+     "kind": "understeer"
+    },
+    {
+     "t": 4266,
+     "car": 2,
+     "kind": "lockup"
+    },
+    {
+     "t": 4335,
+     "car": 4,
+     "kind": "lockup"
+    },
+    {
+     "t": 4344,
+     "car": 0,
+     "kind": "oversteer"
+    },
+    {
+     "t": 4389,
+     "car": 3,
+     "kind": "understeer"
+    },
+    {
+     "t": 4428,
+     "car": 1,
+     "kind": "understeer"
+    },
+    {
+     "t": 6414,
+     "car": 2,
+     "kind": "understeer"
+    },
+    {
+     "t": 6445,
+     "car": 0,
+     "kind": "lockup"
+    },
+    {
+     "t": 6470,
+     "car": 4,
+     "kind": "lockup"
+    },
+    {
+     "t": 6531,
+     "car": 3,
+     "kind": "oversteer"
+    },
+    {
+     "t": 6575,
+     "car": 1,
+     "kind": "oversteer"
+    },
+    {
+     "t": 8599,
+     "car": 0,
+     "kind": "understeer"
+    },
+    {
+     "t": 8626,
+     "car": 4,
+     "kind": "oversteer"
+    },
+    {
+     "t": 8645,
+     "car": 3,
+     "kind": "lockup"
+    },
+    {
+     "t": 8699,
+     "car": 1,
+     "kind": "understeer"
+    }
+   ],
+   "all_laps": [
+    111.5,
+    106.10000000000001,
+    107.9,
+    106.10000000000001,
+    105.9,
+    106.10000000000001,
+    108.0,
+    106.10000000000001,
+    110.2,
+    106.60000000000001,
+    120.10000000000001,
+    106.80000000000001,
+    107.10000000000001,
+    106.7,
+    107.5,
+    106.5,
+    106.7,
+    106.30000000000001,
+    107.2,
+    107.4,
+    109.2,
+    104.80000000000001,
+    106.0,
+    105.7,
+    108.2,
+    105.30000000000001,
+    106.30000000000001,
+    105.2,
+    105.5,
+    105.0,
+    114.0,
+    109.80000000000001,
+    106.2,
+    106.7,
+    107.2,
+    106.4,
+    106.80000000000001,
+    106.30000000000001,
+    110.0,
+    106.4,
+    112.7,
+    107.2,
+    106.80000000000001,
+    105.9,
+    107.60000000000001,
+    105.80000000000001,
+    107.80000000000001,
+    106.0,
+    107.10000000000001,
+    105.80000000000001,
+    123.0,
+    106.60000000000001,
+    106.0,
+    106.80000000000001,
+    106.60000000000001,
+    106.9,
+    107.60000000000001,
+    106.10000000000001,
+    106.80000000000001,
+    106.60000000000001
+   ]
+  },
+  {
+   "steps": 10959,
+   "finished": 6,
+   "outs": [
+    {
+     "car": 0,
+     "reason": "crash_or_track_limit",
+     "frac": 2.122,
+     "t": 2344,
+     "contact_3s": false,
+     "kmh": 29.7
+    },
+    {
+     "car": 0,
+     "reason": "crash_or_track_limit",
+     "frac": 6.123,
+     "t": 6675,
+     "contact_3s": false,
+     "kmh": 48.7
+    }
+   ],
+   "contacts": 24,
+   "contact_types": {
+    "rear": 24,
+    "side": 0
+   },
+   "contact_episodes": 14,
+   "start_passes": 1,
+   "held": [],
+   "env_overtakes": 1,
+   "mean_lap": 106.36666666666667,
+   "best_lap": 105.30000000000001,
+   "pedal_sw": 6.080317697891341,
+   "steer_rev": 39.647647313343505,
+   "beta": 2.1682450478950046,
+   "fault_log": [
+    {
+     "t": 150,
+     "car": 2,
+     "kind": "lockup"
+    },
+    {
+     "t": 156,
+     "car": 0,
+     "kind": "oversteer"
+    },
+    {
+     "t": 166,
+     "car": 4,
+     "kind": "understeer"
+    },
+    {
+     "t": 168,
+     "car": 5,
+     "kind": "oversteer"
+    },
+    {
+     "t": 215,
+     "car": 3,
+     "kind": "lockup"
+    },
+    {
+     "t": 417,
+     "car": 1,
+     "kind": "lockup"
+    },
+    {
+     "t": 2184,
+     "car": 2,
+     "kind": "understeer"
+    },
+    {
+     "t": 2195,
+     "car": 0,
+     "kind": "lockup"
+    },
+    {
+     "t": 2295,
+     "car": 5,
+     "kind": "understeer"
+    },
+    {
+     "t": 2358,
+     "car": 3,
+     "kind": "oversteer"
+    },
+    {
+     "t": 2522,
+     "car": 4,
+     "kind": "understeer"
+    },
+    {
+     "t": 4366,
+     "car": 4,
+     "kind": "understeer"
+    },
+    {
+     "t": 4367,
+     "car": 0,
+     "kind": "lockup"
+    },
+    {
+     "t": 4441,
+     "car": 5,
+     "kind": "oversteer"
+    },
+    {
+     "t": 4477,
+     "car": 3,
+     "kind": "lockup"
+    },
+    {
+     "t": 4515,
+     "car": 1,
+     "kind": "oversteer"
+    },
+    {
+     "t": 4831,
+     "car": 1,
+     "kind": "understeer"
+    },
+    {
+     "t": 6486,
+     "car": 4,
+     "kind": "lockup"
+    },
+    {
+     "t": 6523,
+     "car": 0,
+     "kind": "lockup"
+    },
+    {
+     "t": 6619,
+     "car": 1,
+     "kind": "lockup"
+    },
+    {
+     "t": 6679,
+     "car": 5,
+     "kind": "understeer"
+    },
+    {
+     "t": 8717,
+     "car": 0,
+     "kind": "oversteer"
+    },
+    {
+     "t": 8798,
+     "car": 1,
+     "kind": "understeer"
+    }
+   ],
+   "all_laps": [
+    112.2,
+    106.30000000000001,
+    110.60000000000001,
+    106.5,
+    109.10000000000001,
+    106.60000000000001,
+    111.10000000000001,
+    106.60000000000001,
+    106.4,
+    105.7,
+    123.7,
+    110.4,
+    106.80000000000001,
+    107.4,
+    106.5,
+    106.10000000000001,
+    109.80000000000001,
+    106.9,
+    107.10000000000001,
+    106.5,
+    111.0,
+    105.30000000000001,
+    105.7,
+    105.5,
+    105.7,
+    105.10000000000001,
+    105.5,
+    104.9,
+    105.4,
+    105.30000000000001,
+    122.7,
+    110.30000000000001,
+    106.60000000000001,
+    107.10000000000001,
+    110.7,
+    106.0,
+    109.7,
+    109.0,
+    106.7,
+    107.10000000000001,
+    113.7,
+    107.0,
+    107.4,
+    106.30000000000001,
+    107.0,
+    106.2,
+    108.0,
+    106.30000000000001,
+    106.0,
+    106.4,
+    119.7,
+    107.60000000000001,
+    107.5,
+    106.5,
+    106.10000000000001,
+    106.2,
+    109.80000000000001,
+    107.4,
+    106.80000000000001,
+    107.2
+   ]
+  },
+  {
+   "steps": 10978,
+   "finished": 6,
+   "outs": [
+    {
+     "car": 5,
+     "reason": "crash_or_track_limit",
+     "frac": 0.121,
+     "t": 240,
+     "contact_3s": false,
+     "kmh": 64.4
+    },
+    {
+     "car": 4,
+     "reason": "stalled",
+     "frac": 0.115,
+     "t": 312,
+     "contact_3s": false,
+     "kmh": 0.4
+    },
+    {
+     "car": 4,
+     "reason": "crash_or_track_limit",
+     "frac": 0.92,
+     "t": 1171,
+     "contact_3s": false,
+     "kmh": 75.7
+    },
+    {
+     "car": 4,
+     "reason": "crash_or_track_limit",
+     "frac": 1.921,
+     "t": 2264,
+     "contact_3s": false,
+     "kmh": 78.8
+    },
+    {
+     "car": 5,
+     "reason": "crash_or_track_limit",
+     "frac": 6.119,
+     "t": 6811,
+     "contact_3s": false,
+     "kmh": 39.2
+    },
+    {
+     "car": 4,
+     "reason": "crash_or_track_limit",
+     "frac": 7.922,
+     "t": 8706,
+     "contact_3s": false,
+     "kmh": 79.8
+    },
+    {
+     "car": 1,
+     "reason": "crash_or_track_limit",
+     "frac": 8.917,
+     "t": 9675,
+     "contact_3s": false,
+     "kmh": 80.2
+    }
+   ],
+   "contacts": 32,
+   "contact_types": {
+    "rear": 32,
+    "side": 0
+   },
+   "contact_episodes": 14,
+   "start_passes": 1,
+   "held": [],
+   "env_overtakes": 1,
+   "mean_lap": 105.98333333333333,
+   "best_lap": 105.4,
+   "pedal_sw": 5.920148474549745,
+   "steer_rev": 39.58743329991955,
+   "beta": 2.122874688187619,
+   "fault_log": [
+    {
+     "t": 150,
+     "car": 2,
+     "kind": "lockup"
+    },
+    {
+     "t": 157,
+     "car": 0,
+     "kind": "oversteer"
+    },
+    {
+     "t": 166,
+     "car": 4,
+     "kind": "lockup"
+    },
+    {
+     "t": 168,
+     "car": 5,
+     "kind": "oversteer"
+    },
+    {
+     "t": 215,
+     "car": 3,
+     "kind": "lockup"
+    },
+    {
+     "t": 261,
+     "car": 1,
+     "kind": "lockup"
+    },
+    {
+     "t": 2181,
+     "car": 2,
+     "kind": "oversteer"
+    },
+    {
+     "t": 2263,
+     "car": 3,
+     "kind": "lockup"
+    },
+    {
+     "t": 2312,
+     "car": 1,
+     "kind": "understeer"
+    },
+    {
+     "t": 4290,
+     "car": 2,
+     "kind": "understeer"
+    },
+    {
+     "t": 4443,
+     "car": 1,
+     "kind": "lockup"
+    },
+    {
+     "t": 4447,
+     "car": 3,
+     "kind": "understeer"
+    },
+    {
+     "t": 4461,
+     "car": 5,
+     "kind": "lockup"
+    },
+    {
+     "t": 4778,
+     "car": 5,
+     "kind": "lockup"
+    },
+    {
+     "t": 6392,
+     "car": 2,
+     "kind": "lockup"
+    },
+    {
+     "t": 6588,
+     "car": 3,
+     "kind": "oversteer"
+    },
+    {
+     "t": 6611,
+     "car": 1,
+     "kind": "oversteer"
+    },
+    {
+     "t": 6637,
+     "car": 5,
+     "kind": "lockup"
+    },
+    {
+     "t": 6705,
+     "car": 4,
+     "kind": "lockup"
+    },
+    {
+     "t": 7067,
+     "car": 4,
+     "kind": "understeer"
+    },
+    {
+     "t": 7501,
+     "car": 4,
+     "kind": "understeer"
+    },
+    {
+     "t": 8547,
+     "car": 2,
+     "kind": "understeer"
+    },
+    {
+     "t": 8722,
+     "car": 3,
+     "kind": "understeer"
+    },
+    {
+     "t": 8852,
+     "car": 4,
+     "kind": "understeer"
+    }
+   ],
+   "all_laps": [
+    112.2,
+    106.5,
+    106.7,
+    106.30000000000001,
+    106.30000000000001,
+    105.80000000000001,
+    105.7,
+    106.5,
+    106.2,
+    105.9,
+    121.7,
+    107.30000000000001,
+    107.60000000000001,
+    106.7,
+    108.80000000000001,
+    106.2,
+    106.2,
+    106.80000000000001,
+    109.60000000000001,
+    106.60000000000001,
+    110.0,
+    105.4,
+    105.30000000000001,
+    106.10000000000001,
+    106.5,
+    104.9,
+    108.60000000000001,
+    105.7,
+    105.9,
+    105.4,
+    119.0,
+    106.30000000000001,
+    110.0,
+    107.2,
+    107.2,
+    106.30000000000001,
+    107.2,
+    106.80000000000001,
+    106.9,
+    106.4,
+    129.9,
+    109.0,
+    106.30000000000001,
+    106.60000000000001,
+    106.10000000000001,
+    106.7,
+    109.60000000000001,
+    108.9,
+    106.2,
+    106.0,
+    123.0,
+    107.4,
+    108.10000000000001,
+    106.60000000000001,
+    111.10000000000001,
+    106.5,
+    114.80000000000001,
+    107.7,
+    107.0,
+    105.60000000000001
+   ]
+  },
+  {
+   "steps": 10927,
+   "finished": 6,
+   "outs": [
+    {
+     "car": 1,
+     "reason": "crash_or_track_limit",
+     "frac": 0.116,
+     "t": 248,
+     "contact_3s": false,
+     "kmh": 40.9
+    },
+    {
+     "car": 4,
+     "reason": "crash_or_track_limit",
+     "frac": 1.92,
+     "t": 2086,
+     "contact_3s": false,
+     "kmh": 75.8
+    },
+    {
+     "car": 3,
+     "reason": "crash_or_track_limit",
+     "frac": 2.036,
+     "t": 2280,
+     "contact_3s": true,
+     "kmh": 64.2
+    },
+    {
+     "car": 4,
+     "reason": "crash_or_track_limit",
+     "frac": 2.094,
+     "t": 2321,
+     "contact_3s": false,
+     "kmh": 66.4
+    },
+    {
+     "car": 1,
+     "reason": "crash_or_track_limit",
+     "frac": 3.915,
+     "t": 4323,
+     "contact_3s": false,
+     "kmh": 89.9
+    },
+    {
+     "car": 4,
+     "reason": "crash_or_track_limit",
+     "frac": 7.921,
+     "t": 8616,
+     "contact_3s": false,
+     "kmh": 76.7
+    },
+    {
+     "car": 5,
+     "reason": "crash_or_track_limit",
+     "frac": 9.823,
+     "t": 10664,
+     "contact_3s": true,
+     "kmh": 24.6
+    },
+    {
+     "car": 4,
+     "reason": "crash_or_track_limit",
+     "frac": 9.918,
+     "t": 10796,
+     "contact_3s": false,
+     "kmh": 69.2
+    }
+   ],
+   "contacts": 18,
+   "contact_types": {
+    "rear": 18,
+    "side": 0
+   },
+   "contact_episodes": 15,
+   "start_passes": 1,
+   "held": [],
+   "env_overtakes": 1,
+   "mean_lap": 109.0,
+   "best_lap": 105.7,
+   "pedal_sw": 5.801936500136819,
+   "steer_rev": 39.62688087140367,
+   "beta": 2.1982873691673763,
+   "fault_log": [
+    {
+     "t": 151,
+     "car": 2,
+     "kind": "oversteer"
+    },
+    {
+     "t": 156,
+     "car": 0,
+     "kind": "oversteer"
+    },
+    {
+     "t": 168,
+     "car": 5,
+     "kind": "oversteer"
+    },
+    {
+     "t": 170,
+     "car": 4,
+     "kind": "oversteer"
+    },
+    {
+     "t": 175,
+     "car": 3,
+     "kind": "understeer"
+    },
+    {
+     "t": 2172,
+     "car": 2,
+     "kind": "oversteer"
+    },
+    {
+     "t": 2208,
+     "car": 0,
+     "kind": "lockup"
+    },
+    {
+     "t": 2236,
+     "car": 4,
+     "kind": "understeer"
+    },
+    {
+     "t": 2247,
+     "car": 3,
+     "kind": "lockup"
+    },
+    {
+     "t": 2265,
+     "car": 5,
+     "kind": "understeer"
+    },
+    {
+     "t": 2337,
+     "car": 1,
+     "kind": "oversteer"
+    },
+    {
+     "t": 2696,
+     "car": 1,
+     "kind": "oversteer"
+    },
+    {
+     "t": 4371,
+     "car": 0,
+     "kind": "understeer"
+    },
+    {
+     "t": 4410,
+     "car": 5,
+     "kind": "lockup"
+    },
+    {
+     "t": 4470,
+     "car": 4,
+     "kind": "oversteer"
+    },
+    {
+     "t": 4500,
+     "car": 1,
+     "kind": "oversteer"
+    },
+    {
+     "t": 6588,
+     "car": 5,
+     "kind": "understeer"
+    },
+    {
+     "t": 6594,
+     "car": 4,
+     "kind": "understeer"
+    },
+    {
+     "t": 6626,
+     "car": 1,
+     "kind": "oversteer"
+    },
+    {
+     "t": 8704,
+     "car": 5,
+     "kind": "lockup"
+    },
+    {
+     "t": 8763,
+     "car": 1,
+     "kind": "oversteer"
+    },
+    {
+     "t": 8765,
+     "car": 4,
+     "kind": "understeer"
+    },
+    {
+     "t": 10774,
+     "car": 3,
+     "kind": "understeer"
+    }
+   ],
+   "all_laps": [
+    113.80000000000001,
+    106.10000000000001,
+    108.7,
+    106.30000000000001,
+    107.30000000000001,
+    106.10000000000001,
+    106.5,
+    105.7,
+    105.30000000000001,
+    106.5,
+    121.0,
+    106.5,
+    108.7,
+    111.10000000000001,
+    106.30000000000001,
+    106.2,
+    107.10000000000001,
+    106.60000000000001,
+    106.7,
+    110.80000000000001,
+    109.60000000000001,
+    104.80000000000001,
+    105.2,
+    105.7,
+    105.4,
+    105.4,
+    105.30000000000001,
+    104.7,
+    104.7,
+    105.7,
+    116.2,
+    107.5,
+    116.2,
+    108.9,
+    106.7,
+    106.7,
+    107.0,
+    106.9,
+    106.80000000000001,
+    109.80000000000001,
+    112.0,
+    109.30000000000001,
+    115.7,
+    107.2,
+    106.0,
+    107.0,
+    107.7,
+    109.4,
+    106.80000000000001,
+    111.10000000000001,
+    117.7,
+    106.5,
+    109.60000000000001,
+    106.2,
+    109.5,
+    107.10000000000001,
+    106.7,
+    106.2,
+    109.2,
+    110.10000000000001
+   ]
+  },
+  {
+   "steps": 10987,
+   "finished": 6,
+   "outs": [
+    {
+     "car": 5,
+     "reason": "crash_or_track_limit",
+     "frac": 0.319,
+     "t": 449,
+     "contact_3s": false,
+     "kmh": 80.3
+    },
+    {
+     "car": 3,
+     "reason": "crash_or_track_limit",
+     "frac": 1.352,
+     "t": 1548,
+     "contact_3s": true,
+     "kmh": 70.5
+    },
+    {
+     "car": 1,
+     "reason": "crash_or_track_limit",
+     "frac": 4.121,
+     "t": 4593,
+     "contact_3s": false,
+     "kmh": 59.9
+    },
+    {
+     "car": 0,
+     "reason": "crash_or_track_limit",
+     "frac": 5.921,
+     "t": 6340,
+     "contact_3s": false,
+     "kmh": 76.6
+    },
+    {
+     "car": 4,
+     "reason": "crash_or_track_limit",
+     "frac": 7.919,
+     "t": 8503,
+     "contact_3s": false,
+     "kmh": 71.9
+    },
+    {
+     "car": 2,
+     "reason": "crash_or_track_limit",
+     "frac": 8.039,
+     "t": 8678,
+     "contact_3s": true,
+     "kmh": 15.7
+    },
+    {
+     "car": 0,
+     "reason": "crash_or_track_limit",
+     "frac": 8.095,
+     "t": 8765,
+     "contact_3s": false,
+     "kmh": 66.4
+    },
+    {
+     "car": 1,
+     "reason": "crash_or_track_limit",
+     "frac": 8.042,
+     "t": 8824,
+     "contact_3s": true,
+     "kmh": 51.4
+    },
+    {
+     "car": 1,
+     "reason": "crash_or_track_limit",
+     "frac": 8.317,
+     "t": 9161,
+     "contact_3s": false,
+     "kmh": 89.6
+    },
+    {
+     "car": 4,
+     "reason": "crash_or_track_limit",
+     "frac": 9.106,
+     "t": 9845,
+     "contact_3s": false,
+     "kmh": 77.0
+    },
+    {
+     "car": 2,
+     "reason": "crash_or_track_limit",
+     "frac": 9.106,
+     "t": 9852,
+     "contact_3s": false,
+     "kmh": 47.2
+    },
+    {
+     "car": 2,
+     "reason": "crash_or_track_limit",
+     "frac": 9.106,
+     "t": 9856,
+     "contact_3s": true,
+     "kmh": 5.1
+    },
+    {
+     "car": 4,
+     "reason": "crash_or_track_limit",
+     "frac": 9.118,
+     "t": 9896,
+     "contact_3s": false,
+     "kmh": 47.0
+    },
+    {
+     "car": 0,
+     "reason": "crash_or_track_limit",
+     "frac": 9.347,
+     "t": 10200,
+     "contact_3s": false,
+     "kmh": 67.3
+    },
+    {
+     "car": 0,
+     "reason": "crash_or_track_limit",
+     "frac": 9.919,
+     "t": 10811,
+     "contact_3s": false,
+     "kmh": 72.0
+    }
+   ],
+   "contacts": 39,
+   "contact_types": {
+    "rear": 29,
+    "side": 10
+   },
+   "contact_episodes": 27,
+   "start_passes": 1,
+   "held": [
+    {
+     "a": 4,
+     "b": 2,
+     "t": 228,
+     "frac": 0.157,
+     "corner": false,
+     "touched": false
+    }
+   ],
+   "env_overtakes": 2,
+   "mean_lap": 109.48333333333335,
+   "best_lap": 106.10000000000001,
+   "pedal_sw": 5.787390883367276,
+   "steer_rev": 39.998636558321344,
+   "beta": 2.1324355597812543,
+   "fault_log": [
+    {
+     "t": 150,
+     "car": 3,
+     "kind": "oversteer"
+    },
+    {
+     "t": 157,
+     "car": 0,
+     "kind": "oversteer"
+    },
+    {
+     "t": 163,
+     "car": 4,
+     "kind": "understeer"
+    },
+    {
+     "t": 164,
+     "car": 5,
+     "kind": "understeer"
+    },
+    {
+     "t": 185,
+     "car": 2,
+     "kind": "lockup"
+    },
+    {
+     "t": 1629,
+     "car": 1,
+     "kind": "oversteer"
+    },
+    {
+     "t": 2177,
+     "car": 0,
+     "kind": "lockup"
+    },
+    {
+     "t": 2225,
+     "car": 4,
+     "kind": "oversteer"
+    },
+    {
+     "t": 2233,
+     "car": 2,
+     "kind": "lockup"
+    },
+    {
+     "t": 2288,
+     "car": 3,
+     "kind": "understeer"
+    },
+    {
+     "t": 2316,
+     "car": 1,
+     "kind": "understeer"
+    },
+    {
+     "t": 4334,
+     "car": 0,
+     "kind": "understeer"
+    },
+    {
+     "t": 4352,
+     "car": 4,
+     "kind": "understeer"
+    },
+    {
+     "t": 4366,
+     "car": 2,
+     "kind": "lockup"
+    },
+    {
+     "t": 4425,
+     "car": 3,
+     "kind": "lockup"
+    },
+    {
+     "t": 4445,
+     "car": 1,
+     "kind": "lockup"
+    },
+    {
+     "t": 6470,
+     "car": 4,
+     "kind": "lockup"
+    },
+    {
+     "t": 6485,
+     "car": 0,
+     "kind": "lockup"
+    },
+    {
+     "t": 6518,
+     "car": 2,
+     "kind": "oversteer"
+    },
+    {
+     "t": 6580,
+     "car": 3,
+     "kind": "lockup"
+    },
+    {
+     "t": 6634,
+     "car": 1,
+     "kind": "understeer"
+    },
+    {
+     "t": 8630,
+     "car": 2,
+     "kind": "lockup"
+    },
+    {
+     "t": 8662,
+     "car": 4,
+     "kind": "oversteer"
+    },
+    {
+     "t": 8712,
+     "car": 0,
+     "kind": "lockup"
+    },
+    {
+     "t": 8761,
+     "car": 3,
+     "kind": "understeer"
+    },
+    {
+     "t": 8767,
+     "car": 1,
+     "kind": "lockup"
+    }
+   ],
+   "all_laps": [
+    110.60000000000001,
+    106.10000000000001,
+    108.4,
+    106.10000000000001,
+    106.80000000000001,
+    108.9,
+    112.30000000000001,
+    106.2,
+    113.4,
+    115.2,
+    120.0,
+    109.4,
+    107.10000000000001,
+    106.9,
+    111.0,
+    106.80000000000001,
+    107.4,
+    107.0,
+    114.9,
+    106.10000000000001,
+    115.9,
+    106.4,
+    108.4,
+    105.0,
+    107.80000000000001,
+    105.5,
+    106.4,
+    106.60000000000001,
+    112.80000000000001,
+    111.2,
+    115.5,
+    111.10000000000001,
+    107.9,
+    107.0,
+    109.80000000000001,
+    105.7,
+    110.10000000000001,
+    106.80000000000001,
+    107.4,
+    107.2,
+    114.0,
+    105.7,
+    106.10000000000001,
+    107.30000000000001,
+    106.9,
+    106.0,
+    108.60000000000001,
+    108.60000000000001,
+    111.0,
+    111.0,
+    118.9,
+    113.80000000000001,
+    106.10000000000001,
+    106.80000000000001,
+    111.7,
+    106.2,
+    107.10000000000001,
+    107.10000000000001,
+    114.80000000000001,
+    106.2
+   ]
+  }
+ ],
+ "faults_per_race": 24.666666666666668
+}

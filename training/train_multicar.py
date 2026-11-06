@@ -50,7 +50,10 @@ def parse_args():
     parser.add_argument("--grid", choices=["abreast", "staggered"], default="abreast", help="Kiểu xếp xe xuất phát")
     parser.add_argument("--init-model", type=str, default="models/ref_111s/best_agent.pt", help="Checkpoint đơn tác tử 35D để warm start")
     parser.add_argument("--resume", type=str, default=None, help="Checkpoint đa tác tử 60D để train tiếp")
-    parser.add_argument("--eval-freq", type=int, default=5, help="Đánh giá sau mỗi N lần update")
+    parser.add_argument("--init-steer-logstd", type=float, default=None,
+                        help="Đặt lại logstd của lái sau khi nạp checkpoint để tăng khám phá (vd -1.6)")
+    parser.add_argument("--eval-freq", type=int, default=20, help="Đánh giá sau mỗi N lần update")
+    parser.add_argument("--eval-races", type=int, default=6, help="Số cuộc đua mỗi lần đánh giá (1 cuộc đua quá nhiễu để chọn best)")
     parser.add_argument("--milestone-freq", type=int, default=100000, help="Lưu snapshot mỗi N mẫu")
     parser.add_argument("--save-dir", type=str, default="models/multicar_demo")
     parser.add_argument("--log-dir", type=str, default="logs/multicar_demo")
@@ -104,8 +107,11 @@ def policy_act(agent: PPOAgent, obs: np.ndarray, deterministic: bool):
     )
 
 
-def run_race(env: MultiCarRacingEnv, agent: PPOAgent, deterministic: bool = True) -> Dict[str, Any]:
-    """Chạy 1 cuộc đua đầy đủ, tất cả các xe do policy điều khiển (không respawn: xe bị loại là rời cuộc đua)"""
+def run_race(env: MultiCarRacingEnv, agent: PPOAgent, deterministic: bool = True, jitter_seed: int = 0) -> Dict[str, Any]:
+    """Chạy 1 cuộc đua đầy đủ, tất cả các xe do policy điều khiển (không respawn: xe bị loại là rời cuộc đua).
+    Thêm nhiễu lái nhỏ 10 bước đầu (cố định theo jitter_seed) để các cuộc đua khác nhau khi policy tất định."""
+    rng = np.random.default_rng(1000 + jitter_seed)
+    step = 0
     train_respawn = env.respawn
     env.respawn = False
     obs, info = env.reset()
@@ -114,8 +120,11 @@ def run_race(env: MultiCarRacingEnv, agent: PPOAgent, deterministic: bool = True
         active = env.active_mask()
         if active.any():
             act, _, _, _ = policy_act(agent, obs[active], deterministic)
+            if step < 10:
+                act[:, 0] += rng.normal(0.0, 0.02, size=act.shape[0])
             actions[active] = act
         obs, _, _, truncated, _ = env.step(actions)
+        step += 1
         if truncated or not env.active_mask().any():
             break
     env.respawn = train_respawn
@@ -138,10 +147,31 @@ def run_race(env: MultiCarRacingEnv, agent: PPOAgent, deterministic: bool = True
     }
 
 
+def evaluate(env: MultiCarRacingEnv, agent: PPOAgent, num_races: int) -> Dict[str, Any]:
+    """Đánh giá trên nhiều cuộc đua: finished/outs/stalls là tổng, các chỉ số còn lại là trung bình mỗi cuộc đua"""
+    races = [run_race(env, agent, deterministic=True, jitter_seed=k) for k in range(num_races)]
+    res: Dict[str, Any] = {}
+    for key in ("finished", "outs", "stalls"):
+        res[key] = int(sum(r[key] for r in races))
+    for key in ("contacts", "overtakes", "mean_completion", "pedal_sw_per_100", "steer_rev_per_100", "beta_p95_deg"):
+        res[key] = float(np.mean([r[key] for r in races]))
+    laps = [r["mean_lap"] for r in races if r["mean_lap"] > 0]
+    bests = [r["best_lap"] for r in races if r["best_lap"] > 0]
+    res["mean_lap"] = float(np.mean(laps)) if laps else 0.0
+    res["best_lap"] = float(np.min(bests)) if bests else 0.0
+    return res
+
+
 def write_run_readme(args, c1: float, c2: float, obs_dim: int):
     """Ghi README ngắn trong thư mục log theo §5.1"""
     try:
         commit = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], text=True).strip()
+        # Code chưa commit thì đánh dấu dirty và lưu diff, để biết chính xác code đã train ra model
+        code_diff = subprocess.check_output(["git", "diff", "HEAD", "--", "game_env", "training", "agents"], text=True, encoding="utf-8")
+        if code_diff:
+            commit += "-dirty"
+            with open(os.path.join(args.log_dir, "code.diff"), "w", encoding="utf-8") as f:
+                f.write(code_diff)
         branch = subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"], text=True).strip()
     except Exception:
         commit, branch = "unknown", "unknown"
@@ -154,7 +184,8 @@ def write_run_readme(args, c1: float, c2: float, obs_dim: int):
         f"- **Warm-start / Resume**: `{warm_src}`\n"
         f"- **Lanes**: `{args.lane_num}` | **Cars**: `{args.num_cars}` | **Obs**: `{obs_dim}D`\n"
         f"- **Smoothness Coefs (§4.2)**: `c1 (steer_smooth_coef) = {c1}`, `c2 (pedal_smooth_coef) = {c2}`\n"
-        f"- **Collision Penalty**: `{args.collision_penalty}` (with proximity buffer & WI-L5 clean overtake bonus)\n"
+        f"- **Collision Penalty**: `{args.collision_penalty}` (with proximity buffer)\n"
+        f"- **Init steer logstd**: `{args.init_steer_logstd}` | **Eval**: `{args.eval_races}` races every `{args.eval_freq}` updates (eval_finished/outs/stalls are totals over races)\n"
         f"- **Command**:\n```powershell\npython {cmd_str}\n```\n"
     )
     with open(os.path.join(args.log_dir, "README.md"), "w", encoding="utf-8") as f:
@@ -207,6 +238,12 @@ def main():
     else:
         print(">> Huấn luyện từ đầu (không có checkpoint khởi tạo)")
 
+    if args.init_steer_logstd is not None:
+        with torch.no_grad():
+            agent.ac.actor_logstd[0, 0] = float(args.init_steer_logstd)
+        agent._project_logstd()
+        print(f">> Đặt lại logstd lái = {args.init_steer_logstd}")
+
     print("=" * 80)
     print(f">> MULTI-CAR PPO SELF-PLAY | {args.num_cars} xe | {args.lane_num} làn ({env.half_width * 2:.1f}m) | obs {obs_dim}D | device {agent.device}")
     print(f"   Smoothness: c1(steer)={c1}, c2(pedal)={c2} | lr={args.lr} | collision={args.collision_penalty}")
@@ -246,7 +283,7 @@ def main():
         if res["finished"] == 0:
             return (-1, float(res["mean_completion"]))
 
-        # Khi có xe về đích: Ưu tiên số xe về đích -> số lần vượt sạch -> độ mượt §6 -> ít va chạm -> lap time nhanh
+        # Khi có xe về đích: Ưu tiên số xe về đích -> ít va chạm -> độ mượt §6 -> số lần vượt sạch -> lap time nhanh
         smooth_ok = (
             int(res["pedal_sw_per_100"] <= 5.0)
             + int(res["steer_rev_per_100"] <= 40.0)
@@ -254,17 +291,18 @@ def main():
         )
         return (
             res["finished"],                          # 1. Số xe về đích (càng nhiều càng tốt)
-            res["overtakes"],                         # 2. Số pha vượt sạch (tôn vinh kỹ năng vượt)
+            -(res["contacts"] // 10),                 # 2. Càng ít va chạm càng tốt
             smooth_ok,                                # 3. Đạt 3 chỉ số mượt mà §6
-            -(res["contacts"] // 10),                 # 4. Càng ít va chạm càng tốt
+            res["overtakes"],                         # 4. Số pha vượt sạch
             -res["mean_lap"] if res["mean_lap"] > 0 else -1e9,  # 5. Lap time trung bình
             float(res["mean_completion"]),
         )
 
-    res = run_race(env, agent, deterministic=True)
+    total_cars = args.num_cars * args.eval_races
+    res = evaluate(env, agent, args.eval_races)
     best_score = score(res)
     print(
-        f"[Samples 0] Eval: về đích {res['finished']}/{args.num_cars} | văng {res['outs']} | chạm {res['contacts']} | vượt {res['overtakes']} | "
+        f"[Samples 0] Eval: về đích {res['finished']}/{total_cars} | văng {res['outs']} | chạm/race {res['contacts']:.1f} | vượt/race {res['overtakes']:.1f} | "
         f"lap TB {res['mean_lap']:.1f}s | "
         f"§6[pedal_sw={res['pedal_sw_per_100']:.1f} (<=5), steer_rev={res['steer_rev_per_100']:.1f} (<=40), β_p95={res['beta_p95_deg']:.1f}° (<=4°)]"
     )
@@ -342,12 +380,12 @@ def main():
 
         # 3. Đánh giá định kỳ bằng 1 cuộc đua tất định đủ N xe
         if update_idx % args.eval_freq == 0 or samples >= args.total_samples:
-            res = run_race(env, agent, deterministic=True)
+            res = evaluate(env, agent, args.eval_races)
             sps = int(samples / max(1e-5, time.time() - start_time))
             log_eval(samples, res, train_info, train_laps)
             print(
                 f"[Samples {samples:07d}/{args.total_samples} | {sps} mẫu/s | lap train: {train_laps}] "
-                f"Eval: về đích {res['finished']}/{args.num_cars} | văng {res['outs']} | chạm {res['contacts']} | vượt {res['overtakes']} | "
+                f"Eval: về đích {res['finished']}/{total_cars} | văng {res['outs']} | chạm/race {res['contacts']:.1f} | vượt/race {res['overtakes']:.1f} | "
                 f"lap TB {res['mean_lap']:.1f}s (best {res['best_lap']:.1f}s) | "
                 f"§6[pedal_sw={res['pedal_sw_per_100']:.1f}, steer_rev={res['steer_rev_per_100']:.1f}, β_p95={res['beta_p95_deg']:.1f}°]"
             )
@@ -356,7 +394,7 @@ def main():
                 best_score = score(res)
                 agent.save(os.path.join(args.save_dir, "best_agent.pt"))
                 print(
-                    f"  🏆 [BEST SAVED] về đích {res['finished']}/{args.num_cars}, chạm {res['contacts']}, vượt {res['overtakes']}, lap TB {res['mean_lap']:.1f}s, "
+                    f"  🏆 [BEST SAVED] về đích {res['finished']}/{total_cars}, chạm/race {res['contacts']:.1f}, vượt/race {res['overtakes']:.1f}, lap TB {res['mean_lap']:.1f}s, "
                     f"pedal_sw={res['pedal_sw_per_100']:.1f}, steer_rev={res['steer_rev_per_100']:.1f}, β_p95={res['beta_p95_deg']:.1f}°"
                 )
             if samples >= next_milestone:

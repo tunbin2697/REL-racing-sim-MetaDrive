@@ -1,0 +1,137 @@
+{
+ "config": "d3_narrow",
+ "rows": [
+  {
+   "kind": "lockup",
+   "at": 0.15,
+   "gap_m": 22.456451416015625,
+   "held": [],
+   "contacts": 0,
+   "outs": []
+  },
+  {
+   "kind": "understeer",
+   "at": 0.15,
+   "gap_m": 22.456451416015625,
+   "held": [],
+   "contacts": 0,
+   "outs": []
+  },
+  {
+   "kind": "oversteer",
+   "at": 0.15,
+   "gap_m": 22.456451416015625,
+   "held": [],
+   "contacts": 2,
+   "outs": []
+  },
+  {
+   "kind": "lockup",
+   "at": 0.35,
+   "gap_m": 17.1143798828125,
+   "held": [
+    {
+     "a": 1,
+     "b": 0,
+     "t": 493,
+     "frac": 0.406,
+     "corner": false,
+     "touched": false
+    }
+   ],
+   "contacts": 0,
+   "outs": []
+  },
+  {
+   "kind": "understeer",
+   "at": 0.35,
+   "gap_m": 17.1143798828125,
+   "held": [],
+   "contacts": 2,
+   "outs": []
+  },
+  {
+   "kind": "oversteer",
+   "at": 0.35,
+   "gap_m": 17.1143798828125,
+   "held": [
+    {
+     "a": 1,
+     "b": 0,
+     "t": 491,
+     "frac": 0.407,
+     "corner": false,
+     "touched": false
+    }
+   ],
+   "contacts": 0,
+   "outs": []
+  },
+  {
+   "kind": "lockup",
+   "at": 0.55,
+   "gap_m": 27.45654296875,
+   "held": [],
+   "contacts": 2,
+   "outs": []
+  },
+  {
+   "kind": "understeer",
+   "at": 0.55,
+   "gap_m": 27.45654296875,
+   "held": [],
+   "contacts": 2,
+   "outs": []
+  },
+  {
+   "kind": "oversteer",
+   "at": 0.55,
+   "gap_m": 27.45654296875,
+   "held": [],
+   "contacts": 2,
+   "outs": [
+    {
+     "car": 1,
+     "reason": "crash_or_track_limit",
+     "frac": 0.58,
+     "t": 693,
+     "contact_3s": true,
+     "kmh": 55.1
+    }
+   ]
+  },
+  {
+   "kind": "lockup",
+   "at": 0.75,
+   "gap_m": 59.043212890625,
+   "held": [],
+   "contacts": 0,
+   "outs": []
+  },
+  {
+   "kind": "understeer",
+   "at": 0.75,
+   "gap_m": 59.043212890625,
+   "held": [],
+   "contacts": 2,
+   "outs": [
+    {
+     "car": 0,
+     "reason": "crash_or_track_limit",
+     "frac": 0.92,
+     "t": 1045,
+     "contact_3s": false,
+     "kmh": 68.7
+    }
+   ]
+  },
+  {
+   "kind": "oversteer",
+   "at": 0.75,
+   "gap_m": 59.043212890625,
+   "held": [],
+   "contacts": 2,
+   "outs": []
+  }
+ ]
+}

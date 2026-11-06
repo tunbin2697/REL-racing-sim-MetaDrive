@@ -1,0 +1,8831 @@
+{
+ "steps": 44000,
+ "finished": 4,
+ "outs": [
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 14.996,
+   "t": 16797,
+   "contact_3s": false,
+   "kmh": 0.0,
+   "leader_lap": 14
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 14.996,
+   "t": 16833,
+   "contact_3s": false,
+   "kmh": 1.0,
+   "leader_lap": 14
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 14.998,
+   "t": 16835,
+   "contact_3s": false,
+   "kmh": 0.9,
+   "leader_lap": 14
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 14.996,
+   "t": 16919,
+   "contact_3s": false,
+   "kmh": 0.7,
+   "leader_lap": 14
+  },
+  {
+   "car": 2,
+   "reason": "crash_or_track_limit",
+   "frac": 14.996,
+   "t": 16923,
+   "contact_3s": true,
+   "kmh": 10.1,
+   "leader_lap": 14
+  },
+  {
+   "car": 2,
+   "reason": "crash_or_track_limit",
+   "frac": 14.996,
+   "t": 16928,
+   "contact_3s": true,
+   "kmh": 5.9,
+   "leader_lap": 14
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 14.995,
+   "t": 16953,
+   "contact_3s": true,
+   "kmh": 0.7,
+   "leader_lap": 14
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 14.998,
+   "t": 16955,
+   "contact_3s": true,
+   "kmh": 0.9,
+   "leader_lap": 14
+  },
+  {
+   "car": 2,
+   "reason": "crash_or_track_limit",
+   "frac": 14.997,
+   "t": 17008,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 14
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 14.995,
+   "t": 17073,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 14
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 14.998,
+   "t": 17075,
+   "contact_3s": true,
+   "kmh": 0.6,
+   "leader_lap": 14
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 14.997,
+   "t": 17128,
+   "contact_3s": true,
+   "kmh": 1.0,
+   "leader_lap": 14
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 14.995,
+   "t": 17193,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 14
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 14.997,
+   "t": 17248,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 14
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 14.995,
+   "t": 17313,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 14
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 14.997,
+   "t": 17368,
+   "contact_3s": true,
+   "kmh": 1.0,
+   "leader_lap": 14
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 14.996,
+   "t": 17433,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 14
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 14.997,
+   "t": 17488,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 14
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 14.996,
+   "t": 17553,
+   "contact_3s": true,
+   "kmh": 0.0,
+   "leader_lap": 14
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 14.998,
+   "t": 17608,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 14
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 15.994,
+   "t": 17625,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 14.996,
+   "t": 17673,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 14
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 15.993,
+   "t": 17712,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 14.998,
+   "t": 17728,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 14
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 15.995,
+   "t": 17745,
+   "contact_3s": true,
+   "kmh": 0.0,
+   "leader_lap": 15
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 14.996,
+   "t": 17793,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 14
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 15.993,
+   "t": 17832,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 15
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 14.998,
+   "t": 17848,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 14
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 15.992,
+   "t": 17852,
+   "contact_3s": true,
+   "kmh": 0.9,
+   "leader_lap": 15
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 15.995,
+   "t": 17865,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 15
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 14.997,
+   "t": 17913,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 14
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 15.993,
+   "t": 17952,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 15
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 14.998,
+   "t": 17968,
+   "contact_3s": true,
+   "kmh": 0.9,
+   "leader_lap": 14
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 15.992,
+   "t": 17972,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 15.995,
+   "t": 17986,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 15
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 14.997,
+   "t": 18033,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 14
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 15.993,
+   "t": 18072,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 15
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 14.998,
+   "t": 18088,
+   "contact_3s": true,
+   "kmh": 0.8,
+   "leader_lap": 14
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 15.992,
+   "t": 18092,
+   "contact_3s": true,
+   "kmh": 0.0,
+   "leader_lap": 15
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 15.995,
+   "t": 18106,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 14.997,
+   "t": 18154,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 14
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 15.994,
+   "t": 18193,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 14.999,
+   "t": 18208,
+   "contact_3s": true,
+   "kmh": 0.8,
+   "leader_lap": 14
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 15.992,
+   "t": 18212,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 15.995,
+   "t": 18226,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 14.997,
+   "t": 18274,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 14
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 15.994,
+   "t": 18313,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 15
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 15.992,
+   "t": 18332,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 15.995,
+   "t": 18346,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 15
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 14.997,
+   "t": 18395,
+   "contact_3s": true,
+   "kmh": 0.6,
+   "leader_lap": 14
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 15.994,
+   "t": 18433,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 15.991,
+   "t": 18441,
+   "contact_3s": false,
+   "kmh": 0.0,
+   "leader_lap": 15
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 15.992,
+   "t": 18452,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 15.996,
+   "t": 18466,
+   "contact_3s": true,
+   "kmh": 0.0,
+   "leader_lap": 15
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 14.998,
+   "t": 18515,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 14
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 15.994,
+   "t": 18553,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 15
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 15.991,
+   "t": 18561,
+   "contact_3s": false,
+   "kmh": 0.0,
+   "leader_lap": 15
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 15.993,
+   "t": 18572,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 15
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 15.996,
+   "t": 18586,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 15
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 14.998,
+   "t": 18635,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 14
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 15.994,
+   "t": 18673,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 15.993,
+   "t": 18692,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 15.991,
+   "t": 18702,
+   "contact_3s": true,
+   "kmh": 3.4,
+   "leader_lap": 15
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 15.996,
+   "t": 18706,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 15
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 14.998,
+   "t": 18755,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 14
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 15.995,
+   "t": 18793,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 15
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 15.993,
+   "t": 18812,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 15
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 15.992,
+   "t": 18822,
+   "contact_3s": true,
+   "kmh": 4.6,
+   "leader_lap": 15
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 15.997,
+   "t": 18826,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 15
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 14.998,
+   "t": 18875,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 14
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 15.995,
+   "t": 18913,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 15.993,
+   "t": 18932,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 15.992,
+   "t": 18942,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 15.997,
+   "t": 18946,
+   "contact_3s": true,
+   "kmh": 0.0,
+   "leader_lap": 15
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 14.998,
+   "t": 18995,
+   "contact_3s": true,
+   "kmh": 0.9,
+   "leader_lap": 14
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 15.995,
+   "t": 19033,
+   "contact_3s": true,
+   "kmh": 0.0,
+   "leader_lap": 15
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 15.993,
+   "t": 19052,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 15
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 15.992,
+   "t": 19062,
+   "contact_3s": true,
+   "kmh": 4.2,
+   "leader_lap": 15
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 15.997,
+   "t": 19067,
+   "contact_3s": true,
+   "kmh": 0.6,
+   "leader_lap": 15
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 14.998,
+   "t": 19115,
+   "contact_3s": true,
+   "kmh": 0.9,
+   "leader_lap": 14
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 15.995,
+   "t": 19153,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 15
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 15.994,
+   "t": 19172,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 15
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 15.992,
+   "t": 19182,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 15
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 15.997,
+   "t": 19187,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 15.995,
+   "t": 19273,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 15
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 15.994,
+   "t": 19292,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 15
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 15.992,
+   "t": 19302,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 15.997,
+   "t": 19307,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 15
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 15.996,
+   "t": 19393,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 15
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 15.994,
+   "t": 19412,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 15.993,
+   "t": 19422,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 15.998,
+   "t": 19427,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 15.996,
+   "t": 19513,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 15
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 15.994,
+   "t": 19532,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 15.991,
+   "t": 19538,
+   "contact_3s": false,
+   "kmh": 0.7,
+   "leader_lap": 15
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 15.993,
+   "t": 19542,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 15
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 15.998,
+   "t": 19547,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 15
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 15.996,
+   "t": 19633,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 15
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 15.995,
+   "t": 19652,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 15.993,
+   "t": 19662,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 15.998,
+   "t": 19667,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 15
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 15.992,
+   "t": 19682,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 15
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 15.997,
+   "t": 19754,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 15
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 15.995,
+   "t": 19772,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 15.993,
+   "t": 19782,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 15.998,
+   "t": 19787,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 15
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 15.992,
+   "t": 19802,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 15
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 15.997,
+   "t": 19874,
+   "contact_3s": true,
+   "kmh": 0.6,
+   "leader_lap": 15
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 15.995,
+   "t": 19892,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 15
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 15.993,
+   "t": 19902,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 15
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 15.998,
+   "t": 19907,
+   "contact_3s": true,
+   "kmh": 0.6,
+   "leader_lap": 15
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 15.992,
+   "t": 19922,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 15.997,
+   "t": 19994,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 15
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 15.995,
+   "t": 20012,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 15
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 15.993,
+   "t": 20022,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 15.998,
+   "t": 20027,
+   "contact_3s": true,
+   "kmh": 0.8,
+   "leader_lap": 15
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 15.992,
+   "t": 20042,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 15
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 15.997,
+   "t": 20114,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 15
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 15.995,
+   "t": 20132,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 15
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 15.994,
+   "t": 20142,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 15.992,
+   "t": 20162,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 15
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 15.997,
+   "t": 20234,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 15
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 15.995,
+   "t": 20252,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 15.994,
+   "t": 20262,
+   "contact_3s": true,
+   "kmh": 0.0,
+   "leader_lap": 15
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 15.992,
+   "t": 20282,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 15
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 15.998,
+   "t": 20354,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 15
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 15.996,
+   "t": 20372,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 15.994,
+   "t": 20382,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 15.991,
+   "t": 20396,
+   "contact_3s": false,
+   "kmh": 1.0,
+   "leader_lap": 15
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 15.993,
+   "t": 20402,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 15
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 15.998,
+   "t": 20474,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 15.996,
+   "t": 20492,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 15
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 15.995,
+   "t": 20502,
+   "contact_3s": true,
+   "kmh": 0.0,
+   "leader_lap": 15
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 15.993,
+   "t": 20522,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 15
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 15.992,
+   "t": 20532,
+   "contact_3s": true,
+   "kmh": 3.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 15.998,
+   "t": 20594,
+   "contact_3s": false,
+   "kmh": 0.5,
+   "leader_lap": 15
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 15.997,
+   "t": 20612,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 15
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 15.995,
+   "t": 20622,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 15
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 15.993,
+   "t": 20642,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 15
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 15.992,
+   "t": 20652,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 15.997,
+   "t": 20732,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 15.995,
+   "t": 20742,
+   "contact_3s": true,
+   "kmh": 5.4,
+   "leader_lap": 15
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 15.993,
+   "t": 20762,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 15
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 15.992,
+   "t": 20772,
+   "contact_3s": true,
+   "kmh": 4.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 15.997,
+   "t": 20852,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 15
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 15.995,
+   "t": 20862,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 15.994,
+   "t": 20883,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 15
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 15.992,
+   "t": 20892,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 15.997,
+   "t": 20972,
+   "contact_3s": false,
+   "kmh": 0.4,
+   "leader_lap": 15
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 15.995,
+   "t": 20982,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 15.994,
+   "t": 21003,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 15
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 15.993,
+   "t": 21012,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 15
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 15.997,
+   "t": 21092,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 15
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 15.996,
+   "t": 21102,
+   "contact_3s": true,
+   "kmh": 1.0,
+   "leader_lap": 15
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 15.994,
+   "t": 21123,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 15.992,
+   "t": 21132,
+   "contact_3s": true,
+   "kmh": 2.8,
+   "leader_lap": 15
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 15.998,
+   "t": 21212,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 15
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 15.996,
+   "t": 21222,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 15.994,
+   "t": 21244,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 15
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 15.993,
+   "t": 21252,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 16.991,
+   "t": 21311,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 16
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 15.998,
+   "t": 21332,
+   "contact_3s": false,
+   "kmh": 0.4,
+   "leader_lap": 15
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 15.996,
+   "t": 21342,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 15
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 15.995,
+   "t": 21364,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 15
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 15.993,
+   "t": 21372,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 15
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 16.992,
+   "t": 21431,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 16
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 15.998,
+   "t": 21452,
+   "contact_3s": false,
+   "kmh": 0.4,
+   "leader_lap": 15
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 15.997,
+   "t": 21462,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 15
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 15.995,
+   "t": 21484,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 15
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 15.993,
+   "t": 21492,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 16.992,
+   "t": 21551,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 16
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 15.997,
+   "t": 21582,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 15
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 15.995,
+   "t": 21604,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 15
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 15.994,
+   "t": 21612,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 16.992,
+   "t": 21671,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 16
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 15.997,
+   "t": 21702,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 15
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 15.996,
+   "t": 21724,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 15
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 15.994,
+   "t": 21732,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 16.993,
+   "t": 21791,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 15.997,
+   "t": 21822,
+   "contact_3s": false,
+   "kmh": 0.2,
+   "leader_lap": 15
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 15.996,
+   "t": 21844,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 15
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 15.994,
+   "t": 21852,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 15
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 16.993,
+   "t": 21911,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 16
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 15.998,
+   "t": 21942,
+   "contact_3s": false,
+   "kmh": 0.5,
+   "leader_lap": 15
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 16.991,
+   "t": 21947,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 16
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 15.996,
+   "t": 21964,
+   "contact_3s": true,
+   "kmh": 0.7,
+   "leader_lap": 15
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 15.994,
+   "t": 21972,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 15
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 16.993,
+   "t": 22031,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 16
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 15.998,
+   "t": 22062,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 15
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 16.992,
+   "t": 22067,
+   "contact_3s": true,
+   "kmh": 3.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 15.997,
+   "t": 22084,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 15
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 15.995,
+   "t": 22092,
+   "contact_3s": true,
+   "kmh": 0.0,
+   "leader_lap": 15
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 16.993,
+   "t": 22151,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 15.998,
+   "t": 22182,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 15
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 16.992,
+   "t": 22187,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 15.997,
+   "t": 22204,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 15.995,
+   "t": 22212,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 16.994,
+   "t": 22271,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 16.992,
+   "t": 22307,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 16
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 15.997,
+   "t": 22324,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 15
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 15.995,
+   "t": 22332,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 15
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 16.994,
+   "t": 22391,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 16
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 15.997,
+   "t": 22444,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 16.992,
+   "t": 22448,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 15.996,
+   "t": 22452,
+   "contact_3s": true,
+   "kmh": 1.2,
+   "leader_lap": 15
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 16.994,
+   "t": 22511,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 15.998,
+   "t": 22564,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 15
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 16.993,
+   "t": 22568,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 16
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 15.996,
+   "t": 22572,
+   "contact_3s": true,
+   "kmh": 0.8,
+   "leader_lap": 15
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 16.994,
+   "t": 22631,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 15.998,
+   "t": 22684,
+   "contact_3s": true,
+   "kmh": 0.7,
+   "leader_lap": 15
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 16.993,
+   "t": 22688,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 16
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 15.996,
+   "t": 22692,
+   "contact_3s": true,
+   "kmh": 0.6,
+   "leader_lap": 15
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 16.995,
+   "t": 22751,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 15.998,
+   "t": 22804,
+   "contact_3s": true,
+   "kmh": 0.9,
+   "leader_lap": 15
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 16.993,
+   "t": 22808,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 15.996,
+   "t": 22812,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 15
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 16.992,
+   "t": 22826,
+   "contact_3s": false,
+   "kmh": 6.6,
+   "leader_lap": 16
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 16.995,
+   "t": 22871,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 16
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 15.998,
+   "t": 22924,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 15
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 16.993,
+   "t": 22928,
+   "contact_3s": true,
+   "kmh": 2.2,
+   "leader_lap": 16
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 15.997,
+   "t": 22932,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 15
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 16.992,
+   "t": 22946,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 16
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 16.995,
+   "t": 22992,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 16
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 16.994,
+   "t": 23048,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 16
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 15.997,
+   "t": 23052,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 15
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 16.992,
+   "t": 23066,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 16
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 16.995,
+   "t": 23112,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 16
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 16.994,
+   "t": 23168,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 16
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 15.997,
+   "t": 23172,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 15
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 16.992,
+   "t": 23186,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 16
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 16.996,
+   "t": 23232,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 16
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 16.994,
+   "t": 23288,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 15.998,
+   "t": 23292,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 15
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 16.993,
+   "t": 23306,
+   "contact_3s": true,
+   "kmh": 8.9,
+   "leader_lap": 16
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 16.996,
+   "t": 23352,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 16
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 16.994,
+   "t": 23408,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 16
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 15.998,
+   "t": 23412,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 15
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 16.996,
+   "t": 23472,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 16
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 15.998,
+   "t": 23532,
+   "contact_3s": true,
+   "kmh": 0.8,
+   "leader_lap": 15
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 16.991,
+   "t": 23543,
+   "contact_3s": false,
+   "kmh": 0.0,
+   "leader_lap": 16
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 16.995,
+   "t": 23544,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 16.993,
+   "t": 23544,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 16.996,
+   "t": 23592,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 16
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 15.998,
+   "t": 23652,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 15
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 16.992,
+   "t": 23663,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 16.995,
+   "t": 23664,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 16
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 16.993,
+   "t": 23664,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 16.997,
+   "t": 23712,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 16
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 15.998,
+   "t": 23772,
+   "contact_3s": true,
+   "kmh": 0.8,
+   "leader_lap": 15
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 16.992,
+   "t": 23783,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 16.995,
+   "t": 23785,
+   "contact_3s": true,
+   "kmh": 0.0,
+   "leader_lap": 16
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 16.993,
+   "t": 23785,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 16
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 16.997,
+   "t": 23832,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 16
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 15.998,
+   "t": 23892,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 15
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 16.992,
+   "t": 23903,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 16
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 16.995,
+   "t": 23905,
+   "contact_3s": true,
+   "kmh": 0.0,
+   "leader_lap": 16
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 16.993,
+   "t": 23905,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 16
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 16.997,
+   "t": 23953,
+   "contact_3s": true,
+   "kmh": 0.0,
+   "leader_lap": 16
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 16.992,
+   "t": 24024,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 16.995,
+   "t": 24025,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 16
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 16.994,
+   "t": 24025,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 16
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 16.997,
+   "t": 24073,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 16
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 16.993,
+   "t": 24144,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 16.996,
+   "t": 24145,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 16
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 16.994,
+   "t": 24145,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 16.998,
+   "t": 24193,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 16
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 16.991,
+   "t": 24245,
+   "contact_3s": false,
+   "kmh": 0.7,
+   "leader_lap": 16
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 16.993,
+   "t": 24264,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 16
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 16.994,
+   "t": 24265,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 16
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 16.996,
+   "t": 24266,
+   "contact_3s": true,
+   "kmh": 0.6,
+   "leader_lap": 16
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 16.998,
+   "t": 24313,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 16.993,
+   "t": 24384,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 16
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 16.995,
+   "t": 24385,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 16.996,
+   "t": 24386,
+   "contact_3s": true,
+   "kmh": 1.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 16.998,
+   "t": 24434,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 16.992,
+   "t": 24457,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 16
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 16.993,
+   "t": 24504,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 16.995,
+   "t": 24505,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 16
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 16.997,
+   "t": 24506,
+   "contact_3s": true,
+   "kmh": 0.7,
+   "leader_lap": 16
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 16.998,
+   "t": 24554,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 16
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 16.992,
+   "t": 24577,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 16
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 16.993,
+   "t": 24624,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 16.995,
+   "t": 24625,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 16
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 16.997,
+   "t": 24626,
+   "contact_3s": true,
+   "kmh": 0.9,
+   "leader_lap": 16
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 16.998,
+   "t": 24675,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 16
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 16.992,
+   "t": 24697,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 16
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 16.993,
+   "t": 24744,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 16
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 16.995,
+   "t": 24745,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 16
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 16.997,
+   "t": 24746,
+   "contact_3s": true,
+   "kmh": 0.9,
+   "leader_lap": 16
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 16.998,
+   "t": 24795,
+   "contact_3s": true,
+   "kmh": 0.9,
+   "leader_lap": 16
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 16.992,
+   "t": 24817,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 16
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 16.993,
+   "t": 24864,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 16.995,
+   "t": 24865,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 16.997,
+   "t": 24866,
+   "contact_3s": true,
+   "kmh": 0.6,
+   "leader_lap": 16
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 16.998,
+   "t": 24915,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 16.992,
+   "t": 24954,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 16
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 16.994,
+   "t": 24984,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 16
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 16.995,
+   "t": 24985,
+   "contact_3s": true,
+   "kmh": 1.2,
+   "leader_lap": 16
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 16.997,
+   "t": 24986,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 16
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 16.992,
+   "t": 25074,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 16
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 16.994,
+   "t": 25104,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 16.995,
+   "t": 25105,
+   "contact_3s": true,
+   "kmh": 0.8,
+   "leader_lap": 16
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 16.997,
+   "t": 25106,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 16.993,
+   "t": 25194,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 16
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 16.994,
+   "t": 25224,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 16.996,
+   "t": 25225,
+   "contact_3s": true,
+   "kmh": 0.9,
+   "leader_lap": 16
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 16.998,
+   "t": 25226,
+   "contact_3s": true,
+   "kmh": 0.7,
+   "leader_lap": 16
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 16.991,
+   "t": 25278,
+   "contact_3s": false,
+   "kmh": 0.0,
+   "leader_lap": 16
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 16.993,
+   "t": 25314,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 16
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 16.994,
+   "t": 25344,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 16.996,
+   "t": 25345,
+   "contact_3s": true,
+   "kmh": 0.0,
+   "leader_lap": 16
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 16.998,
+   "t": 25346,
+   "contact_3s": false,
+   "kmh": 0.5,
+   "leader_lap": 16
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 16.997,
+   "t": 25465,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 16
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 16.998,
+   "t": 25466,
+   "contact_3s": true,
+   "kmh": 1.0,
+   "leader_lap": 16
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 16.993,
+   "t": 25485,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 16
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 16.995,
+   "t": 25485,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 16
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 16.992,
+   "t": 25496,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 16.997,
+   "t": 25585,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 16
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 16.998,
+   "t": 25586,
+   "contact_3s": true,
+   "kmh": 0.9,
+   "leader_lap": 16
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 16.993,
+   "t": 25605,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 16
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 16.995,
+   "t": 25605,
+   "contact_3s": true,
+   "kmh": 0.0,
+   "leader_lap": 16
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 16.992,
+   "t": 25637,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 16.997,
+   "t": 25705,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 16
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 16.994,
+   "t": 25725,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 16
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 16.995,
+   "t": 25725,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 16
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 16.992,
+   "t": 25757,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 16.997,
+   "t": 25825,
+   "contact_3s": false,
+   "kmh": 0.9,
+   "leader_lap": 16
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 16.994,
+   "t": 25845,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 16
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 16.995,
+   "t": 25845,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 16.993,
+   "t": 25877,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 16.997,
+   "t": 25945,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 16
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 16.996,
+   "t": 25965,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 16.994,
+   "t": 25967,
+   "contact_3s": true,
+   "kmh": 1.4,
+   "leader_lap": 16
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 16.993,
+   "t": 25997,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 16.998,
+   "t": 26065,
+   "contact_3s": false,
+   "kmh": 0.9,
+   "leader_lap": 16
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 16.996,
+   "t": 26085,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 16.994,
+   "t": 26088,
+   "contact_3s": true,
+   "kmh": 1.5,
+   "leader_lap": 16
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 16.993,
+   "t": 26117,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 16
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 16.998,
+   "t": 26185,
+   "contact_3s": false,
+   "kmh": 0.4,
+   "leader_lap": 16
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 17.992,
+   "t": 26187,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 16.996,
+   "t": 26205,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 16.995,
+   "t": 26208,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 16.993,
+   "t": 26237,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 16.998,
+   "t": 26305,
+   "contact_3s": false,
+   "kmh": 0.4,
+   "leader_lap": 16
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 17.992,
+   "t": 26308,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 16.997,
+   "t": 26325,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 16
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 16.995,
+   "t": 26328,
+   "contact_3s": true,
+   "kmh": 2.6,
+   "leader_lap": 16
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 16.993,
+   "t": 26357,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 17.992,
+   "t": 26428,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 17
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 16.997,
+   "t": 26445,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 16
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 16.995,
+   "t": 26448,
+   "contact_3s": true,
+   "kmh": 3.4,
+   "leader_lap": 16
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 16.994,
+   "t": 26477,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 17.992,
+   "t": 26548,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 16.997,
+   "t": 26565,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 16.995,
+   "t": 26569,
+   "contact_3s": true,
+   "kmh": 4.9,
+   "leader_lap": 16
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 16.994,
+   "t": 26597,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 17.993,
+   "t": 26668,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 16.997,
+   "t": 26685,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 16
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 16.996,
+   "t": 26691,
+   "contact_3s": true,
+   "kmh": 0.7,
+   "leader_lap": 16
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 16.994,
+   "t": 26717,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 16
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 17.993,
+   "t": 26788,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 17
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 16.998,
+   "t": 26805,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 16
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 16.996,
+   "t": 26811,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 16
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 16.995,
+   "t": 26837,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 16.998,
+   "t": 26925,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 17.993,
+   "t": 26927,
+   "contact_3s": true,
+   "kmh": 1.5,
+   "leader_lap": 17
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 16.996,
+   "t": 26931,
+   "contact_3s": true,
+   "kmh": 0.7,
+   "leader_lap": 16
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 17.992,
+   "t": 26945,
+   "contact_3s": false,
+   "kmh": 6.1,
+   "leader_lap": 17
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 16.995,
+   "t": 26957,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 16
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 16.998,
+   "t": 27045,
+   "contact_3s": false,
+   "kmh": 0.5,
+   "leader_lap": 16
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 17.993,
+   "t": 27047,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 16.997,
+   "t": 27051,
+   "contact_3s": true,
+   "kmh": 0.7,
+   "leader_lap": 16
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 17.992,
+   "t": 27065,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 17
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 16.995,
+   "t": 27077,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 16
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 17.994,
+   "t": 27167,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 17
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 16.997,
+   "t": 27171,
+   "contact_3s": true,
+   "kmh": 0.6,
+   "leader_lap": 16
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 17.992,
+   "t": 27185,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 17
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 16.995,
+   "t": 27197,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 16
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 17.994,
+   "t": 27287,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 17
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 16.997,
+   "t": 27291,
+   "contact_3s": true,
+   "kmh": 1.0,
+   "leader_lap": 16
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 17.993,
+   "t": 27305,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 16.996,
+   "t": 27317,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 16
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 17.994,
+   "t": 27407,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 16.998,
+   "t": 27411,
+   "contact_3s": true,
+   "kmh": 0.8,
+   "leader_lap": 16
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 17.993,
+   "t": 27425,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 16.996,
+   "t": 27437,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 17.994,
+   "t": 27527,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 17
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 16.998,
+   "t": 27531,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 16
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 17.993,
+   "t": 27545,
+   "contact_3s": true,
+   "kmh": 3.9,
+   "leader_lap": 17
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 16.996,
+   "t": 27557,
+   "contact_3s": true,
+   "kmh": 0.0,
+   "leader_lap": 16
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 17.995,
+   "t": 27647,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 17
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 16.998,
+   "t": 27651,
+   "contact_3s": true,
+   "kmh": 0.7,
+   "leader_lap": 16
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 17.993,
+   "t": 27665,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 17
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 16.997,
+   "t": 27677,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 16
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 17.992,
+   "t": 27682,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 17.995,
+   "t": 27767,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 17
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 16.998,
+   "t": 27771,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 16
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 17.994,
+   "t": 27785,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 17
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 16.997,
+   "t": 27797,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 16
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 17.992,
+   "t": 27802,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 17
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 17.995,
+   "t": 27887,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 17
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 16.999,
+   "t": 27891,
+   "contact_3s": true,
+   "kmh": 2.0,
+   "leader_lap": 16
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 17.994,
+   "t": 27905,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 17
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 16.997,
+   "t": 27917,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 17.992,
+   "t": 27922,
+   "contact_3s": true,
+   "kmh": 1.7,
+   "leader_lap": 17
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 17.996,
+   "t": 28007,
+   "contact_3s": true,
+   "kmh": 0.0,
+   "leader_lap": 17
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 17.994,
+   "t": 28025,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 16.997,
+   "t": 28037,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 16
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 17.993,
+   "t": 28042,
+   "contact_3s": true,
+   "kmh": 1.8,
+   "leader_lap": 17
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 17.996,
+   "t": 28127,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 17
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 17.994,
+   "t": 28145,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 16.998,
+   "t": 28157,
+   "contact_3s": true,
+   "kmh": 1.0,
+   "leader_lap": 16
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 17.993,
+   "t": 28162,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 17
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 17.996,
+   "t": 28247,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 17.994,
+   "t": 28265,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 16.998,
+   "t": 28277,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 17.993,
+   "t": 28282,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 17.996,
+   "t": 28367,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 17
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 17.995,
+   "t": 28385,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 16.998,
+   "t": 28397,
+   "contact_3s": true,
+   "kmh": 0.7,
+   "leader_lap": 16
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 17.993,
+   "t": 28402,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 17.991,
+   "t": 28411,
+   "contact_3s": false,
+   "kmh": 0.0,
+   "leader_lap": 17
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 17.997,
+   "t": 28487,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 17.995,
+   "t": 28505,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 16.998,
+   "t": 28517,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 16
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 17.993,
+   "t": 28522,
+   "contact_3s": true,
+   "kmh": 1.1,
+   "leader_lap": 17
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 17.992,
+   "t": 28531,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 17.997,
+   "t": 28607,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 17
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 17.995,
+   "t": 28625,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 17
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 16.998,
+   "t": 28638,
+   "contact_3s": true,
+   "kmh": 0.9,
+   "leader_lap": 16
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 17.993,
+   "t": 28642,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 17.992,
+   "t": 28651,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 17.997,
+   "t": 28727,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 17
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 17.995,
+   "t": 28745,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 17
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 16.998,
+   "t": 28758,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 16
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 17.993,
+   "t": 28762,
+   "contact_3s": true,
+   "kmh": 0.7,
+   "leader_lap": 17
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 17.992,
+   "t": 28771,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 17
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 17.997,
+   "t": 28847,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 17
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 17.995,
+   "t": 28865,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 17
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 17.994,
+   "t": 28884,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 17
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 17.992,
+   "t": 28891,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 17.997,
+   "t": 28967,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 17
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 17.996,
+   "t": 28985,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 17
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 17.994,
+   "t": 29004,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 17.992,
+   "t": 29011,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 17
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 17.998,
+   "t": 29087,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 17
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 17.996,
+   "t": 29105,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 17.994,
+   "t": 29124,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 17.992,
+   "t": 29131,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 17
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 17.991,
+   "t": 29146,
+   "contact_3s": false,
+   "kmh": 0.7,
+   "leader_lap": 17
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 17.998,
+   "t": 29207,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 17.996,
+   "t": 29225,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 17
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 17.994,
+   "t": 29244,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 17
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 17.993,
+   "t": 29251,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 17.998,
+   "t": 29327,
+   "contact_3s": false,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 17.996,
+   "t": 29345,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 17
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 17.994,
+   "t": 29364,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 17.993,
+   "t": 29371,
+   "contact_3s": true,
+   "kmh": 2.7,
+   "leader_lap": 17
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 17.991,
+   "t": 29380,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 17.998,
+   "t": 29447,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 17.996,
+   "t": 29465,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 17
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 17.995,
+   "t": 29484,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 17.993,
+   "t": 29491,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 17.992,
+   "t": 29500,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 17
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 17.998,
+   "t": 29567,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 17.997,
+   "t": 29585,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 17
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 17.995,
+   "t": 29604,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 17.993,
+   "t": 29611,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 17
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 17.991,
+   "t": 29620,
+   "contact_3s": true,
+   "kmh": 1.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 17.998,
+   "t": 29687,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 17
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 17.997,
+   "t": 29705,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 17
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 17.995,
+   "t": 29724,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 17
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 17.993,
+   "t": 29732,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 17
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 17.992,
+   "t": 29740,
+   "contact_3s": true,
+   "kmh": 0.6,
+   "leader_lap": 17
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 17.998,
+   "t": 29807,
+   "contact_3s": true,
+   "kmh": 0.9,
+   "leader_lap": 17
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 17.997,
+   "t": 29825,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 17
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 17.995,
+   "t": 29844,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 17
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 17.994,
+   "t": 29852,
+   "contact_3s": true,
+   "kmh": 0.8,
+   "leader_lap": 17
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 17.992,
+   "t": 29898,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 17
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 17.997,
+   "t": 29945,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 17
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 17.995,
+   "t": 29964,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 17
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 17.994,
+   "t": 29972,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 17.992,
+   "t": 30018,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 17
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 17.997,
+   "t": 30066,
+   "contact_3s": false,
+   "kmh": 0.2,
+   "leader_lap": 17
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 17.995,
+   "t": 30084,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 17.994,
+   "t": 30092,
+   "contact_3s": true,
+   "kmh": 1.7,
+   "leader_lap": 17
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 17.991,
+   "t": 30110,
+   "contact_3s": true,
+   "kmh": 0.6,
+   "leader_lap": 17
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 17.992,
+   "t": 30138,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 17
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 17.998,
+   "t": 30186,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 17
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 17.996,
+   "t": 30204,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 17.994,
+   "t": 30212,
+   "contact_3s": true,
+   "kmh": 0.0,
+   "leader_lap": 17
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 17.991,
+   "t": 30230,
+   "contact_3s": false,
+   "kmh": 0.0,
+   "leader_lap": 17
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 17.993,
+   "t": 30258,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 17
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 17.998,
+   "t": 30306,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 17.996,
+   "t": 30324,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 17
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 17.994,
+   "t": 30332,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 17
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 17.993,
+   "t": 30378,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 17
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 17.992,
+   "t": 30389,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 17
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 17.998,
+   "t": 30426,
+   "contact_3s": false,
+   "kmh": 0.5,
+   "leader_lap": 17
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 17.997,
+   "t": 30444,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 17
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 17.995,
+   "t": 30452,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 17
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 17.993,
+   "t": 30498,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 17
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 17.992,
+   "t": 30509,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 17.997,
+   "t": 30564,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 17.995,
+   "t": 30572,
+   "contact_3s": true,
+   "kmh": 2.9,
+   "leader_lap": 17
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 17.994,
+   "t": 30618,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 17
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 17.992,
+   "t": 30629,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 17
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 17.997,
+   "t": 30684,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 17
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 17.995,
+   "t": 30694,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 17
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 17.994,
+   "t": 30738,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 17
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 17.992,
+   "t": 30749,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 17.997,
+   "t": 30804,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 17.995,
+   "t": 30814,
+   "contact_3s": true,
+   "kmh": 5.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 17.994,
+   "t": 30858,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 17
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 17.992,
+   "t": 30869,
+   "contact_3s": true,
+   "kmh": 5.6,
+   "leader_lap": 17
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 17.997,
+   "t": 30924,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 17
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 17.995,
+   "t": 30934,
+   "contact_3s": true,
+   "kmh": 0.0,
+   "leader_lap": 17
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 17.994,
+   "t": 30979,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 17
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 17.993,
+   "t": 30989,
+   "contact_3s": true,
+   "kmh": 0.6,
+   "leader_lap": 17
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 17.997,
+   "t": 31044,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 17
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 17.996,
+   "t": 31054,
+   "contact_3s": true,
+   "kmh": 1.0,
+   "leader_lap": 17
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 17.994,
+   "t": 31099,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 17
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 17.993,
+   "t": 31109,
+   "contact_3s": true,
+   "kmh": 2.2,
+   "leader_lap": 17
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 18.991,
+   "t": 31113,
+   "contact_3s": false,
+   "kmh": 1.0,
+   "leader_lap": 18
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 17.998,
+   "t": 31164,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 17
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 17.996,
+   "t": 31174,
+   "contact_3s": true,
+   "kmh": 0.7,
+   "leader_lap": 17
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 17.994,
+   "t": 31220,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 17
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 17.993,
+   "t": 31229,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 18.991,
+   "t": 31244,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 18
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 17.998,
+   "t": 31284,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 17
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 17.996,
+   "t": 31294,
+   "contact_3s": true,
+   "kmh": 0.0,
+   "leader_lap": 17
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 17.995,
+   "t": 31340,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 17
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 17.993,
+   "t": 31349,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 18.992,
+   "t": 31364,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 17.998,
+   "t": 31404,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 17.997,
+   "t": 31414,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 17
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 17.995,
+   "t": 31460,
+   "contact_3s": true,
+   "kmh": 0.0,
+   "leader_lap": 17
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 17.993,
+   "t": 31469,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 17
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 18.992,
+   "t": 31484,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 18
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 17.998,
+   "t": 31524,
+   "contact_3s": true,
+   "kmh": 0.7,
+   "leader_lap": 17
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 17.997,
+   "t": 31534,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 17
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 17.995,
+   "t": 31581,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 17
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 17.994,
+   "t": 31589,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 17
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 18.992,
+   "t": 31604,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 17.998,
+   "t": 31644,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 17.997,
+   "t": 31654,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 17
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 17.995,
+   "t": 31701,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 17
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 17.994,
+   "t": 31709,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 17
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 18.992,
+   "t": 31724,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 18
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 17.997,
+   "t": 31774,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 17
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 18.99,
+   "t": 31788,
+   "contact_3s": false,
+   "kmh": 0.9,
+   "leader_lap": 18
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 17.995,
+   "t": 31821,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 17
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 17.994,
+   "t": 31829,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 17
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 18.993,
+   "t": 31844,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 18
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 17.997,
+   "t": 31894,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 17.996,
+   "t": 31941,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 17
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 17.994,
+   "t": 31949,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 18.991,
+   "t": 31961,
+   "contact_3s": true,
+   "kmh": 0.7,
+   "leader_lap": 18
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 18.993,
+   "t": 31964,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 17.998,
+   "t": 32014,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 17
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 17.996,
+   "t": 32061,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 17
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 17.994,
+   "t": 32069,
+   "contact_3s": true,
+   "kmh": 1.4,
+   "leader_lap": 17
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 18.991,
+   "t": 32081,
+   "contact_3s": false,
+   "kmh": 1.7,
+   "leader_lap": 18
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 18.993,
+   "t": 32084,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 17.998,
+   "t": 32134,
+   "contact_3s": false,
+   "kmh": 0.5,
+   "leader_lap": 17
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 17.996,
+   "t": 32181,
+   "contact_3s": true,
+   "kmh": 0.7,
+   "leader_lap": 17
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 17.995,
+   "t": 32189,
+   "contact_3s": true,
+   "kmh": 4.9,
+   "leader_lap": 17
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 18.992,
+   "t": 32201,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 18.993,
+   "t": 32205,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 18
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 17.998,
+   "t": 32254,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 17
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 17.997,
+   "t": 32301,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 17
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 17.995,
+   "t": 32310,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 18.992,
+   "t": 32322,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 18
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 18.994,
+   "t": 32325,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 18
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 17.997,
+   "t": 32421,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 17.995,
+   "t": 32431,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 18.994,
+   "t": 32445,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 18
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 18.992,
+   "t": 32483,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 18
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 17.997,
+   "t": 32541,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 17.996,
+   "t": 32551,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 17
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 18.994,
+   "t": 32565,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 18.993,
+   "t": 32603,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 18
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 17.998,
+   "t": 32661,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 17
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 17.996,
+   "t": 32671,
+   "contact_3s": true,
+   "kmh": 0.0,
+   "leader_lap": 17
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 18.994,
+   "t": 32685,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 18.993,
+   "t": 32723,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 17.998,
+   "t": 32781,
+   "contact_3s": false,
+   "kmh": 0.7,
+   "leader_lap": 17
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 17.996,
+   "t": 32791,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 18.995,
+   "t": 32805,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 18.993,
+   "t": 32843,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 17.998,
+   "t": 32901,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 17.997,
+   "t": 32911,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 18.995,
+   "t": 32925,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 18
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 18.992,
+   "t": 32950,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 18.993,
+   "t": 32963,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 17.998,
+   "t": 33021,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 17
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 17.997,
+   "t": 33031,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 17
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 18.995,
+   "t": 33045,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 18
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 18.992,
+   "t": 33070,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 18.993,
+   "t": 33083,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 17.998,
+   "t": 33141,
+   "contact_3s": false,
+   "kmh": 1.0,
+   "leader_lap": 17
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 17.997,
+   "t": 33151,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 17
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 18.995,
+   "t": 33165,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 18
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 18.992,
+   "t": 33190,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 18.994,
+   "t": 33203,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 17.997,
+   "t": 33271,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 17
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 18.995,
+   "t": 33286,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 18
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 18.992,
+   "t": 33310,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 18
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 18.994,
+   "t": 33323,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 17.997,
+   "t": 33391,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 17
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 18.996,
+   "t": 33406,
+   "contact_3s": true,
+   "kmh": 0.0,
+   "leader_lap": 18
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 18.993,
+   "t": 33430,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 18.994,
+   "t": 33443,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 18
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 17.998,
+   "t": 33511,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 17
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 18.996,
+   "t": 33526,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 18
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 18.994,
+   "t": 33563,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 18.993,
+   "t": 33575,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 18
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 17.998,
+   "t": 33631,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 17
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 18.991,
+   "t": 33633,
+   "contact_3s": true,
+   "kmh": 1.6,
+   "leader_lap": 18
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 18.997,
+   "t": 33646,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 18
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 18.995,
+   "t": 33683,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 18.993,
+   "t": 33695,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 18
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 17.998,
+   "t": 33751,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 17
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 18.992,
+   "t": 33753,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 18
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 18.997,
+   "t": 33766,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 18
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 18.995,
+   "t": 33803,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 18
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 18.993,
+   "t": 33816,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 18
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 17.998,
+   "t": 33871,
+   "contact_3s": true,
+   "kmh": 0.6,
+   "leader_lap": 17
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 18.992,
+   "t": 33873,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 18
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 18.997,
+   "t": 33886,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 18
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 18.995,
+   "t": 33923,
+   "contact_3s": true,
+   "kmh": 0.0,
+   "leader_lap": 18
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 18.993,
+   "t": 33936,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 18
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 17.998,
+   "t": 33991,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 17
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 18.992,
+   "t": 33993,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 18
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 18.997,
+   "t": 34007,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 18
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 18.995,
+   "t": 34043,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 18.994,
+   "t": 34056,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 18
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 18.992,
+   "t": 34113,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 18
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 18.997,
+   "t": 34127,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 18.996,
+   "t": 34164,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 18
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 18.994,
+   "t": 34176,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 18.993,
+   "t": 34233,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 18.998,
+   "t": 34247,
+   "contact_3s": true,
+   "kmh": 0.8,
+   "leader_lap": 18
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 18.996,
+   "t": 34284,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 18
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 18.994,
+   "t": 34296,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 18.993,
+   "t": 34353,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 18
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 18.998,
+   "t": 34367,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 18
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 18.996,
+   "t": 34404,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 18
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 18.994,
+   "t": 34416,
+   "contact_3s": true,
+   "kmh": 2.9,
+   "leader_lap": 18
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 18.991,
+   "t": 34452,
+   "contact_3s": false,
+   "kmh": 0.7,
+   "leader_lap": 18
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 18.993,
+   "t": 34473,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 18.998,
+   "t": 34487,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 18
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 18.997,
+   "t": 34524,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 18
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 18.995,
+   "t": 34538,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 18.991,
+   "t": 34572,
+   "contact_3s": false,
+   "kmh": 0.9,
+   "leader_lap": 18
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 18.993,
+   "t": 34593,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 18.998,
+   "t": 34607,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 18
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 18.997,
+   "t": 34644,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 18
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 18.995,
+   "t": 34658,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 18.993,
+   "t": 34713,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 18
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 18.998,
+   "t": 34728,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 18
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 18.992,
+   "t": 34746,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 18
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 18.997,
+   "t": 34764,
+   "contact_3s": true,
+   "kmh": 0.9,
+   "leader_lap": 18
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 18.995,
+   "t": 34778,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 18
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 18.993,
+   "t": 34833,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 18.998,
+   "t": 34848,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 18
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 18.992,
+   "t": 34866,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 18
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 18.997,
+   "t": 34884,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 18
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 18.995,
+   "t": 34898,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 18
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 18.994,
+   "t": 34953,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 18
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 18.992,
+   "t": 34986,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 18
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 18.997,
+   "t": 35004,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 18
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 18.995,
+   "t": 35018,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 18
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 18.994,
+   "t": 35073,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 18
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 18.992,
+   "t": 35106,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 18
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 18.997,
+   "t": 35124,
+   "contact_3s": false,
+   "kmh": 0.1,
+   "leader_lap": 18
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 18.995,
+   "t": 35138,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 18.994,
+   "t": 35193,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 18.993,
+   "t": 35226,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 18
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 18.998,
+   "t": 35244,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 18
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 18.996,
+   "t": 35258,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 18.994,
+   "t": 35313,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 18.991,
+   "t": 35331,
+   "contact_3s": false,
+   "kmh": 3.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 18.993,
+   "t": 35346,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 18
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 18.998,
+   "t": 35364,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 18.996,
+   "t": 35378,
+   "contact_3s": true,
+   "kmh": 0.0,
+   "leader_lap": 18
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 18.995,
+   "t": 35433,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 18.991,
+   "t": 35463,
+   "contact_3s": false,
+   "kmh": 0.5,
+   "leader_lap": 18
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 18.993,
+   "t": 35466,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 18
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 18.998,
+   "t": 35484,
+   "contact_3s": false,
+   "kmh": 0.5,
+   "leader_lap": 18
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 18.997,
+   "t": 35498,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 18
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 18.995,
+   "t": 35553,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 18
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 18.992,
+   "t": 35583,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 18.993,
+   "t": 35586,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 18
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 18.997,
+   "t": 35618,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 18
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 18.995,
+   "t": 35673,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 18
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 18.992,
+   "t": 35703,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 18
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 18.994,
+   "t": 35706,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 18
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 18.997,
+   "t": 35738,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 18
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 18.995,
+   "t": 35793,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 18
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 18.993,
+   "t": 35823,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 18.994,
+   "t": 35826,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 18
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 18.998,
+   "t": 35858,
+   "contact_3s": true,
+   "kmh": 0.9,
+   "leader_lap": 18
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 18.996,
+   "t": 35914,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 18.993,
+   "t": 35943,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 18.994,
+   "t": 35946,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 18
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 18.998,
+   "t": 35978,
+   "contact_3s": false,
+   "kmh": 0.4,
+   "leader_lap": 18
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 18.996,
+   "t": 36034,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 18.993,
+   "t": 36063,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 18.995,
+   "t": 36066,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 18
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 18.998,
+   "t": 36098,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 18
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 18.997,
+   "t": 36154,
+   "contact_3s": true,
+   "kmh": 0.0,
+   "leader_lap": 18
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 18.993,
+   "t": 36183,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 18.995,
+   "t": 36186,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 18
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 19.992,
+   "t": 36206,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 18.998,
+   "t": 36218,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 18
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 18.997,
+   "t": 36274,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 18
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 18.994,
+   "t": 36303,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 18
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 18.995,
+   "t": 36306,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 18
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 19.992,
+   "t": 36326,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 18.998,
+   "t": 36338,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 18.997,
+   "t": 36394,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 18
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 18.994,
+   "t": 36424,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 18.995,
+   "t": 36426,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 18
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 19.992,
+   "t": 36446,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 19
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 18.997,
+   "t": 36514,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 18
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 18.994,
+   "t": 36544,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 18.995,
+   "t": 36546,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 18
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 19.992,
+   "t": 36566,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 18.997,
+   "t": 36634,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 18
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 18.994,
+   "t": 36664,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 18
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 18.996,
+   "t": 36666,
+   "contact_3s": true,
+   "kmh": 2.6,
+   "leader_lap": 18
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 19.993,
+   "t": 36686,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 18.998,
+   "t": 36754,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 18.994,
+   "t": 36784,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 18.996,
+   "t": 36786,
+   "contact_3s": true,
+   "kmh": 3.4,
+   "leader_lap": 18
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 19.993,
+   "t": 36806,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 19.991,
+   "t": 36850,
+   "contact_3s": false,
+   "kmh": 0.0,
+   "leader_lap": 19
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 18.998,
+   "t": 36874,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 18
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 18.995,
+   "t": 36904,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 18.996,
+   "t": 36906,
+   "contact_3s": true,
+   "kmh": 0.8,
+   "leader_lap": 18
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 19.993,
+   "t": 36926,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 19.991,
+   "t": 36970,
+   "contact_3s": false,
+   "kmh": 0.0,
+   "leader_lap": 19
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 18.998,
+   "t": 36994,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 18
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 18.995,
+   "t": 37025,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 18
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 18.996,
+   "t": 37026,
+   "contact_3s": true,
+   "kmh": 0.8,
+   "leader_lap": 18
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 19.993,
+   "t": 37046,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 19
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 19.991,
+   "t": 37090,
+   "contact_3s": false,
+   "kmh": 0.0,
+   "leader_lap": 19
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 18.998,
+   "t": 37114,
+   "contact_3s": true,
+   "kmh": 0.8,
+   "leader_lap": 18
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 18.995,
+   "t": 37145,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 18.997,
+   "t": 37146,
+   "contact_3s": true,
+   "kmh": 0.8,
+   "leader_lap": 18
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 19.993,
+   "t": 37166,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 19.992,
+   "t": 37210,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 18.998,
+   "t": 37234,
+   "contact_3s": true,
+   "kmh": 0.7,
+   "leader_lap": 18
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 18.995,
+   "t": 37265,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 18
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 18.997,
+   "t": 37266,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 18
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 19.993,
+   "t": 37286,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 19.992,
+   "t": 37330,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 18.998,
+   "t": 37354,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 18
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 18.995,
+   "t": 37385,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 18
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 18.997,
+   "t": 37386,
+   "contact_3s": true,
+   "kmh": 0.9,
+   "leader_lap": 18
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 19.994,
+   "t": 37406,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 19
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 19.992,
+   "t": 37450,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 18.998,
+   "t": 37474,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 18.995,
+   "t": 37505,
+   "contact_3s": true,
+   "kmh": 0.0,
+   "leader_lap": 18
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 18.997,
+   "t": 37506,
+   "contact_3s": true,
+   "kmh": 0.8,
+   "leader_lap": 18
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 19.994,
+   "t": 37526,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 19.992,
+   "t": 37570,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 18.995,
+   "t": 37625,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 18
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 18.997,
+   "t": 37626,
+   "contact_3s": true,
+   "kmh": 0.8,
+   "leader_lap": 18
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 19.994,
+   "t": 37646,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 19
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 19.991,
+   "t": 37695,
+   "contact_3s": false,
+   "kmh": 0.0,
+   "leader_lap": 19
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 19.992,
+   "t": 37696,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 19
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 18.996,
+   "t": 37745,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 18
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 18.997,
+   "t": 37746,
+   "contact_3s": true,
+   "kmh": 0.6,
+   "leader_lap": 18
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 19.994,
+   "t": 37767,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 19.991,
+   "t": 37815,
+   "contact_3s": false,
+   "kmh": 0.0,
+   "leader_lap": 19
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 19.993,
+   "t": 37816,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 19
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 18.996,
+   "t": 37865,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 18
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 18.998,
+   "t": 37866,
+   "contact_3s": true,
+   "kmh": 1.5,
+   "leader_lap": 18
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 19.994,
+   "t": 37887,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 19
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 19.991,
+   "t": 37935,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 19
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 19.993,
+   "t": 37936,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 18.996,
+   "t": 37985,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 18
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 18.998,
+   "t": 37986,
+   "contact_3s": false,
+   "kmh": 0.9,
+   "leader_lap": 18
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 19.995,
+   "t": 38007,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 19
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 19.992,
+   "t": 38055,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 19.993,
+   "t": 38056,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 19
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 18.997,
+   "t": 38105,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 18
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 18.998,
+   "t": 38106,
+   "contact_3s": false,
+   "kmh": 0.8,
+   "leader_lap": 18
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 19.995,
+   "t": 38127,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 19.992,
+   "t": 38175,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 19.993,
+   "t": 38176,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 18.997,
+   "t": 38225,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 18
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 18.998,
+   "t": 38226,
+   "contact_3s": true,
+   "kmh": 0.0,
+   "leader_lap": 18
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 19.995,
+   "t": 38247,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 19
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 19.994,
+   "t": 38320,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 19
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 19.992,
+   "t": 38321,
+   "contact_3s": true,
+   "kmh": 2.7,
+   "leader_lap": 19
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 18.997,
+   "t": 38345,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 19.995,
+   "t": 38368,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 19
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 19.994,
+   "t": 38440,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 19
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 19.992,
+   "t": 38441,
+   "contact_3s": true,
+   "kmh": 1.4,
+   "leader_lap": 19
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 18.997,
+   "t": 38465,
+   "contact_3s": false,
+   "kmh": 0.5,
+   "leader_lap": 18
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 19.996,
+   "t": 38488,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 19
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 19.994,
+   "t": 38560,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 19.993,
+   "t": 38561,
+   "contact_3s": true,
+   "kmh": 5.4,
+   "leader_lap": 19
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 18.998,
+   "t": 38585,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 19.996,
+   "t": 38608,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 19
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 19.994,
+   "t": 38680,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 19.993,
+   "t": 38681,
+   "contact_3s": true,
+   "kmh": 3.7,
+   "leader_lap": 19
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 18.998,
+   "t": 38705,
+   "contact_3s": true,
+   "kmh": 0.9,
+   "leader_lap": 18
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 19.996,
+   "t": 38728,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 19.995,
+   "t": 38800,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 19.993,
+   "t": 38801,
+   "contact_3s": true,
+   "kmh": 1.2,
+   "leader_lap": 19
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 18.998,
+   "t": 38825,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 18
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 19.996,
+   "t": 38848,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 19.991,
+   "t": 38857,
+   "contact_3s": false,
+   "kmh": 0.9,
+   "leader_lap": 19
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 19.995,
+   "t": 38920,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 19.993,
+   "t": 38921,
+   "contact_3s": true,
+   "kmh": 0.7,
+   "leader_lap": 19
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 18.998,
+   "t": 38945,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 19.997,
+   "t": 38968,
+   "contact_3s": true,
+   "kmh": 0.0,
+   "leader_lap": 19
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 19.991,
+   "t": 38977,
+   "contact_3s": false,
+   "kmh": 0.9,
+   "leader_lap": 19
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 19.995,
+   "t": 39040,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 19.993,
+   "t": 39041,
+   "contact_3s": true,
+   "kmh": 3.8,
+   "leader_lap": 19
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 18.998,
+   "t": 39065,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 18
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 19.997,
+   "t": 39088,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 19.992,
+   "t": 39097,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 19.995,
+   "t": 39161,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 19
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 19.993,
+   "t": 39161,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 18.998,
+   "t": 39185,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 18
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 19.997,
+   "t": 39208,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 19
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 19.992,
+   "t": 39217,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 19.995,
+   "t": 39281,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 19.994,
+   "t": 39281,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 18.998,
+   "t": 39305,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 18
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 19.997,
+   "t": 39328,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 19
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 19.992,
+   "t": 39337,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 19
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 19.995,
+   "t": 39402,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 19
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 19.994,
+   "t": 39402,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 19.997,
+   "t": 39448,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 19.992,
+   "t": 39457,
+   "contact_3s": true,
+   "kmh": 3.5,
+   "leader_lap": 19
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 19.996,
+   "t": 39522,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 19
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 19.994,
+   "t": 39522,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 19
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 19.991,
+   "t": 39561,
+   "contact_3s": false,
+   "kmh": 0.9,
+   "leader_lap": 19
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 19.998,
+   "t": 39568,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 19
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 19.993,
+   "t": 39577,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 19.996,
+   "t": 39642,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 19
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 19.994,
+   "t": 39642,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 19.998,
+   "t": 39688,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 19
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 19.993,
+   "t": 39697,
+   "contact_3s": true,
+   "kmh": 2.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 19.991,
+   "t": 39706,
+   "contact_3s": true,
+   "kmh": 6.2,
+   "leader_lap": 19
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 19.996,
+   "t": 39762,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 19
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 19.995,
+   "t": 39762,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 19.998,
+   "t": 39809,
+   "contact_3s": false,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 19.993,
+   "t": 39817,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 19.992,
+   "t": 39826,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 19
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 19.997,
+   "t": 39883,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 19
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 19.995,
+   "t": 39883,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 19.998,
+   "t": 39929,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 19.993,
+   "t": 39937,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 19
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 19.992,
+   "t": 39946,
+   "contact_3s": true,
+   "kmh": 3.5,
+   "leader_lap": 19
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 19.997,
+   "t": 40003,
+   "contact_3s": true,
+   "kmh": 0.9,
+   "leader_lap": 19
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 19.995,
+   "t": 40003,
+   "contact_3s": true,
+   "kmh": 0.8,
+   "leader_lap": 19
+  },
+  {
+   "car": 0,
+   "reason": "stalled",
+   "frac": 19.998,
+   "t": 40049,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 19
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 19.993,
+   "t": 40057,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 19
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 19.992,
+   "t": 40066,
+   "contact_3s": true,
+   "kmh": 6.1,
+   "leader_lap": 19
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 19.997,
+   "t": 40123,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 19
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 19.995,
+   "t": 40123,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 19
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 19.994,
+   "t": 40177,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 19
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 19.992,
+   "t": 40186,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 19
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 19.997,
+   "t": 40243,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 19.995,
+   "t": 40244,
+   "contact_3s": true,
+   "kmh": 0.8,
+   "leader_lap": 19
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 19.994,
+   "t": 40297,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 19
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 19.993,
+   "t": 40322,
+   "contact_3s": true,
+   "kmh": 0.5,
+   "leader_lap": 19
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 19.998,
+   "t": 40363,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 19
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 19.996,
+   "t": 40364,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 19
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 19.994,
+   "t": 40417,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 19.993,
+   "t": 40459,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 19.998,
+   "t": 40483,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 19
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 19.996,
+   "t": 40484,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 19
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 19.994,
+   "t": 40537,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 19.993,
+   "t": 40579,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 19
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 19.991,
+   "t": 40582,
+   "contact_3s": false,
+   "kmh": 0.0,
+   "leader_lap": 19
+  },
+  {
+   "car": 1,
+   "reason": "stalled",
+   "frac": 19.998,
+   "t": 40603,
+   "contact_3s": false,
+   "kmh": 0.5,
+   "leader_lap": 19
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 19.996,
+   "t": 40604,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 19.995,
+   "t": 40657,
+   "contact_3s": true,
+   "kmh": 0.0,
+   "leader_lap": 19
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 19.993,
+   "t": 40699,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 19.997,
+   "t": 40724,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 19
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 19.992,
+   "t": 40751,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 19.995,
+   "t": 40777,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 19
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 19.994,
+   "t": 40819,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 19
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 19.997,
+   "t": 40844,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 19
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 19.993,
+   "t": 40891,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 19.996,
+   "t": 40897,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 19.994,
+   "t": 40939,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 19
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 19.998,
+   "t": 40964,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 19.993,
+   "t": 41012,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 19.996,
+   "t": 41017,
+   "contact_3s": true,
+   "kmh": 0.0,
+   "leader_lap": 19
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 19.994,
+   "t": 41060,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 19
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 19.998,
+   "t": 41084,
+   "contact_3s": false,
+   "kmh": 0.9,
+   "leader_lap": 19
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 19.993,
+   "t": 41132,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 19.996,
+   "t": 41137,
+   "contact_3s": true,
+   "kmh": 0.9,
+   "leader_lap": 19
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 19.995,
+   "t": 41180,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 19
+  },
+  {
+   "car": 3,
+   "reason": "stalled",
+   "frac": 19.998,
+   "t": 41204,
+   "contact_3s": false,
+   "kmh": 0.4,
+   "leader_lap": 19
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 19.993,
+   "t": 41252,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 19.997,
+   "t": 41257,
+   "contact_3s": true,
+   "kmh": 0.8,
+   "leader_lap": 19
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 19.995,
+   "t": 41300,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 19
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 19.997,
+   "t": 41377,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 19.994,
+   "t": 41391,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 19
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 19.995,
+   "t": 41420,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 19
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 19.997,
+   "t": 41497,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 19.994,
+   "t": 41511,
+   "contact_3s": true,
+   "kmh": 4.2,
+   "leader_lap": 19
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 19.995,
+   "t": 41540,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 19
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 19.997,
+   "t": 41617,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 19.994,
+   "t": 41631,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 19
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 19.996,
+   "t": 41660,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 19
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 19.997,
+   "t": 41737,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 19.994,
+   "t": 41751,
+   "contact_3s": true,
+   "kmh": 5.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 19.996,
+   "t": 41780,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 19
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 19.998,
+   "t": 41857,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 19.994,
+   "t": 41871,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 19.996,
+   "t": 41900,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 19
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 19.998,
+   "t": 41977,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 19
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 19.994,
+   "t": 41991,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 19.996,
+   "t": 42020,
+   "contact_3s": true,
+   "kmh": 0.0,
+   "leader_lap": 19
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 19.998,
+   "t": 42097,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 19
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 19.995,
+   "t": 42111,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 19.997,
+   "t": 42140,
+   "contact_3s": true,
+   "kmh": 0.0,
+   "leader_lap": 19
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 19.998,
+   "t": 42217,
+   "contact_3s": true,
+   "kmh": 0.1,
+   "leader_lap": 19
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 19.995,
+   "t": 42231,
+   "contact_3s": true,
+   "kmh": 0.4,
+   "leader_lap": 19
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 19.997,
+   "t": 42260,
+   "contact_3s": true,
+   "kmh": 0.8,
+   "leader_lap": 19
+  },
+  {
+   "car": 5,
+   "reason": "stalled",
+   "frac": 19.998,
+   "t": 42337,
+   "contact_3s": false,
+   "kmh": 0.6,
+   "leader_lap": 19
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 19.995,
+   "t": 42351,
+   "contact_3s": true,
+   "kmh": 0.6,
+   "leader_lap": 19
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 19.997,
+   "t": 42380,
+   "contact_3s": true,
+   "kmh": 0.8,
+   "leader_lap": 19
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 19.995,
+   "t": 42471,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 19.997,
+   "t": 42500,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 19
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 19.995,
+   "t": 42591,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 19.997,
+   "t": 42620,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 19
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 19.995,
+   "t": 42711,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 19.997,
+   "t": 42740,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 19
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 19.996,
+   "t": 42831,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 19.997,
+   "t": 42860,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 19
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 19.996,
+   "t": 42951,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 19.998,
+   "t": 42980,
+   "contact_3s": true,
+   "kmh": 0.2,
+   "leader_lap": 19
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 19.996,
+   "t": 43071,
+   "contact_3s": true,
+   "kmh": 0.3,
+   "leader_lap": 19
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 19.998,
+   "t": 43100,
+   "contact_3s": true,
+   "kmh": 0.9,
+   "leader_lap": 19
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 19.996,
+   "t": 43191,
+   "contact_3s": false,
+   "kmh": 0.0,
+   "leader_lap": 19
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 19.998,
+   "t": 43220,
+   "contact_3s": false,
+   "kmh": 0.9,
+   "leader_lap": 19
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 19.996,
+   "t": 43311,
+   "contact_3s": false,
+   "kmh": 0.0,
+   "leader_lap": 19
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 19.998,
+   "t": 43340,
+   "contact_3s": false,
+   "kmh": 0.9,
+   "leader_lap": 19
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 19.996,
+   "t": 43431,
+   "contact_3s": false,
+   "kmh": 0.0,
+   "leader_lap": 19
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 19.998,
+   "t": 43460,
+   "contact_3s": false,
+   "kmh": 0.9,
+   "leader_lap": 19
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 19.996,
+   "t": 43551,
+   "contact_3s": false,
+   "kmh": 0.0,
+   "leader_lap": 19
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 19.998,
+   "t": 43580,
+   "contact_3s": false,
+   "kmh": 0.9,
+   "leader_lap": 19
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 19.996,
+   "t": 43671,
+   "contact_3s": false,
+   "kmh": 0.0,
+   "leader_lap": 19
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 19.998,
+   "t": 43700,
+   "contact_3s": false,
+   "kmh": 0.9,
+   "leader_lap": 19
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 19.996,
+   "t": 43791,
+   "contact_3s": false,
+   "kmh": 0.0,
+   "leader_lap": 19
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 19.998,
+   "t": 43820,
+   "contact_3s": false,
+   "kmh": 0.9,
+   "leader_lap": 19
+  },
+  {
+   "car": 4,
+   "reason": "stalled",
+   "frac": 19.996,
+   "t": 43911,
+   "contact_3s": false,
+   "kmh": 0.0,
+   "leader_lap": 19
+  },
+  {
+   "car": 2,
+   "reason": "stalled",
+   "frac": 19.998,
+   "t": 43940,
+   "contact_3s": false,
+   "kmh": 0.9,
+   "leader_lap": 19
+  }
+ ],
+ "contacts": 7859,
+ "contact_types": {
+  "rear": 7287,
+  "side": 22
+ },
+ "contact_episodes": 426,
+ "start_passes": 0,
+ "held": [],
+ "env_overtakes": 0,
+ "mean_lap": 499.50000000000006,
+ "best_lap": 484.40000000000003,
+ "pedal_sw": 3.364806684368661,
+ "steer_rev": 43.33530761587761,
+ "beta": 3.4593258739028276,
+ "which": "mpc",
+ "laps": 20,
+ "seed": 0,
+ "grid_pos": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5
+ ],
+ "final_pos": [
+  0,
+  1,
+  4,
+  2,
+  5,
+  3
+ ],
+ "all_laps": [
+  114.60000000000001,
+  109.30000000000001,
+  109.0,
+  109.5,
+  109.10000000000001,
+  109.0,
+  108.0,
+  108.5,
+  108.80000000000001,
+  109.80000000000001,
+  109.0,
+  108.7,
+  109.0,
+  109.80000000000001,
+  108.80000000000001,
+  363.3,
+  489.3,
+  491.70000000000005,
+  509.5,
+  515.1,
+  118.9,
+  110.10000000000001,
+  108.80000000000001,
+  109.5,
+  109.60000000000001,
+  109.4,
+  109.30000000000001,
+  109.0,
+  109.4,
+  109.5,
+  108.80000000000001,
+  109.9,
+  109.30000000000001,
+  108.9,
+  108.60000000000001,
+  420.0,
+  499.6,
+  483.6,
+  505.8,
+  510.6,
+  128.20000000000002,
+  110.2,
+  108.5,
+  110.80000000000001,
+  111.0,
+  110.4,
+  109.9,
+  108.60000000000001,
+  109.7,
+  109.30000000000001,
+  109.30000000000001,
+  110.4,
+  109.7,
+  108.60000000000001,
+  267.90000000000003,
+  478.20000000000005,
+  489.8,
+  531.5,
+  506.8,
+  122.60000000000001,
+  109.80000000000001,
+  109.4,
+  110.10000000000001,
+  110.0,
+  110.60000000000001,
+  109.4,
+  109.5,
+  110.0,
+  109.60000000000001,
+  109.4,
+  109.4,
+  110.5,
+  110.30000000000001,
+  110.7,
+  493.1,
+  485.3,
+  527.8000000000001,
+  474.20000000000005,
+  487.90000000000003,
+  131.5,
+  110.60000000000001,
+  109.2,
+  108.4,
+  111.30000000000001,
+  111.0,
+  111.10000000000001,
+  109.5,
+  108.7,
+  109.30000000000001,
+  108.9,
+  109.5,
+  109.7,
+  109.30000000000001,
+  355.0,
+  487.8,
+  482.70000000000005,
+  522.8000000000001,
+  525.6,
+  125.5,
+  109.30000000000001,
+  109.5,
+  111.30000000000001,
+  111.2,
+  109.30000000000001,
+  109.9,
+  109.2,
+  109.7,
+  109.0,
+  109.7,
+  109.5,
+  109.60000000000001,
+  109.80000000000001,
+  163.10000000000002,
+  512.2,
+  486.3,
+  522.9,
+  521.8000000000001,
+  484.40000000000003
+ ],
+ "gap_median_s": [
+  2.9732660055160522,
+  3.481715202331543,
+  3.584076166152954,
+  3.5517959594726562,
+  3.9556074142456055,
+  4.087231636047363,
+  4.322482585906982,
+  4.678001403808594,
+  5.33221960067749,
+  3.9658656120300293,
+  4.038876056671143,
+  4.167423248291016,
+  4.269997596740723,
+  3.4979751110076904,
+  3.6528682708740234,
+  1.001708984375,
+  1.001708984375,
+  1.001708984375,
+  1.001708984375,
+  1.001708984375
+ ],
+ "mistakes": 0
+}

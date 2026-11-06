@@ -1,2 +1,4 @@
 results/console/
 __pycache__/
+results/t14_*.json
+results/round*/t14_*.json

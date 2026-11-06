@@ -23,15 +23,26 @@ from training.train_multicar import warm_start_from_single, policy_act
 
 MODELS = {
     "ref_111s": "models/ref_111s/best_agent.pt",
-    "pilot": "models/multicar_clean_pilot/best_agent.pt",
+    "pilot_100k": "models/multicar_clean_pilot/agent_100k.pt",
+    "pilot_200k": "models/multicar_clean_pilot/agent_200k.pt",
+    "pilot_300k": "models/multicar_clean_pilot/agent_300k.pt",
 }
 HOLD_STEPS = 30       # Xe vượt phải giữ được vị trí 3s mới tính là vượt thật
 START_PHASE_STEPS = 150  # 15s đầu là tranh vị trí sau xuất phát, tính riêng
 
 
-def make_env(num_cars=6, lane=3, grid="staggered", respawn=False, lat_norm=None):
+def make_env(num_cars=6, lane=3, grid="staggered", respawn=False, lat_norm=None, max_laps=1, max_steps=3000):
     torch.set_num_threads(1)
-    env = MultiCarRacingEnv(num_cars=num_cars, lane_num=lane, grid=grid, respawn=respawn, start_seed=42)
+    if os.environ.get("MC_BRAKE") or os.environ.get("MC_MU_F") or os.environ.get("MC_ENGINE"):
+        # Thử vật lý khác từ biến môi trường mà không sửa code xe
+        import game_env.multicar_env as menv
+        from game_env.vehicle import GT3RaceCar
+        base = GT3RaceCar().cfg
+        cfg = dataclasses.replace(base, max_brake_force=float(os.environ.get("MC_BRAKE", base.max_brake_force)),
+                                  front_wheel_friction=float(os.environ.get("MC_MU_F", base.front_wheel_friction)),
+                                  max_engine_force=float(os.environ.get("MC_ENGINE", base.max_engine_force)))
+        menv.GT3RaceCar = lambda: GT3RaceCar(dataclasses.replace(cfg))
+    env = MultiCarRacingEnv(num_cars=num_cars, lane_num=lane, grid=grid, respawn=respawn, start_seed=42, max_laps=max_laps, max_steps=max_steps)
     if lat_norm is not None:
         env.preset = dataclasses.replace(env.preset, lat_norm=float(lat_norm))
     return env
@@ -78,7 +89,7 @@ class Mistake:
             raise ValueError(self.kind)
 
 
-def run_race(env, agent, seed=0, deterministic=True, mistakes=(), stop_after_mistake=None, on_step=None):
+def run_race(env, agent, seed=0, deterministic=True, mistakes=(), stop_after_mistake=None, on_step=None, act_fn=None):
     """Chạy 1 cuộc đua, trả về số đo. Nhiễu lái nhỏ 10 bước đầu theo seed để các cuộc đua khác nhau."""
     rng = np.random.default_rng(1000 + seed)
     torch.manual_seed(seed)
@@ -89,6 +100,7 @@ def run_race(env, agent, seed=0, deterministic=True, mistakes=(), stop_after_mis
     start_passes = 0
     last_contact = [-999] * n
     contact_types = {"rear": 0, "side": 0}
+    contact_episodes = 0  # Gộp các cú chạm cách nhau dưới 1s của cùng một xe thành một lần
     prev_in_contact = [False] * n
     follow_dy, follow_closing = [], []
     step = 0
@@ -96,7 +108,10 @@ def run_race(env, agent, seed=0, deterministic=True, mistakes=(), stop_after_mis
     while True:
         active = env.active_mask()
         if active.any():
-            act, _, _, _ = policy_act(agent, obs[active], deterministic)
+            if act_fn is not None:
+                act = act_fn(env, obs, active, step)
+            else:
+                act, _, _, _ = policy_act(agent, obs[active], deterministic)
             if step < 10:
                 act[:, 0] += rng.normal(0.0, 0.02, size=act.shape[0])
             actions[active] = act
@@ -113,6 +128,8 @@ def run_race(env, agent, seed=0, deterministic=True, mistakes=(), stop_after_mis
         for i, st in enumerate(env.racers):
             if st.in_contact:
                 if not prev_in_contact[i]:
+                    if step - last_contact[i] > 10:
+                        contact_episodes += 1
                     # Xếp loại cú chạm theo xe gần nhất: lệch dọc lớn là đâm đuôi, nhỏ là cọ sườn
                     h = st.car.heading_theta
                     fwd = np.array([np.cos(h), np.sin(h)])
@@ -155,6 +172,8 @@ def run_race(env, agent, seed=0, deterministic=True, mistakes=(), stop_after_mis
             sa, sb = env.racers[a], env.racers[b]
             if not (sa.active or sa.finished) or not (sb.active or sb.finished):
                 continue
+            if t0 - sb.respawn_step <= 300:  # Không tính pha vượt qua xe vừa hồi sinh trong 30s
+                continue
             if env.race_distance(sa) > env.race_distance(sb):
                 if t0 <= START_PHASE_STEPS:
                     start_passes += 1
@@ -177,6 +196,7 @@ def run_race(env, agent, seed=0, deterministic=True, mistakes=(), stop_after_mis
         "outs": outs,
         "contacts": int(sum(s.contacts for s in env.racers)),
         "contact_types": contact_types,
+        "contact_episodes": contact_episodes,
         "start_passes": start_passes,
         "held": held,
         "env_overtakes": int(sum(s.overtakes for s in env.racers)),

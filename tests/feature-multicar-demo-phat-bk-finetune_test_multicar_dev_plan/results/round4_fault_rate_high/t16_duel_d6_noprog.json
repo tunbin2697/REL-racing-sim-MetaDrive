@@ -1,0 +1,146 @@
+{
+ "config": "d6_noprog",
+ "rows": [
+  {
+   "kind": "lockup",
+   "at": 0.15,
+   "gap_m": 18.097564697265625,
+   "held": [],
+   "contacts": 0,
+   "outs": [
+    {
+     "car": 0,
+     "reason": "crash_or_track_limit",
+     "frac": 0.124,
+     "t": 198,
+     "contact_3s": false,
+     "kmh": 45.1
+    }
+   ]
+  },
+  {
+   "kind": "understeer",
+   "at": 0.15,
+   "gap_m": 18.097564697265625,
+   "held": [
+    {
+     "a": 1,
+     "b": 0,
+     "t": 408,
+     "frac": 0.346,
+     "corner": true,
+     "touched": false
+    }
+   ],
+   "contacts": 2,
+   "outs": [
+    {
+     "car": 0,
+     "reason": "crash_or_track_limit",
+     "frac": 0.348,
+     "t": 483,
+     "contact_3s": false,
+     "kmh": 62.4
+    }
+   ]
+  },
+  {
+   "kind": "oversteer",
+   "at": 0.15,
+   "gap_m": 18.097564697265625,
+   "held": [],
+   "contacts": 4,
+   "outs": []
+  },
+  {
+   "kind": "lockup",
+   "at": 0.35,
+   "gap_m": 18.9158935546875,
+   "held": [],
+   "contacts": 2,
+   "outs": []
+  },
+  {
+   "kind": "understeer",
+   "at": 0.35,
+   "gap_m": 18.9158935546875,
+   "held": [],
+   "contacts": 2,
+   "outs": []
+  },
+  {
+   "kind": "oversteer",
+   "at": 0.35,
+   "gap_m": 18.9158935546875,
+   "held": [],
+   "contacts": 2,
+   "outs": []
+  },
+  {
+   "kind": "lockup",
+   "at": 0.55,
+   "gap_m": 21.45654296875,
+   "held": [],
+   "contacts": 2,
+   "outs": []
+  },
+  {
+   "kind": "understeer",
+   "at": 0.55,
+   "gap_m": 21.45654296875,
+   "held": [],
+   "contacts": 0,
+   "outs": [
+    {
+     "car": 0,
+     "reason": "crash_or_track_limit",
+     "frac": 0.915,
+     "t": 1038,
+     "contact_3s": false,
+     "kmh": 98.7
+    }
+   ]
+  },
+  {
+   "kind": "oversteer",
+   "at": 0.55,
+   "gap_m": 21.45654296875,
+   "held": [],
+   "contacts": 0,
+   "outs": []
+  },
+  {
+   "kind": "lockup",
+   "at": 0.75,
+   "gap_m": 43.031494140625,
+   "held": [],
+   "contacts": 0,
+   "outs": []
+  },
+  {
+   "kind": "understeer",
+   "at": 0.75,
+   "gap_m": 43.031494140625,
+   "held": [],
+   "contacts": 0,
+   "outs": []
+  },
+  {
+   "kind": "oversteer",
+   "at": 0.75,
+   "gap_m": 43.031494140625,
+   "held": [],
+   "contacts": 2,
+   "outs": [
+    {
+     "car": 1,
+     "reason": "crash_or_track_limit",
+     "frac": 0.955,
+     "t": 1096,
+     "contact_3s": true,
+     "kmh": 20.0
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,119 @@
+{
+ "config": "ref",
+ "rows": [
+  {
+   "kind": "lockup",
+   "at": 0.15,
+   "gap_m": 24.635894775390625,
+   "held": [],
+   "contacts": 57,
+   "outs": [
+    {
+     "car": 1,
+     "reason": "stalled",
+     "frac": 0.572,
+     "t": 811,
+     "contact_3s": false,
+     "kmh": 0.7
+    }
+   ]
+  },
+  {
+   "kind": "understeer",
+   "at": 0.15,
+   "gap_m": 24.635894775390625,
+   "held": [],
+   "contacts": 39,
+   "outs": [
+    {
+     "car": 1,
+     "reason": "crash_or_track_limit",
+     "frac": 0.92,
+     "t": 1041,
+     "contact_3s": true,
+     "kmh": 74.3
+    }
+   ]
+  },
+  {
+   "kind": "oversteer",
+   "at": 0.15,
+   "gap_m": 24.635894775390625,
+   "held": [],
+   "contacts": 2,
+   "outs": []
+  },
+  {
+   "kind": "lockup",
+   "at": 0.35,
+   "gap_m": 9.007568359375,
+   "held": [],
+   "contacts": 2,
+   "outs": []
+  },
+  {
+   "kind": "understeer",
+   "at": 0.35,
+   "gap_m": 9.007568359375,
+   "held": [],
+   "contacts": 19,
+   "outs": []
+  },
+  {
+   "kind": "oversteer",
+   "at": 0.35,
+   "gap_m": 9.007568359375,
+   "held": [],
+   "contacts": 8,
+   "outs": []
+  },
+  {
+   "kind": "lockup",
+   "at": 0.55,
+   "gap_m": 45.179931640625,
+   "held": [],
+   "contacts": 2,
+   "outs": []
+  },
+  {
+   "kind": "understeer",
+   "at": 0.55,
+   "gap_m": 45.179931640625,
+   "held": [],
+   "contacts": 12,
+   "outs": []
+  },
+  {
+   "kind": "oversteer",
+   "at": 0.55,
+   "gap_m": 45.179931640625,
+   "held": [],
+   "contacts": 2,
+   "outs": []
+  },
+  {
+   "kind": "lockup",
+   "at": 0.75,
+   "gap_m": 26.01904296875,
+   "held": [],
+   "contacts": 2,
+   "outs": []
+  },
+  {
+   "kind": "understeer",
+   "at": 0.75,
+   "gap_m": 26.01904296875,
+   "held": [],
+   "contacts": 2,
+   "outs": []
+  },
+  {
+   "kind": "oversteer",
+   "at": 0.75,
+   "gap_m": 26.01904296875,
+   "held": [],
+   "contacts": 2,
+   "outs": []
+  }
+ ]
+}

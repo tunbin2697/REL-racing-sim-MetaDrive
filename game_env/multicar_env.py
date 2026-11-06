@@ -13,6 +13,7 @@ from typing import Dict, List, Optional, Tuple
 import numpy as np
 from numpy.typing import NDArray
 from gymnasium import spaces
+from panda3d.core import Vec3
 
 from metadrive.component.vehicle.vehicle_type import DefaultVehicle, MVehicle, SVehicle, LVehicle
 from game_env.racing_env import MetaRacingEnv
@@ -20,9 +21,14 @@ from game_env.vehicle import BaseRaceVehicle, GT3RaceCar
 
 BASE_OBS_DIM = 35
 OPPONENT_FEATURES = 5
+# Chuẩn hóa obs đối thủ để xe ở gần có độ lớn tương đương các chiều ego (xe cách 2m bên sườn = 0.4)
+OPPONENT_DX_NORM = 20.0
+OPPONENT_DY_NORM = 5.0
+OPPONENT_DV_NORM = 10.0
 
 OVERTAKE_COOLDOWN_STEPS = 15    # Không đếm lại pha vượt cùng cặp xe trong 1.5s
 RESPAWN_IMMUNITY_STEPS = 120    # Không đếm pha vượt qua xe vừa hồi sinh
+RESPAWN_HEIGHT_M = 0.6          # Xe đứng yên trên mặt đường ở độ cao khoảng 0.54m
 PROXIMITY_LONG_M = 4.5          # Chiều dài thân xe 4.5m
 PROXIMITY_LAT_M = 1.20          # Thu hẹp vùng đệm ngang để thoải mái so kè sườn xe
 PROXIMITY_PENALTY_COEF = 0.15   # Giảm phạt tiệm cận để agent dám so kè cự ly gần
@@ -314,10 +320,10 @@ class MultiCarRacingEnv(MetaRacingEnv):
             if dist <= self.opponent_range:
                 rel_v = ot.car.velocity - vel
                 others.append((dist, [
-                    float(np.dot(rel, fwd) / self.opponent_range),
-                    float(np.dot(rel, lat) / self.opponent_range),
-                    float(np.clip(np.dot(rel_v, fwd) / 20.0, -2.0, 2.0)),
-                    float(np.clip(np.dot(rel_v, lat) / 20.0, -2.0, 2.0)),
+                    float(np.dot(rel, fwd) / OPPONENT_DX_NORM),
+                    float(np.clip(np.dot(rel, lat) / OPPONENT_DY_NORM, -3.0, 3.0)),
+                    float(np.clip(np.dot(rel_v, fwd) / OPPONENT_DV_NORM, -2.0, 2.0)),
+                    float(np.clip(np.dot(rel_v, lat) / OPPONENT_DV_NORM, -2.0, 2.0)),
                     1.0,
                 ]))
         others.sort(key=lambda o: o[0])
@@ -356,6 +362,15 @@ class MultiCarRacingEnv(MetaRacingEnv):
         except Exception:
             pass
 
+    def _place_upright(self, raw, x: float, y: float, heading: float):
+        """Đặt xe về tư thế đứng yên trên mặt đường, kể cả khi trước đó xe đang lật hoặc đang xoay."""
+        raw.set_position([x, y], height=RESPAWN_HEIGHT_M)
+        raw.set_heading_theta(heading)
+        raw.origin.setP(0.0)
+        raw.origin.setR(0.0)
+        raw.set_velocity([0.0, 0.0])
+        raw.body.setAngularVelocity(Vec3(0.0, 0.0, 0.0))
+
     def _respawn(self, st: RacerState):
         """Đặt lại xe ở làn ngẫu nhiên tại điểm cách các xe khác >= respawn_clearance"""
         others = [ot.car.position for ot in self.racers if ot is not st and ot.active]
@@ -373,9 +388,7 @@ class MultiCarRacingEnv(MetaRacingEnv):
         th = float(self.track_theta[idx])
         lat_vec = np.array([-np.sin(th), np.cos(th)], dtype=np.float32)
         pos = self.track_xy[idx] + chosen_lat * lat_vec
-        st.raw_vehicle.set_position([float(pos[0]), float(pos[1])])
-        st.raw_vehicle.set_heading_theta(th)
-        st.raw_vehicle.set_velocity([0.0, 0.0])
+        self._place_upright(st.raw_vehicle, float(pos[0]), float(pos[1]), th)
         st.car.reset_state()
         st.current_track_idx = idx
         st.last_s = float(self.track_s[idx])
@@ -412,9 +425,7 @@ class MultiCarRacingEnv(MetaRacingEnv):
         th = float(self.track_theta[idx])
         pos = self.track_xy[idx]
 
-        st.raw_vehicle.set_position([float(pos[0]), float(pos[1])])
-        st.raw_vehicle.set_heading_theta(th)
-        st.raw_vehicle.set_velocity([0.0, 0.0])
+        self._place_upright(st.raw_vehicle, float(pos[0]), float(pos[1]), th)
         st.car.reset_state()
         st.active = True
         st.termination_reason = ""

@@ -1,0 +1,810 @@
+{
+ "clean_lap": 114.06666666666668,
+ "kinds": [
+  "lockup",
+  "understeer",
+  "oversteer"
+ ],
+ "rows": [
+  {
+   "kind": "lockup",
+   "severity": "light",
+   "at": 0.05,
+   "fired": true,
+   "loss": -0.67,
+   "outs": []
+  },
+  {
+   "kind": "lockup",
+   "severity": "light",
+   "at": 0.165,
+   "fired": true,
+   "loss": -0.07,
+   "outs": []
+  },
+  {
+   "kind": "lockup",
+   "severity": "light",
+   "at": 0.28,
+   "fired": true,
+   "loss": -0.37,
+   "outs": []
+  },
+  {
+   "kind": "lockup",
+   "severity": "light",
+   "at": 0.395,
+   "fired": true,
+   "loss": 0.03,
+   "outs": []
+  },
+  {
+   "kind": "lockup",
+   "severity": "light",
+   "at": 0.51,
+   "fired": true,
+   "loss": 0.23,
+   "outs": []
+  },
+  {
+   "kind": "lockup",
+   "severity": "light",
+   "at": 0.625,
+   "fired": true,
+   "loss": 0.83,
+   "outs": []
+  },
+  {
+   "kind": "lockup",
+   "severity": "light",
+   "at": 0.74,
+   "fired": true,
+   "loss": 0.33,
+   "outs": []
+  },
+  {
+   "kind": "lockup",
+   "severity": "light",
+   "at": 0.855,
+   "fired": true,
+   "loss": 0.23,
+   "outs": []
+  },
+  {
+   "kind": "lockup",
+   "severity": "mid",
+   "at": 0.05,
+   "fired": true,
+   "loss": -0.17,
+   "outs": []
+  },
+  {
+   "kind": "lockup",
+   "severity": "mid",
+   "at": 0.165,
+   "fired": true,
+   "loss": -0.37,
+   "outs": []
+  },
+  {
+   "kind": "lockup",
+   "severity": "mid",
+   "at": 0.28,
+   "fired": true,
+   "loss": -0.67,
+   "outs": []
+  },
+  {
+   "kind": "lockup",
+   "severity": "mid",
+   "at": 0.395,
+   "fired": true,
+   "loss": 0.73,
+   "outs": []
+  },
+  {
+   "kind": "lockup",
+   "severity": "mid",
+   "at": 0.51,
+   "fired": true,
+   "loss": null,
+   "outs": [
+    0.921
+   ]
+  },
+  {
+   "kind": "lockup",
+   "severity": "mid",
+   "at": 0.625,
+   "fired": true,
+   "loss": 0.73,
+   "outs": []
+  },
+  {
+   "kind": "lockup",
+   "severity": "mid",
+   "at": 0.74,
+   "fired": true,
+   "loss": 1.03,
+   "outs": []
+  },
+  {
+   "kind": "lockup",
+   "severity": "mid",
+   "at": 0.855,
+   "fired": true,
+   "loss": 0.43,
+   "outs": []
+  },
+  {
+   "kind": "lockup",
+   "severity": "hard",
+   "at": 0.05,
+   "fired": true,
+   "loss": -0.27,
+   "outs": []
+  },
+  {
+   "kind": "lockup",
+   "severity": "hard",
+   "at": 0.165,
+   "fired": true,
+   "loss": -0.07,
+   "outs": []
+  },
+  {
+   "kind": "lockup",
+   "severity": "hard",
+   "at": 0.28,
+   "fired": true,
+   "loss": -0.77,
+   "outs": []
+  },
+  {
+   "kind": "lockup",
+   "severity": "hard",
+   "at": 0.395,
+   "fired": true,
+   "loss": 0.43,
+   "outs": []
+  },
+  {
+   "kind": "lockup",
+   "severity": "hard",
+   "at": 0.51,
+   "fired": true,
+   "loss": 1.43,
+   "outs": []
+  },
+  {
+   "kind": "lockup",
+   "severity": "hard",
+   "at": 0.625,
+   "fired": true,
+   "loss": 2.03,
+   "outs": []
+  },
+  {
+   "kind": "lockup",
+   "severity": "hard",
+   "at": 0.74,
+   "fired": true,
+   "loss": 0.33,
+   "outs": []
+  },
+  {
+   "kind": "lockup",
+   "severity": "hard",
+   "at": 0.855,
+   "fired": true,
+   "loss": 0.73,
+   "outs": []
+  },
+  {
+   "kind": "lockup",
+   "severity": "ext",
+   "at": 0.05,
+   "fired": true,
+   "loss": null,
+   "outs": [
+    0.094
+   ]
+  },
+  {
+   "kind": "lockup",
+   "severity": "ext",
+   "at": 0.165,
+   "fired": true,
+   "loss": 0.63,
+   "outs": []
+  },
+  {
+   "kind": "lockup",
+   "severity": "ext",
+   "at": 0.28,
+   "fired": true,
+   "loss": 0.83,
+   "outs": []
+  },
+  {
+   "kind": "lockup",
+   "severity": "ext",
+   "at": 0.395,
+   "fired": true,
+   "loss": null,
+   "outs": [
+    0.919
+   ]
+  },
+  {
+   "kind": "lockup",
+   "severity": "ext",
+   "at": 0.51,
+   "fired": true,
+   "loss": 4.53,
+   "outs": []
+  },
+  {
+   "kind": "lockup",
+   "severity": "ext",
+   "at": 0.625,
+   "fired": true,
+   "loss": 5.93,
+   "outs": []
+  },
+  {
+   "kind": "lockup",
+   "severity": "ext",
+   "at": 0.74,
+   "fired": true,
+   "loss": 0.83,
+   "outs": []
+  },
+  {
+   "kind": "lockup",
+   "severity": "ext",
+   "at": 0.855,
+   "fired": true,
+   "loss": 1.13,
+   "outs": []
+  },
+  {
+   "kind": "understeer",
+   "severity": "light",
+   "at": 0.05,
+   "fired": true,
+   "loss": -0.07,
+   "outs": []
+  },
+  {
+   "kind": "understeer",
+   "severity": "light",
+   "at": 0.165,
+   "fired": true,
+   "loss": -0.47,
+   "outs": []
+  },
+  {
+   "kind": "understeer",
+   "severity": "light",
+   "at": 0.28,
+   "fired": true,
+   "loss": -0.27,
+   "outs": []
+  },
+  {
+   "kind": "understeer",
+   "severity": "light",
+   "at": 0.395,
+   "fired": true,
+   "loss": 0.43,
+   "outs": []
+  },
+  {
+   "kind": "understeer",
+   "severity": "light",
+   "at": 0.51,
+   "fired": true,
+   "loss": 0.53,
+   "outs": []
+  },
+  {
+   "kind": "understeer",
+   "severity": "light",
+   "at": 0.625,
+   "fired": true,
+   "loss": -0.07,
+   "outs": []
+  },
+  {
+   "kind": "understeer",
+   "severity": "light",
+   "at": 0.74,
+   "fired": true,
+   "loss": 0.43,
+   "outs": []
+  },
+  {
+   "kind": "understeer",
+   "severity": "light",
+   "at": 0.855,
+   "fired": true,
+   "loss": 0.03,
+   "outs": []
+  },
+  {
+   "kind": "understeer",
+   "severity": "mid",
+   "at": 0.05,
+   "fired": true,
+   "loss": 0.63,
+   "outs": []
+  },
+  {
+   "kind": "understeer",
+   "severity": "mid",
+   "at": 0.165,
+   "fired": true,
+   "loss": -0.17,
+   "outs": []
+  },
+  {
+   "kind": "understeer",
+   "severity": "mid",
+   "at": 0.28,
+   "fired": true,
+   "loss": -0.37,
+   "outs": []
+  },
+  {
+   "kind": "understeer",
+   "severity": "mid",
+   "at": 0.395,
+   "fired": true,
+   "loss": null,
+   "outs": [
+    0.92
+   ]
+  },
+  {
+   "kind": "understeer",
+   "severity": "mid",
+   "at": 0.51,
+   "fired": true,
+   "loss": 1.03,
+   "outs": []
+  },
+  {
+   "kind": "understeer",
+   "severity": "mid",
+   "at": 0.625,
+   "fired": true,
+   "loss": 0.33,
+   "outs": []
+  },
+  {
+   "kind": "understeer",
+   "severity": "mid",
+   "at": 0.74,
+   "fired": true,
+   "loss": null,
+   "outs": [
+    0.92
+   ]
+  },
+  {
+   "kind": "understeer",
+   "severity": "mid",
+   "at": 0.855,
+   "fired": true,
+   "loss": null,
+   "outs": [
+    0.919
+   ]
+  },
+  {
+   "kind": "understeer",
+   "severity": "hard",
+   "at": 0.05,
+   "fired": true,
+   "loss": -0.27,
+   "outs": []
+  },
+  {
+   "kind": "understeer",
+   "severity": "hard",
+   "at": 0.165,
+   "fired": true,
+   "loss": 0.43,
+   "outs": []
+  },
+  {
+   "kind": "understeer",
+   "severity": "hard",
+   "at": 0.28,
+   "fired": true,
+   "loss": null,
+   "outs": [
+    0.328
+   ]
+  },
+  {
+   "kind": "understeer",
+   "severity": "hard",
+   "at": 0.395,
+   "fired": true,
+   "loss": null,
+   "outs": [
+    0.919
+   ]
+  },
+  {
+   "kind": "understeer",
+   "severity": "hard",
+   "at": 0.51,
+   "fired": true,
+   "loss": null,
+   "outs": [
+    0.922
+   ]
+  },
+  {
+   "kind": "understeer",
+   "severity": "hard",
+   "at": 0.625,
+   "fired": true,
+   "loss": -0.27,
+   "outs": []
+  },
+  {
+   "kind": "understeer",
+   "severity": "hard",
+   "at": 0.74,
+   "fired": true,
+   "loss": 0.83,
+   "outs": []
+  },
+  {
+   "kind": "understeer",
+   "severity": "hard",
+   "at": 0.855,
+   "fired": true,
+   "loss": null,
+   "outs": [
+    0.919
+   ]
+  },
+  {
+   "kind": "understeer",
+   "severity": "ext",
+   "at": 0.05,
+   "fired": true,
+   "loss": 0.73,
+   "outs": []
+  },
+  {
+   "kind": "understeer",
+   "severity": "ext",
+   "at": 0.165,
+   "fired": true,
+   "loss": 2.13,
+   "outs": []
+  },
+  {
+   "kind": "understeer",
+   "severity": "ext",
+   "at": 0.28,
+   "fired": true,
+   "loss": 2.23,
+   "outs": []
+  },
+  {
+   "kind": "understeer",
+   "severity": "ext",
+   "at": 0.395,
+   "fired": true,
+   "loss": 2.43,
+   "outs": []
+  },
+  {
+   "kind": "understeer",
+   "severity": "ext",
+   "at": 0.51,
+   "fired": true,
+   "loss": 2.83,
+   "outs": []
+  },
+  {
+   "kind": "understeer",
+   "severity": "ext",
+   "at": 0.625,
+   "fired": true,
+   "loss": 2.63,
+   "outs": []
+  },
+  {
+   "kind": "understeer",
+   "severity": "ext",
+   "at": 0.74,
+   "fired": true,
+   "loss": 1.53,
+   "outs": []
+  },
+  {
+   "kind": "understeer",
+   "severity": "ext",
+   "at": 0.855,
+   "fired": true,
+   "loss": null,
+   "outs": [
+    0.921
+   ]
+  },
+  {
+   "kind": "oversteer",
+   "severity": "light",
+   "at": 0.05,
+   "fired": true,
+   "loss": -0.07,
+   "outs": []
+  },
+  {
+   "kind": "oversteer",
+   "severity": "light",
+   "at": 0.165,
+   "fired": true,
+   "loss": 0.03,
+   "outs": []
+  },
+  {
+   "kind": "oversteer",
+   "severity": "light",
+   "at": 0.28,
+   "fired": true,
+   "loss": -0.17,
+   "outs": []
+  },
+  {
+   "kind": "oversteer",
+   "severity": "light",
+   "at": 0.395,
+   "fired": true,
+   "loss": -0.97,
+   "outs": []
+  },
+  {
+   "kind": "oversteer",
+   "severity": "light",
+   "at": 0.51,
+   "fired": true,
+   "loss": 0.03,
+   "outs": []
+  },
+  {
+   "kind": "oversteer",
+   "severity": "light",
+   "at": 0.625,
+   "fired": true,
+   "loss": 0.33,
+   "outs": []
+  },
+  {
+   "kind": "oversteer",
+   "severity": "light",
+   "at": 0.74,
+   "fired": true,
+   "loss": -0.57,
+   "outs": []
+  },
+  {
+   "kind": "oversteer",
+   "severity": "light",
+   "at": 0.855,
+   "fired": true,
+   "loss": -0.07,
+   "outs": []
+  },
+  {
+   "kind": "oversteer",
+   "severity": "mid",
+   "at": 0.05,
+   "fired": true,
+   "loss": -0.37,
+   "outs": []
+  },
+  {
+   "kind": "oversteer",
+   "severity": "mid",
+   "at": 0.165,
+   "fired": true,
+   "loss": 0.13,
+   "outs": []
+  },
+  {
+   "kind": "oversteer",
+   "severity": "mid",
+   "at": 0.28,
+   "fired": true,
+   "loss": -0.27,
+   "outs": []
+  },
+  {
+   "kind": "oversteer",
+   "severity": "mid",
+   "at": 0.395,
+   "fired": true,
+   "loss": -0.17,
+   "outs": []
+  },
+  {
+   "kind": "oversteer",
+   "severity": "mid",
+   "at": 0.51,
+   "fired": true,
+   "loss": -0.37,
+   "outs": []
+  },
+  {
+   "kind": "oversteer",
+   "severity": "mid",
+   "at": 0.625,
+   "fired": true,
+   "loss": null,
+   "outs": [
+    0.922
+   ]
+  },
+  {
+   "kind": "oversteer",
+   "severity": "mid",
+   "at": 0.74,
+   "fired": true,
+   "loss": 0.03,
+   "outs": []
+  },
+  {
+   "kind": "oversteer",
+   "severity": "mid",
+   "at": 0.855,
+   "fired": true,
+   "loss": 0.03,
+   "outs": []
+  },
+  {
+   "kind": "oversteer",
+   "severity": "hard",
+   "at": 0.05,
+   "fired": true,
+   "loss": null,
+   "outs": [
+    0.074
+   ]
+  },
+  {
+   "kind": "oversteer",
+   "severity": "hard",
+   "at": 0.165,
+   "fired": true,
+   "loss": -0.27,
+   "outs": []
+  },
+  {
+   "kind": "oversteer",
+   "severity": "hard",
+   "at": 0.28,
+   "fired": true,
+   "loss": 0.53,
+   "outs": []
+  },
+  {
+   "kind": "oversteer",
+   "severity": "hard",
+   "at": 0.395,
+   "fired": true,
+   "loss": null,
+   "outs": [
+    0.545
+   ]
+  },
+  {
+   "kind": "oversteer",
+   "severity": "hard",
+   "at": 0.51,
+   "fired": true,
+   "loss": null,
+   "outs": [
+    0.546
+   ]
+  },
+  {
+   "kind": "oversteer",
+   "severity": "hard",
+   "at": 0.625,
+   "fired": true,
+   "loss": 0.53,
+   "outs": []
+  },
+  {
+   "kind": "oversteer",
+   "severity": "hard",
+   "at": 0.74,
+   "fired": true,
+   "loss": null,
+   "outs": [
+    0.845
+   ]
+  },
+  {
+   "kind": "oversteer",
+   "severity": "hard",
+   "at": 0.855,
+   "fired": true,
+   "loss": 0.43,
+   "outs": []
+  },
+  {
+   "kind": "oversteer",
+   "severity": "ext",
+   "at": 0.05,
+   "fired": true,
+   "loss": 0.03,
+   "outs": []
+  },
+  {
+   "kind": "oversteer",
+   "severity": "ext",
+   "at": 0.165,
+   "fired": true,
+   "loss": 2.23,
+   "outs": []
+  },
+  {
+   "kind": "oversteer",
+   "severity": "ext",
+   "at": 0.28,
+   "fired": true,
+   "loss": 2.23,
+   "outs": []
+  },
+  {
+   "kind": "oversteer",
+   "severity": "ext",
+   "at": 0.395,
+   "fired": true,
+   "loss": 1.63,
+   "outs": []
+  },
+  {
+   "kind": "oversteer",
+   "severity": "ext",
+   "at": 0.51,
+   "fired": true,
+   "loss": 1.73,
+   "outs": []
+  },
+  {
+   "kind": "oversteer",
+   "severity": "ext",
+   "at": 0.625,
+   "fired": true,
+   "loss": 2.63,
+   "outs": []
+  },
+  {
+   "kind": "oversteer",
+   "severity": "ext",
+   "at": 0.74,
+   "fired": true,
+   "loss": 2.63,
+   "outs": []
+  },
+  {
+   "kind": "oversteer",
+   "severity": "ext",
+   "at": 0.855,
+   "fired": true,
+   "loss": 0.43,
+   "outs": []
+  }
+ ]
+}
