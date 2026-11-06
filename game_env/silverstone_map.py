@@ -11,11 +11,9 @@ Thiết kế chính xác theo sa bàn Silverstone F1 Circuit từ dữ liệu đ
 
 import json
 import os
-import numpy as np
 from metadrive.component.pgblock.first_block import FirstPGBlock
 from metadrive.component.pgblock.straight import Straight
 from metadrive.component.pgblock.curve import Curve
-from metadrive.component.road_network.road import Road
 from metadrive.constants import PGLineType
 from metadrive.component.pg_space import Parameter
 from metadrive.component.map.pg_map import PGMap
@@ -24,7 +22,7 @@ from metadrive.manager.pg_map_manager import PGMapManager
 
 class SilverstoneMap(PGMap):
     """Bản đồ Silverstone Grand Prix F1 với hình học khép kín hoàn hảo"""
-    
+
     def _generate(self):
         assert self.engine is not None, "Engine is not initialized!"
         assert self.road_network is not None, "Map road network is not initialized!"
@@ -38,7 +36,7 @@ class SilverstoneMap(PGMap):
         LENGTH_SCALE = float(config.get("length_scale", 1.0))
 
         # Nạp dữ liệu cấu hình các block đã giải tối ưu
-        json_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "scripts", "silverstone_blocks.json")
+        json_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "game_env", "silverstone_blocks.json")
         with open(json_path, "r") as f:
             data = json.load(f)
         blocks_data = data["blocks"]
@@ -96,7 +94,7 @@ class SilverstoneMap(PGMap):
                     parent_node_path,
                     physics_world,
                 )
-                
+
             self.blocks.append(block)
             last_block = block
             block_index += 1

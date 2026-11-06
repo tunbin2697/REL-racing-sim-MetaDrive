@@ -1,6 +1,6 @@
 """
 MultiCarRacingEnv: Đua 4-6 xe trên Silverstone half (mặc định 3 làn x 4.5m = 13.5m)
-- Xây dựng trực tiếp trên nền nhánh feature/111s-honest-anchor (obs ego 35D của ref_111s + xe gt3_anchor).
+- Xây dựng trên nền nhánh feature/111s-honest-anchor (obs ego 35D và vật lý xe của ref_111s).
 - Xe 0 là agent MetaDrive (camera bám theo, dùng cho người chơi tay cầm hoặc AI-0), xe 1..N-1 spawn thêm vào engine.
 - Va chạm vật lý Bullet thật giữa các xe; va chạm bị phạt đối xứng + vùng đệm an toàn (proximity) + thưởng vượt sạch (WI-L5).
 - Lưới xuất phát phía sau vạch x = 60m: mặc định xếp ngang hàng (abreast) hoặc so le kiểu F1 (staggered).
@@ -15,14 +15,13 @@ from gymnasium import spaces
 
 from metadrive.component.vehicle.vehicle_type import DefaultVehicle, MVehicle, SVehicle, LVehicle
 from game_env.racing_env import MetaRacingEnv
-from game_env.telemetry import TelemetryTracker
-from game_env.vehicle import BaseRaceVehicle, get_vehicle
+from game_env.vehicle import BaseRaceVehicle, GT3RaceCar
 
 BASE_OBS_DIM = 35
 OPPONENT_FEATURES = 5
 
 # Hằng số Racecraft & Overtake Dynamics (Nhánh finetune không phanh cưỡng bức)
-OVERTAKE_BONUS = 5.0           # Tăng mạnh thưởng vượt sạch qua xe trước 
+OVERTAKE_BONUS = 5.0           # Tăng mạnh thưởng vượt sạch qua xe trước
 OVERTAKE_COOLDOWN_STEPS = 15    # Cooldown ngắn (1.5s) để xe liên tục tranh chấp
 RESPAWN_IMMUNITY_STEPS = 120
 PROXIMITY_LONG_M = 4.5          # Chiều dài thân xe 4.5m
@@ -59,7 +58,6 @@ class RacerState:
         self.car_id = car_id
         self.car = car
         self.raw_vehicle = raw_vehicle
-        self.telemetry = TelemetryTracker()
         self.current_track_idx = 0
         self.last_s = 0.0
         self.lat_offset = float(spawn_lat)
@@ -75,8 +73,6 @@ class RacerState:
         self.prev_action: NDArray[np.float32] = np.zeros(3, dtype=np.float32)
         self.last_action: NDArray[np.float32] = np.zeros(3, dtype=np.float32)
         self.last_applied: NDArray[np.float32] = np.zeros(2, dtype=np.float32)
-        self.last_acc_long_g = 0.0
-        self.last_acc_lat_g = 0.0
         self.stagnant_steps = 0
         self.contacts = 0          # Số lần va chạm (tính theo sự kiện bắt đầu chạm)
         self.overtakes = 0         # Số lần vượt sạch (WI-L5)
@@ -99,13 +95,11 @@ class MultiCarRacingEnv(MetaRacingEnv):
         use_render: bool = False,
         lane_num: int = 3,
         map_type: Optional[str] = None,
-        vehicle_name: str = "gt3_anchor",
         max_laps: int = 1,
         time_penalty: float = 0.01,
         collision_penalty: float = 2.0,
         steer_smooth_coef: float = 0.10,
         pedal_smooth_coef: float = 0.0,
-        center_coef: float = 0.0,
         opponent_slots: int = 5,
         opponent_range: float = 60.0,
         max_steps: int = 3000,
@@ -117,16 +111,14 @@ class MultiCarRacingEnv(MetaRacingEnv):
     ):
         if map_type is None:
             map_type = "silverstone_half_3lane" if int(lane_num) == 3 else "silverstone_half"
-        self.vehicle_name = str(vehicle_name)
         super().__init__(
             use_render=use_render,
             window_size=window_size,
             start_seed=start_seed,
             map_type=map_type,
-            vehicle=get_vehicle(self.vehicle_name),
+            vehicle=GT3RaceCar(),
             max_laps=max_laps,
             time_penalty=time_penalty,
-            center_coef=center_coef,
             horizon=max_steps + 100,
         )
         self.num_cars = int(num_cars)
@@ -238,7 +230,7 @@ class MultiCarRacingEnv(MetaRacingEnv):
                 car = self.car
                 car.reset_state()
             else:
-                car = get_vehicle(self.vehicle_name)
+                car = GT3RaceCar()
                 raw = self._spawn_extra_vehicle(car, (x, y), 0.0, car_id=k)
                 self.extra_vehicles.append(raw)
             car.attach_agent(raw)
@@ -259,9 +251,8 @@ class MultiCarRacingEnv(MetaRacingEnv):
             st.prev_race_dist = s
             st.lap_target = self.circuit_length - s
             st.lat_offset = self._compute_car_lat_offset(st.car.position, idx)
-            st.telemetry.reset()
 
-        obs = self._all_observations(np.zeros(self.num_cars), np.zeros(self.num_cars, dtype=bool))
+        obs = self._all_observations(np.zeros(self.num_cars, dtype=bool))
         return obs, {"active": self.active_mask()}
 
     # ------------------------------------------------------------------ observation & track limits
@@ -403,7 +394,7 @@ class MultiCarRacingEnv(MetaRacingEnv):
             feats.extend(others[k][1] if k < len(others) else [0.0] * OPPONENT_FEATURES)
         return feats
 
-    def _all_observations(self, delta_steers, runoffs) -> np.ndarray:
+    def _all_observations(self, runoffs) -> np.ndarray:
         obs = np.zeros((self.num_cars, self.obs_dim), dtype=np.float32)
         for i, st in enumerate(self.racers):
             if not st.active:
@@ -414,7 +405,6 @@ class MultiCarRacingEnv(MetaRacingEnv):
             base = self.get_compact_racing_obs(
                 st.raw_vehicle,
                 action_applied=st.last_applied,
-                delta_steer=float(delta_steers[i]),
                 on_runoff=bool(runoffs[i]),
             )
             st.current_track_idx = self.current_track_idx
@@ -455,7 +445,6 @@ class MultiCarRacingEnv(MetaRacingEnv):
         st.raw_vehicle.set_heading_theta(th)
         st.raw_vehicle.set_velocity([0.0, 0.0])
         st.car.reset_state()
-        st.telemetry.reset()
         st.current_track_idx = idx
         st.last_s = float(self.track_s[idx])
         st.lat_offset = chosen_lat
@@ -468,8 +457,6 @@ class MultiCarRacingEnv(MetaRacingEnv):
         st.prev_action = np.zeros(3, dtype=np.float32)
         st.last_action = np.zeros(3, dtype=np.float32)
         st.last_applied = np.zeros(2, dtype=np.float32)
-        st.last_acc_long_g = 0.0
-        st.last_acc_lat_g = 0.0
         st.stagnant_steps = 0
         st.in_contact = False
         st.finished = False
@@ -498,7 +485,6 @@ class MultiCarRacingEnv(MetaRacingEnv):
         st.raw_vehicle.set_heading_theta(th)
         st.raw_vehicle.set_velocity([0.0, 0.0])
         st.car.reset_state()
-        st.telemetry.reset()
         st.active = True
         st.termination_reason = ""
         st.respawn_step = self.current_step
@@ -614,7 +600,6 @@ class MultiCarRacingEnv(MetaRacingEnv):
         dones = np.zeros(self.num_cars, dtype=bool)
         infos: List[Dict] = [{} for _ in range(self.num_cars)]
         runoffs = np.zeros(self.num_cars, dtype=bool)
-        current_time = float(self.current_step * self.dt)
 
         for i, st in enumerate(self.racers):
             if not st.active:
@@ -624,18 +609,7 @@ class MultiCarRacingEnv(MetaRacingEnv):
             idx, current_s = self._get_track_s(st.car.position, st.current_track_idx)
             st.current_track_idx = idx
             st.lat_offset = self._compute_car_lat_offset(st.car.position, idx)
-            sample = st.telemetry.log_step(
-                current_time=current_time,
-                position=st.car.position,
-                velocity=st.car.velocity,
-                steering=float(applied[i][0]),
-                throttle_brake=float(net_pedals[i]),
-                dt=self.dt,
-                on_runoff=on_runoff,
-            )
-            st.last_acc_long_g = float(sample.get("acc_long_g", 0.0))
-            st.last_acc_lat_g = float(sample.get("acc_lat_g", 0.0))
-            speed_km_h = float(sample["speed_km_h"])
+            speed_km_h = float(np.linalg.norm(st.car.velocity)) * 3.6
             st.speed_km_h = speed_km_h
             st.on_runoff = on_runoff
 
@@ -669,9 +643,6 @@ class MultiCarRacingEnv(MetaRacingEnv):
             r_progress = self.preset.progress_coef * max(0.0, float(delta_s))
             r_steer_smooth = -self.steer_smooth_coef * float(delta_steers[i] ** 2)
             r_pedal_smooth = -self.pedal_smooth_coef * float(delta_pedals[i] ** 2)
-            r_center = 0.0
-            if self.center_coef > 0.0:
-                r_center = -self.center_coef * float((st.lat_offset / self.preset.lat_norm) ** 2)
             r_idle = -0.15 if speed_km_h < 10.0 else 0.0
             r_time = -self.time_penalty
             # Phạt va chạm theo sự kiện: -collision_penalty khi bắt đầu chạm, -25% mỗi bước còn cọ sát nhau
@@ -728,7 +699,7 @@ class MultiCarRacingEnv(MetaRacingEnv):
                     st.lap_start_step = self.current_step
                     st.lap_target += self.circuit_length
 
-            rewards[i] = r_progress + r_steer_smooth + r_pedal_smooth + r_center + r_idle + r_time + r_contact + r_proximity + r_racecraft + r_no_gap + macro
+            rewards[i] = r_progress + r_steer_smooth + r_pedal_smooth + r_idle + r_time + r_contact + r_proximity + r_racecraft + r_no_gap + macro
             infos[i].update({
                 "speed_km_h": speed_km_h,
                 "track_s": current_s,
@@ -765,12 +736,11 @@ class MultiCarRacingEnv(MetaRacingEnv):
                 if self.respawn:
                     self._respawn(st)
                     runoffs[i] = False
-                    delta_steers[i] = 0.0
                 else:
                     self._retire(st)
 
         # Với respawn: obs của xe vừa done là trạng thái đầu của episode mới (trainer đã cắt chuỗi bằng dones)
-        obs = self._all_observations(delta_steers, runoffs)
+        obs = self._all_observations(runoffs)
         truncated = bool(self.current_step >= self.max_steps)
         return obs, rewards, dones, truncated, infos
 

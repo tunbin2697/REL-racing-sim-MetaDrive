@@ -1,3 +1,0 @@
-"""
-evaluation package initialization.
-"""

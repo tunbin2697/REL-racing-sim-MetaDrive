@@ -1,21 +1,11 @@
 from .racing_env import MetaRacingEnv
-from .vehicle import BaseRaceVehicle, GT3RaceCar, DefaultCivilianSedan, VehicleConfig, get_vehicle
-from .benchmark import RacingBenchmarkEngine
-from .ghost_car import GhostCar
-from .visualizer import RacingLineVisualizer
-from .camera import RacingCameraController
+from .multicar_env import MultiCarRacingEnv
+from .vehicle import BaseRaceVehicle, GT3RaceCar, VehicleConfig
 
 __all__ = [
     "MetaRacingEnv",
+    "MultiCarRacingEnv",
     "BaseRaceVehicle",
     "GT3RaceCar",
-    "DefaultCivilianSedan",
     "VehicleConfig",
-    "get_vehicle",
-    "RacingBenchmarkEngine",
-    "GhostCar",
-    "RacingLineVisualizer",
-    "RacingCameraController",
 ]
-
-

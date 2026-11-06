@@ -1,4 +1,3 @@
-from typing import Tuple, Optional
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -23,7 +22,7 @@ class ActorCritic(nn.Module):
 
     def __init__(self, state_dim: int, action_dim: int = 3, hidden_dim: int = 256, init_log_std: float = -0.8):
         super().__init__()
-        
+
         # Mạng Critic V(s)
         self.critic = nn.Sequential(
             layer_init(nn.Linear(state_dim, hidden_dim)),
@@ -32,7 +31,7 @@ class ActorCritic(nn.Module):
             nn.Tanh(),
             layer_init(nn.Linear(hidden_dim, 1), std=1.0),
         )
-        
+
         # Mạng Actor mu(s)
         actor_out = layer_init(nn.Linear(hidden_dim, action_dim), std=0.01)
         # Khởi tạo thiên vị chân ga ban đầu (Forward Drive Bias):
@@ -42,9 +41,8 @@ class ActorCritic(nn.Module):
         if actor_out.bias is not None:
             actor_out.bias.data[0] = 0.0
             actor_out.bias.data[1] = 0.5
-            if action_dim >= 3:
-                actor_out.bias.data[2] = -1.6
-            
+            actor_out.bias.data[2] = -1.6
+
         self.actor_mean = nn.Sequential(
             layer_init(nn.Linear(state_dim, hidden_dim)),
             nn.Tanh(),
@@ -52,19 +50,9 @@ class ActorCritic(nn.Module):
             nn.Tanh(),
             actor_out,
         )
-        
+
         # Tham số log_std: Khởi tạo ở mức -0.8 (std ~ 0.45)
         self.actor_logstd = nn.Parameter(torch.full((1, action_dim), float(init_log_std)))
-
-    def actor_forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Trả về (u_mean, action_logstd)"""
-        u_mean = self.actor_mean(x)
-        action_logstd = torch.clamp(self.actor_logstd.expand_as(u_mean), min=self.LOGSTD_MIN, max=self.LOGSTD_MAX)
-        return u_mean, action_logstd
-
-    def get_value(self, x: torch.Tensor) -> torch.Tensor:
-        """Dự đoán giá trị trạng thái V(s)"""
-        return self.critic(x)
 
     def get_action_and_value(self, x, action=None, deterministic=False, raw_u=None, return_raw=False):
         """

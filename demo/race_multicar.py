@@ -17,7 +17,7 @@ import sys
 import time
 import types
 import argparse
-from typing import List, Dict, Optional, Tuple, Any
+from typing import Optional, Any
 import numpy as np
 import torch
 
@@ -184,7 +184,6 @@ def parse_args():
                         help="Tổng số xe trên đường đua (2 đến 10 xe, mặc định 6)")
     parser.add_argument("--lane-num", type=int, default=3, choices=[2, 3],
                         help="Số làn đường (3 làn = 13.5m, 2 làn = 9.0m)")
-    parser.add_argument("--vehicle", type=str, default="gt3_anchor", choices=["gt3_anchor", "gt3"])
     parser.add_argument("--laps", type=int, default=1, help="Số vòng đua")
     parser.add_argument("--spectate", action="store_true",
                         help="Chế độ khán giả (tất cả các xe do AI tự động điều khiển)")
@@ -216,7 +215,6 @@ def main():
     env = MultiCarRacingEnv(
         num_cars=args.num_cars,
         lane_num=args.lane_num,
-        vehicle_name=args.vehicle,
         use_render=True,
         max_laps=args.laps,
         max_steps=3000 * args.laps,

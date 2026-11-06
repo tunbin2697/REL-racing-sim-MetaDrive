@@ -3,8 +3,7 @@ Huấn luyện PPO Self-Play Đa Tác Tử (Parameter Sharing) trên MultiCarRac
 - Phát triển trực tiếp từ nhánh feature/111s-honest-anchor, warm-start từ models/ref_111s/best_agent.pt (35D -> 60D).
 - Kế thừa đầy đủ bản vá F13 (lưu raw_u vào buffer) và D19 (logstd_max = [0.0, -0.7, -0.7]).
 - Hỗ trợ phạt mượt lái (c1 = steer_smooth_coef) và mượt bàn đạp (c2 = pedal_smooth_coef) theo §4.2:
-    + Bộ A (--preset-smooth A): c1 = 1.0, c2 = 0.05
-    + Bộ B (--preset-smooth B): c1 = 0.5, c2 = 0.02
+  bộ A (--preset-smooth A) dùng c1 = 1.0, c2 = 0.05.
 - Tự động đo và log các chỉ số §6 (pedal_sw/100, steer_rev/100, beta_p95, số xe về đích, số lần chạm, số lần vượt).
 """
 
@@ -36,7 +35,6 @@ def parse_args():
     parser.add_argument("--rollout-steps", type=int, default=512, help="Số bước mô phỏng mỗi rollout (x số xe = số mẫu)")
     parser.add_argument("--num-cars", type=int, default=6)
     parser.add_argument("--lane-num", type=int, default=3, help="Số làn (3 làn x 4.5m = 13.5m, hoặc 2 làn = 9.0m)")
-    parser.add_argument("--vehicle", type=str, default="gt3_anchor", choices=["gt3_anchor", "gt3"], help="Thực thể xe (mặc định gt3_anchor)")
     parser.add_argument("--batch-size", type=int, default=128)
     parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--gamma", type=float, default=0.995)
@@ -45,11 +43,10 @@ def parse_args():
     parser.add_argument("--ent-coef", type=float, default=0.001)
     parser.add_argument("--time-penalty", type=float, default=0.01)
     parser.add_argument("--collision-penalty", type=float, default=4.0)
-    parser.add_argument("--preset-smooth", choices=["none", "A", "B"], default="none",
-                        help="Bộ hệ số phạt mượt §4.2: A (c1=1.0, c2=0.05), B (c1=0.5, c2=0.02)")
+    parser.add_argument("--preset-smooth", choices=["none", "A"], default="none",
+                        help="Bộ hệ số phạt mượt §4.2: A (c1=1.0, c2=0.05)")
     parser.add_argument("--steer-smooth-coef", type=float, default=None, help="Hệ số c1 phạt Δlái^2 (ghi đè --preset-smooth)")
     parser.add_argument("--pedal-smooth-coef", type=float, default=None, help="Hệ số c2 phạt Δpedal^2 (ghi đè --preset-smooth)")
-    parser.add_argument("--center-coef", type=float, default=0.0, help="Hệ số phạt lệch tim đường r_center (§4.3)")
     parser.add_argument("--grid", choices=["abreast", "staggered"], default="abreast", help="Kiểu xếp xe xuất phát")
     parser.add_argument("--init-model", type=str, default="models/ref_111s/best_agent.pt", help="Checkpoint đơn tác tử 35D để warm start")
     parser.add_argument("--resume", type=str, default=None, help="Checkpoint đa tác tử 60D để train tiếp")
@@ -65,8 +62,6 @@ def resolve_smooth_coefs(args):
     c1, c2 = 0.10, 0.0
     if args.preset_smooth == "A":
         c1, c2 = 1.0, 0.05
-    elif args.preset_smooth == "B":
-        c1, c2 = 0.5, 0.02
     if args.steer_smooth_coef is not None:
         c1 = float(args.steer_smooth_coef)
     if args.pedal_smooth_coef is not None:
@@ -157,8 +152,8 @@ def write_run_readme(args, c1: float, c2: float, obs_dim: int):
         f"- **Branch**: `{branch}`\n"
         f"- **Commit**: `{commit}`\n"
         f"- **Warm-start / Resume**: `{warm_src}`\n"
-        f"- **Vehicle**: `{args.vehicle}` | **Lanes**: `{args.lane_num}` | **Cars**: `{args.num_cars}` | **Obs**: `{obs_dim}D`\n"
-        f"- **Smoothness Coefs (§4.2)**: `c1 (steer_smooth_coef) = {c1}`, `c2 (pedal_smooth_coef) = {c2}`, `center_coef = {args.center_coef}`\n"
+        f"- **Lanes**: `{args.lane_num}` | **Cars**: `{args.num_cars}` | **Obs**: `{obs_dim}D`\n"
+        f"- **Smoothness Coefs (§4.2)**: `c1 (steer_smooth_coef) = {c1}`, `c2 (pedal_smooth_coef) = {c2}`\n"
         f"- **Collision Penalty**: `{args.collision_penalty}` (with proximity buffer & WI-L5 clean overtake bonus)\n"
         f"- **Command**:\n```powershell\npython {cmd_str}\n```\n"
     )
@@ -177,12 +172,10 @@ def main():
     env = MultiCarRacingEnv(
         num_cars=args.num_cars,
         lane_num=args.lane_num,
-        vehicle_name=args.vehicle,
         time_penalty=args.time_penalty,
         collision_penalty=args.collision_penalty,
         steer_smooth_coef=c1,
         pedal_smooth_coef=c2,
-        center_coef=args.center_coef,
         start_seed=args.seed,
         respawn=True,
         grid=args.grid,
@@ -215,8 +208,8 @@ def main():
         print(">> Huấn luyện từ đầu (không có checkpoint khởi tạo)")
 
     print("=" * 80)
-    print(f">> MULTI-CAR PPO SELF-PLAY | {args.num_cars} xe ({args.vehicle}) | {args.lane_num} làn ({env.half_width * 2:.1f}m) | obs {obs_dim}D | device {agent.device}")
-    print(f"   Smoothness: c1(steer)={c1}, c2(pedal)={c2}, center={args.center_coef} | lr={args.lr} | collision={args.collision_penalty}")
+    print(f">> MULTI-CAR PPO SELF-PLAY | {args.num_cars} xe | {args.lane_num} làn ({env.half_width * 2:.1f}m) | obs {obs_dim}D | device {agent.device}")
+    print(f"   Smoothness: c1(steer)={c1}, c2(pedal)={c2} | lr={args.lr} | collision={args.collision_penalty}")
     print("=" * 80)
 
     metrics: Dict[str, List] = {k: [] for k in [

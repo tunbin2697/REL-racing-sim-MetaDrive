@@ -1,13 +1,11 @@
 """
-Cấu hình chuẩn hóa hình học và tham số môi trường theo sa bàn (Track Presets)
-Hỗ trợ cả hai chế độ:
-- 'silverstone_half' (mặc định / Phase 1): sa bàn thu nhỏ bán phần (2 làn 9.0m, L ≈ 2838.7m)
-- 'silverstone_half_3lane' (Demo multicar): sa bàn bán phần mở rộng 3 làn (3 làn 13.5m, L ≈ 2838.7m)
-- 'silverstone_full' (Phase 2): sa bàn kích thước thật 1:1 (3 làn 14.4m, L ≈ 5891m, length_scale = 2.075)
+Cấu hình hình học và chuẩn hóa quan sát theo sa bàn Silverstone bán phần (L ≈ 2838.7m):
+- 'silverstone_half': 2 làn 9.0m, sa bàn ref_111s được train
+- 'silverstone_half_3lane': 3 làn 13.5m, sa bàn demo multicar
 """
 
-from dataclasses import dataclass, field
-from typing import List, Dict, Optional
+from dataclasses import dataclass
+from typing import Dict, List
 
 
 @dataclass(frozen=True)
@@ -24,11 +22,6 @@ class TrackPreset:
     vy_norm: float
     lat_norm: float
     progress_coef: float
-    finish_T0: float
-    finish_tau: float
-    time_scale: float
-    logstd_max: List[float]
-    opponent_range: float
 
     @property
     def center_lat(self) -> float:
@@ -60,11 +53,6 @@ TRACK_PRESETS: Dict[str, TrackPreset] = {
         vy_norm=20.0,
         lat_norm=4.5,
         progress_coef=0.05,
-        finish_T0=180.0,
-        finish_tau=25.0,
-        time_scale=1.0,
-        logstd_max=[0.0, 0.0, 0.0],
-        opponent_range=60.0,
     ),
     "silverstone_half_3lane": TrackPreset(
         name="silverstone_half_3lane",
@@ -79,52 +67,12 @@ TRACK_PRESETS: Dict[str, TrackPreset] = {
         vy_norm=20.0,
         lat_norm=6.75,     # half_width = 0.5 * 3 * 4.5 = 6.75m
         progress_coef=0.05,
-        finish_T0=180.0,
-        finish_tau=25.0,
-        time_scale=1.0,
-        logstd_max=[0.0, 0.0, 0.0],
-        opponent_range=60.0,
-    ),
-    "silverstone_full": TrackPreset(
-        name="silverstone_full",
-        length_scale=2.075,
-        lane_num=3,
-        lane_width=4.8,
-        lookahead_m=[15.0, 40.0, 80.0, 130.0, 200.0],
-        lookahead_dx_norm=200.0,
-        lookahead_dy_norm=80.0,
-        kappa_norm=104.0,  # 50.0 * 2.075 ≈ 103.75 -> 104.0
-        v_norm=80.0,
-        vy_norm=40.0,
-        lat_norm=7.2,      # half_width = 0.5 * 3 * 4.8 = 7.2
-        progress_coef=0.0241,  # 0.05 * 2838.7 / 5891 ≈ 0.02409
-        finish_T0=186.0,   # D14 v2: 180 x T_ref_full/T_ref_half (tim đường + trần bám đo được + v_max), không dùng profile
-        finish_tau=26.0,   # 25 x 186/180
-        time_scale=1.45,
-        logstd_max=[0.0, -0.7, -0.7],  # D19: khống chế sigma ga/phanh <= 0.5
-        opponent_range=124.5,          # 60.0 * 2.075 = 124.5
     ),
 }
 
 
-def get_track_preset(name: Optional[str] = None) -> TrackPreset:
-    """
-    Truy xuất TrackPreset tương ứng theo tên định danh.
-    Hỗ trợ alias:
-    - None, 'silverstone', 'silverstone_half', 'half' -> preset 'silverstone_half'
-    - 'silverstone_half_3lane', 'half_3lane', '3lane' -> preset 'silverstone_half_3lane'
-    - 'silverstone_full', 'full', '1:1' -> preset 'silverstone_full'
-    """
-    if name is None:
-        return TRACK_PRESETS["silverstone_half"]
-    key = str(name).strip().lower()
-    if key in ["silverstone", "silverstone_half", "half"]:
-        return TRACK_PRESETS["silverstone_half"]
-    elif key in ["silverstone_half_3lane", "half_3lane", "3lane"]:
-        return TRACK_PRESETS["silverstone_half_3lane"]
-    elif key in ["silverstone_full", "full", "1:1"]:
-        return TRACK_PRESETS["silverstone_full"]
-    else:
-        import warnings
-        warnings.warn(f"Map preset '{name}' khong nam trong danh muc. Tu dong fallback ve 'silverstone_half'.")
-        return TRACK_PRESETS["silverstone_half"]
+def get_track_preset(name: str) -> TrackPreset:
+    """Truy xuất TrackPreset theo tên"""
+    if name not in TRACK_PRESETS:
+        raise ValueError(f"Không có preset '{name}'. Chọn một trong: {', '.join(TRACK_PRESETS)}")
+    return TRACK_PRESETS[name]
