@@ -1,0 +1,40 @@
+{
+  "num_episodes": 20,
+  "mean_return": 271.72706333655236,
+  "std_return": 46.385912595024976,
+  "mean_completion_rate": 96.86166792497863,
+  "success_rate": 0.95,
+  "crash_rate": 0.05,
+  "mean_speed_kmh": 88.74149879964129,
+  "max_speed_kmh": 121.0726318359375,
+  "mean_episode_length": 1106.75,
+  "agent": "ppo",
+  "model": "models/abl_no_finish/last_agent.pt",
+  "lap_times": [
+    112.7,
+    112.7,
+    112.60000000000001,
+    112.2,
+    112.7,
+    112.60000000000001,
+    112.5,
+    112.10000000000001,
+    112.60000000000001,
+    112.2,
+    112.5,
+    112.30000000000001,
+    112.60000000000001,
+    112.60000000000001,
+    112.4,
+    112.60000000000001,
+    112.5,
+    112.2,
+    112.5
+  ],
+  "lap_time_mean": 112.47894736842107,
+  "lap_time_std": 0.1902599022636055,
+  "crash_locations": [
+    1860.34521484375
+  ],
+  "lap_definition": "ket thuc khi dat 98.5% quang duong, xuat phat dung"
+}
