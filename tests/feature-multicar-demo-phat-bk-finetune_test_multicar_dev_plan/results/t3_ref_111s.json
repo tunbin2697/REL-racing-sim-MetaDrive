@@ -1,0 +1,484 @@
+{
+ "model": "ref_111s",
+ "clean_lap": 114.10000000000001,
+ "clean_finished": 1,
+ "rows": [
+  {
+   "kind": "coast",
+   "dur": 1.0,
+   "frac": 0.08,
+   "finished": 1,
+   "lap": 114.30000000000001,
+   "loss": 0.2,
+   "outs": []
+  },
+  {
+   "kind": "coast",
+   "dur": 1.0,
+   "frac": 0.185,
+   "finished": 1,
+   "lap": 113.60000000000001,
+   "loss": -0.5,
+   "outs": []
+  },
+  {
+   "kind": "coast",
+   "dur": 1.0,
+   "frac": 0.29,
+   "finished": 0,
+   "lap": 0.0,
+   "loss": null,
+   "outs": [
+    {
+     "car": 0,
+     "reason": "crash_or_track_limit",
+     "frac": 0.314,
+     "t": 385,
+     "contact_3s": false,
+     "kmh": 77.1
+    }
+   ]
+  },
+  {
+   "kind": "coast",
+   "dur": 1.0,
+   "frac": 0.395,
+   "finished": 1,
+   "lap": 113.9,
+   "loss": -0.2,
+   "outs": []
+  },
+  {
+   "kind": "coast",
+   "dur": 1.0,
+   "frac": 0.5,
+   "finished": 1,
+   "lap": 114.10000000000001,
+   "loss": 0.0,
+   "outs": []
+  },
+  {
+   "kind": "coast",
+   "dur": 1.0,
+   "frac": 0.605,
+   "finished": 1,
+   "lap": 114.80000000000001,
+   "loss": 0.7,
+   "outs": []
+  },
+  {
+   "kind": "coast",
+   "dur": 1.0,
+   "frac": 0.71,
+   "finished": 1,
+   "lap": 114.10000000000001,
+   "loss": 0.0,
+   "outs": []
+  },
+  {
+   "kind": "coast",
+   "dur": 1.0,
+   "frac": 0.815,
+   "finished": 1,
+   "lap": 114.0,
+   "loss": -0.1,
+   "outs": []
+  },
+  {
+   "kind": "coast",
+   "dur": 2.0,
+   "frac": 0.08,
+   "finished": 1,
+   "lap": 115.0,
+   "loss": 0.9,
+   "outs": []
+  },
+  {
+   "kind": "coast",
+   "dur": 2.0,
+   "frac": 0.185,
+   "finished": 1,
+   "lap": 114.2,
+   "loss": 0.1,
+   "outs": []
+  },
+  {
+   "kind": "coast",
+   "dur": 2.0,
+   "frac": 0.29,
+   "finished": 0,
+   "lap": 0.0,
+   "loss": null,
+   "outs": [
+    {
+     "car": 0,
+     "reason": "crash_or_track_limit",
+     "frac": 0.314,
+     "t": 382,
+     "contact_3s": false,
+     "kmh": 102.4
+    }
+   ]
+  },
+  {
+   "kind": "coast",
+   "dur": 2.0,
+   "frac": 0.395,
+   "finished": 1,
+   "lap": 114.2,
+   "loss": 0.1,
+   "outs": []
+  },
+  {
+   "kind": "coast",
+   "dur": 2.0,
+   "frac": 0.5,
+   "finished": 1,
+   "lap": 114.5,
+   "loss": 0.4,
+   "outs": []
+  },
+  {
+   "kind": "coast",
+   "dur": 2.0,
+   "frac": 0.605,
+   "finished": 1,
+   "lap": 113.10000000000001,
+   "loss": -1.0,
+   "outs": []
+  },
+  {
+   "kind": "coast",
+   "dur": 2.0,
+   "frac": 0.71,
+   "finished": 1,
+   "lap": 113.80000000000001,
+   "loss": -0.3,
+   "outs": []
+  },
+  {
+   "kind": "coast",
+   "dur": 2.0,
+   "frac": 0.815,
+   "finished": 1,
+   "lap": 114.4,
+   "loss": 0.3,
+   "outs": []
+  },
+  {
+   "kind": "coast",
+   "dur": 3.0,
+   "frac": 0.08,
+   "finished": 1,
+   "lap": 114.10000000000001,
+   "loss": 0.0,
+   "outs": []
+  },
+  {
+   "kind": "coast",
+   "dur": 3.0,
+   "frac": 0.185,
+   "finished": 1,
+   "lap": 114.60000000000001,
+   "loss": 0.5,
+   "outs": []
+  },
+  {
+   "kind": "coast",
+   "dur": 3.0,
+   "frac": 0.29,
+   "finished": 0,
+   "lap": 0.0,
+   "loss": null,
+   "outs": [
+    {
+     "car": 0,
+     "reason": "crash_or_track_limit",
+     "frac": 0.314,
+     "t": 382,
+     "contact_3s": false,
+     "kmh": 110.4
+    }
+   ]
+  },
+  {
+   "kind": "coast",
+   "dur": 3.0,
+   "frac": 0.395,
+   "finished": 1,
+   "lap": 114.30000000000001,
+   "loss": 0.2,
+   "outs": []
+  },
+  {
+   "kind": "coast",
+   "dur": 3.0,
+   "frac": 0.5,
+   "finished": 1,
+   "lap": 114.7,
+   "loss": 0.6,
+   "outs": []
+  },
+  {
+   "kind": "coast",
+   "dur": 3.0,
+   "frac": 0.605,
+   "finished": 1,
+   "lap": 113.9,
+   "loss": -0.2,
+   "outs": []
+  },
+  {
+   "kind": "coast",
+   "dur": 3.0,
+   "frac": 0.71,
+   "finished": 1,
+   "lap": 114.80000000000001,
+   "loss": 0.7,
+   "outs": []
+  },
+  {
+   "kind": "coast",
+   "dur": 3.0,
+   "frac": 0.815,
+   "finished": 1,
+   "lap": 114.9,
+   "loss": 0.8,
+   "outs": []
+  },
+  {
+   "kind": "brake50",
+   "dur": 0.5,
+   "frac": 0.08,
+   "finished": 0,
+   "lap": 0.0,
+   "loss": null,
+   "outs": [
+    {
+     "car": 0,
+     "reason": "crash_or_track_limit",
+     "frac": 0.095,
+     "t": 152,
+     "contact_3s": false,
+     "kmh": 68.5
+    }
+   ]
+  },
+  {
+   "kind": "brake50",
+   "dur": 0.5,
+   "frac": 0.185,
+   "finished": 1,
+   "lap": 114.4,
+   "loss": 0.3,
+   "outs": []
+  },
+  {
+   "kind": "brake50",
+   "dur": 0.5,
+   "frac": 0.29,
+   "finished": 1,
+   "lap": 113.7,
+   "loss": -0.4,
+   "outs": []
+  },
+  {
+   "kind": "brake50",
+   "dur": 0.5,
+   "frac": 0.395,
+   "finished": 1,
+   "lap": 115.2,
+   "loss": 1.1,
+   "outs": []
+  },
+  {
+   "kind": "brake50",
+   "dur": 0.5,
+   "frac": 0.5,
+   "finished": 1,
+   "lap": 114.2,
+   "loss": 0.1,
+   "outs": []
+  },
+  {
+   "kind": "brake50",
+   "dur": 0.5,
+   "frac": 0.605,
+   "finished": 1,
+   "lap": 114.5,
+   "loss": 0.4,
+   "outs": []
+  },
+  {
+   "kind": "brake50",
+   "dur": 0.5,
+   "frac": 0.71,
+   "finished": 1,
+   "lap": 114.2,
+   "loss": 0.1,
+   "outs": []
+  },
+  {
+   "kind": "brake50",
+   "dur": 0.5,
+   "frac": 0.815,
+   "finished": 1,
+   "lap": 114.7,
+   "loss": 0.6,
+   "outs": []
+  },
+  {
+   "kind": "brake50",
+   "dur": 1.0,
+   "frac": 0.08,
+   "finished": 0,
+   "lap": 0.0,
+   "loss": null,
+   "outs": [
+    {
+     "car": 0,
+     "reason": "crash_or_track_limit",
+     "frac": 0.096,
+     "t": 165,
+     "contact_3s": false,
+     "kmh": 50.6
+    }
+   ]
+  },
+  {
+   "kind": "brake50",
+   "dur": 1.0,
+   "frac": 0.185,
+   "finished": 1,
+   "lap": 116.60000000000001,
+   "loss": 2.5,
+   "outs": []
+  },
+  {
+   "kind": "brake50",
+   "dur": 1.0,
+   "frac": 0.29,
+   "finished": 1,
+   "lap": 113.9,
+   "loss": -0.2,
+   "outs": []
+  },
+  {
+   "kind": "brake50",
+   "dur": 1.0,
+   "frac": 0.395,
+   "finished": 1,
+   "lap": 117.2,
+   "loss": 3.1,
+   "outs": []
+  },
+  {
+   "kind": "brake50",
+   "dur": 1.0,
+   "frac": 0.5,
+   "finished": 1,
+   "lap": 115.80000000000001,
+   "loss": 1.7,
+   "outs": []
+  },
+  {
+   "kind": "brake50",
+   "dur": 1.0,
+   "frac": 0.605,
+   "finished": 1,
+   "lap": 117.30000000000001,
+   "loss": 3.2,
+   "outs": []
+  },
+  {
+   "kind": "brake50",
+   "dur": 1.0,
+   "frac": 0.71,
+   "finished": 1,
+   "lap": 115.80000000000001,
+   "loss": 1.7,
+   "outs": []
+  },
+  {
+   "kind": "brake50",
+   "dur": 1.0,
+   "frac": 0.815,
+   "finished": 1,
+   "lap": 116.5,
+   "loss": 2.4,
+   "outs": []
+  },
+  {
+   "kind": "brake50",
+   "dur": 1.5,
+   "frac": 0.08,
+   "finished": 1,
+   "lap": 118.30000000000001,
+   "loss": 4.2,
+   "outs": []
+  },
+  {
+   "kind": "brake50",
+   "dur": 1.5,
+   "frac": 0.185,
+   "finished": 1,
+   "lap": 118.4,
+   "loss": 4.3,
+   "outs": []
+  },
+  {
+   "kind": "brake50",
+   "dur": 1.5,
+   "frac": 0.29,
+   "finished": 1,
+   "lap": 113.4,
+   "loss": -0.7,
+   "outs": []
+  },
+  {
+   "kind": "brake50",
+   "dur": 1.5,
+   "frac": 0.395,
+   "finished": 1,
+   "lap": 118.80000000000001,
+   "loss": 4.7,
+   "outs": []
+  },
+  {
+   "kind": "brake50",
+   "dur": 1.5,
+   "frac": 0.5,
+   "finished": 1,
+   "lap": 115.4,
+   "loss": 1.3,
+   "outs": []
+  },
+  {
+   "kind": "brake50",
+   "dur": 1.5,
+   "frac": 0.605,
+   "finished": 1,
+   "lap": 118.4,
+   "loss": 4.3,
+   "outs": []
+  },
+  {
+   "kind": "brake50",
+   "dur": 1.5,
+   "frac": 0.71,
+   "finished": 1,
+   "lap": 118.9,
+   "loss": 4.8,
+   "outs": []
+  },
+  {
+   "kind": "brake50",
+   "dur": 1.5,
+   "frac": 0.815,
+   "finished": 1,
+   "lap": 117.5,
+   "loss": 3.4,
+   "outs": []
+  }
+ ]
+}

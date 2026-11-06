@@ -1,0 +1,24 @@
+{
+ "model": "final_1000k",
+ "steps": 6000,
+ "car_steps": 36000,
+ "dones": {
+  "crash_or_track_limit": 3,
+  "stalled": 1,
+  "finished": 23
+ },
+ "share_ahead_within_m": {
+  "10": 0.161,
+  "15": 0.2154,
+  "30": 0.3683,
+  "60": 0.5192
+ },
+ "share_within15_by_phase": {
+  "first_300": 0.5167,
+  "after_300": 0.1819
+ },
+ "phase_car_steps": {
+  "first_300": 3600,
+  "after_300": 32400
+ }
+}

@@ -1,0 +1,537 @@
+{
+ "model": "final_1000k",
+ "rows": [
+  {
+   "frac": 0.12,
+   "kind": null,
+   "dur": 0.0,
+   "gap_m": 13.1,
+   "leader": 0,
+   "held": [],
+   "contacts": 0,
+   "contact_types": {
+    "rear": 0,
+    "side": 0
+   },
+   "outs": [],
+   "finished": 2
+  },
+  {
+   "frac": 0.12,
+   "kind": "coast",
+   "dur": 2.0,
+   "gap_m": 13.1,
+   "leader": 0,
+   "held": [],
+   "contacts": 23,
+   "contact_types": {
+    "rear": 23,
+    "side": 0
+   },
+   "outs": [],
+   "finished": 0
+  },
+  {
+   "frac": 0.12,
+   "kind": "brake50",
+   "dur": 1.0,
+   "gap_m": 13.1,
+   "leader": 0,
+   "held": [],
+   "contacts": 8,
+   "contact_types": {
+    "rear": 3,
+    "side": 5
+   },
+   "outs": [
+    {
+     "car": 0,
+     "reason": "stalled",
+     "frac": 0.125,
+     "t": 330,
+     "contact_3s": false,
+     "kmh": 0.6
+    }
+   ],
+   "finished": 0
+  },
+  {
+   "frac": 0.12,
+   "kind": "brake50",
+   "dur": 1.5,
+   "gap_m": 13.1,
+   "leader": 0,
+   "held": [],
+   "contacts": 24,
+   "contact_types": {
+    "rear": 16,
+    "side": 8
+   },
+   "outs": [
+    {
+     "car": 0,
+     "reason": "stalled",
+     "frac": 0.124,
+     "t": 326,
+     "contact_3s": true,
+     "kmh": 0.3
+    },
+    {
+     "car": 1,
+     "reason": "stalled",
+     "frac": 0.123,
+     "t": 327,
+     "contact_3s": true,
+     "kmh": 1.7
+    }
+   ],
+   "finished": 0
+  },
+  {
+   "frac": 0.22,
+   "kind": null,
+   "dur": 0.0,
+   "gap_m": 41.1,
+   "leader": 0,
+   "held": [],
+   "contacts": 0,
+   "contact_types": {
+    "rear": 0,
+    "side": 0
+   },
+   "outs": [],
+   "finished": 2
+  },
+  {
+   "frac": 0.22,
+   "kind": "coast",
+   "dur": 2.0,
+   "gap_m": 41.1,
+   "leader": 0,
+   "held": [],
+   "contacts": 0,
+   "contact_types": {
+    "rear": 0,
+    "side": 0
+   },
+   "outs": [],
+   "finished": 0
+  },
+  {
+   "frac": 0.22,
+   "kind": "brake50",
+   "dur": 1.0,
+   "gap_m": 41.1,
+   "leader": 0,
+   "held": [],
+   "contacts": 16,
+   "contact_types": {
+    "rear": 7,
+    "side": 9
+   },
+   "outs": [],
+   "finished": 0
+  },
+  {
+   "frac": 0.22,
+   "kind": "brake50",
+   "dur": 1.5,
+   "gap_m": 41.1,
+   "leader": 0,
+   "held": [],
+   "contacts": 4,
+   "contact_types": {
+    "rear": 4,
+    "side": 0
+   },
+   "outs": [],
+   "finished": 0
+  },
+  {
+   "frac": 0.32,
+   "kind": null,
+   "dur": 0.0,
+   "gap_m": 23.7,
+   "leader": 0,
+   "held": [],
+   "contacts": 0,
+   "contact_types": {
+    "rear": 0,
+    "side": 0
+   },
+   "outs": [],
+   "finished": 2
+  },
+  {
+   "frac": 0.32,
+   "kind": "coast",
+   "dur": 2.0,
+   "gap_m": 23.7,
+   "leader": 0,
+   "held": [],
+   "contacts": 0,
+   "contact_types": {
+    "rear": 0,
+    "side": 0
+   },
+   "outs": [],
+   "finished": 0
+  },
+  {
+   "frac": 0.32,
+   "kind": "brake50",
+   "dur": 1.0,
+   "gap_m": 23.7,
+   "leader": 0,
+   "held": [],
+   "contacts": 2,
+   "contact_types": {
+    "rear": 0,
+    "side": 2
+   },
+   "outs": [],
+   "finished": 0
+  },
+  {
+   "frac": 0.32,
+   "kind": "brake50",
+   "dur": 1.5,
+   "gap_m": 23.7,
+   "leader": 0,
+   "held": [],
+   "contacts": 0,
+   "contact_types": {
+    "rear": 0,
+    "side": 0
+   },
+   "outs": [],
+   "finished": 0
+  },
+  {
+   "frac": 0.42,
+   "kind": null,
+   "dur": 0.0,
+   "gap_m": 56.1,
+   "leader": 0,
+   "held": [],
+   "contacts": 0,
+   "contact_types": {
+    "rear": 0,
+    "side": 0
+   },
+   "outs": [],
+   "finished": 2
+  },
+  {
+   "frac": 0.42,
+   "kind": "coast",
+   "dur": 2.0,
+   "gap_m": 56.1,
+   "leader": 0,
+   "held": [],
+   "contacts": 0,
+   "contact_types": {
+    "rear": 0,
+    "side": 0
+   },
+   "outs": [],
+   "finished": 0
+  },
+  {
+   "frac": 0.42,
+   "kind": "brake50",
+   "dur": 1.0,
+   "gap_m": 56.1,
+   "leader": 0,
+   "held": [],
+   "contacts": 20,
+   "contact_types": {
+    "rear": 8,
+    "side": 12
+   },
+   "outs": [],
+   "finished": 0
+  },
+  {
+   "frac": 0.42,
+   "kind": "brake50",
+   "dur": 1.5,
+   "gap_m": 56.1,
+   "leader": 0,
+   "held": [],
+   "contacts": 2,
+   "contact_types": {
+    "rear": 2,
+    "side": 0
+   },
+   "outs": [],
+   "finished": 0
+  },
+  {
+   "frac": 0.52,
+   "kind": null,
+   "dur": 0.0,
+   "gap_m": 19.8,
+   "leader": 0,
+   "held": [],
+   "contacts": 0,
+   "contact_types": {
+    "rear": 0,
+    "side": 0
+   },
+   "outs": [],
+   "finished": 2
+  },
+  {
+   "frac": 0.52,
+   "kind": "coast",
+   "dur": 2.0,
+   "gap_m": 19.8,
+   "leader": 0,
+   "held": [],
+   "contacts": 0,
+   "contact_types": {
+    "rear": 0,
+    "side": 0
+   },
+   "outs": [],
+   "finished": 0
+  },
+  {
+   "frac": 0.52,
+   "kind": "brake50",
+   "dur": 1.0,
+   "gap_m": 19.8,
+   "leader": 0,
+   "held": [],
+   "contacts": 17,
+   "contact_types": {
+    "rear": 17,
+    "side": 0
+   },
+   "outs": [],
+   "finished": 0
+  },
+  {
+   "frac": 0.52,
+   "kind": "brake50",
+   "dur": 1.5,
+   "gap_m": 19.8,
+   "leader": 0,
+   "held": [],
+   "contacts": 2,
+   "contact_types": {
+    "rear": 2,
+    "side": 0
+   },
+   "outs": [
+    {
+     "car": 1,
+     "reason": "crash_or_track_limit",
+     "frac": 0.535,
+     "t": 666,
+     "contact_3s": true,
+     "kmh": 34.7
+    }
+   ],
+   "finished": 0
+  },
+  {
+   "frac": 0.62,
+   "kind": null,
+   "dur": 0.0,
+   "gap_m": 53.2,
+   "leader": 0,
+   "held": [],
+   "contacts": 0,
+   "contact_types": {
+    "rear": 0,
+    "side": 0
+   },
+   "outs": [],
+   "finished": 2
+  },
+  {
+   "frac": 0.62,
+   "kind": "coast",
+   "dur": 2.0,
+   "gap_m": 53.2,
+   "leader": 0,
+   "held": [],
+   "contacts": 0,
+   "contact_types": {
+    "rear": 0,
+    "side": 0
+   },
+   "outs": [],
+   "finished": 0
+  },
+  {
+   "frac": 0.62,
+   "kind": "brake50",
+   "dur": 1.0,
+   "gap_m": 53.2,
+   "leader": 0,
+   "held": [],
+   "contacts": 21,
+   "contact_types": {
+    "rear": 2,
+    "side": 19
+   },
+   "outs": [],
+   "finished": 0
+  },
+  {
+   "frac": 0.62,
+   "kind": "brake50",
+   "dur": 1.5,
+   "gap_m": 53.2,
+   "leader": 0,
+   "held": [],
+   "contacts": 0,
+   "contact_types": {
+    "rear": 0,
+    "side": 0
+   },
+   "outs": [],
+   "finished": 0
+  },
+  {
+   "frac": 0.72,
+   "kind": null,
+   "dur": 0.0,
+   "gap_m": 81.1,
+   "leader": 0,
+   "held": [],
+   "contacts": 0,
+   "contact_types": {
+    "rear": 0,
+    "side": 0
+   },
+   "outs": [],
+   "finished": 2
+  },
+  {
+   "frac": 0.72,
+   "kind": "coast",
+   "dur": 2.0,
+   "gap_m": 81.1,
+   "leader": 0,
+   "held": [],
+   "contacts": 0,
+   "contact_types": {
+    "rear": 0,
+    "side": 0
+   },
+   "outs": [],
+   "finished": 0
+  },
+  {
+   "frac": 0.72,
+   "kind": "brake50",
+   "dur": 1.0,
+   "gap_m": 81.1,
+   "leader": 0,
+   "held": [],
+   "contacts": 2,
+   "contact_types": {
+    "rear": 2,
+    "side": 0
+   },
+   "outs": [],
+   "finished": 0
+  },
+  {
+   "frac": 0.72,
+   "kind": "brake50",
+   "dur": 1.5,
+   "gap_m": 81.1,
+   "leader": 0,
+   "held": [],
+   "contacts": 6,
+   "contact_types": {
+    "rear": 6,
+    "side": 0
+   },
+   "outs": [],
+   "finished": 0
+  },
+  {
+   "frac": 0.82,
+   "kind": null,
+   "dur": 0.0,
+   "gap_m": 35.3,
+   "leader": 0,
+   "held": [],
+   "contacts": 0,
+   "contact_types": {
+    "rear": 0,
+    "side": 0
+   },
+   "outs": [],
+   "finished": 2
+  },
+  {
+   "frac": 0.82,
+   "kind": "coast",
+   "dur": 2.0,
+   "gap_m": 35.3,
+   "leader": 0,
+   "held": [],
+   "contacts": 0,
+   "contact_types": {
+    "rear": 0,
+    "side": 0
+   },
+   "outs": [],
+   "finished": 2
+  },
+  {
+   "frac": 0.82,
+   "kind": "brake50",
+   "dur": 1.0,
+   "gap_m": 35.3,
+   "leader": 0,
+   "held": [],
+   "contacts": 0,
+   "contact_types": {
+    "rear": 0,
+    "side": 0
+   },
+   "outs": [],
+   "finished": 2
+  },
+  {
+   "frac": 0.82,
+   "kind": "brake50",
+   "dur": 1.5,
+   "gap_m": 35.3,
+   "leader": 0,
+   "held": [],
+   "contacts": 2,
+   "contact_types": {
+    "rear": 1,
+    "side": 1
+   },
+   "outs": [
+    {
+     "car": 1,
+     "reason": "crash_or_track_limit",
+     "frac": 0.827,
+     "t": 965,
+     "contact_3s": true,
+     "kmh": 18.4
+    },
+    {
+     "car": 0,
+     "reason": "stalled",
+     "frac": 0.828,
+     "t": 1082,
+     "contact_3s": false,
+     "kmh": 0.9
+    }
+   ],
+   "finished": 0
+  }
+ ]
+}
